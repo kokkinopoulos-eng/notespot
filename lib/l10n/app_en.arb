@@ -1,0 +1,23 @@
+{
+  "@@locale": "en",
+  "appTitle": "NoteSpot",
+  "tagline": "Capture anything. Find everything.",
+  "chooseLanguage": "Choose your language",
+  "notesTab": "Notes",
+  "searchTab": "Search",
+  "settingsTab": "Settings",
+  "noNotesYet": "No notes yet",
+  "captureHint": "Tap + to capture your first note",
+  "photoNote": "Photo",
+  "voiceNote": "Voice memo",
+  "handwritingNote": "Handwriting",
+  "textNote": "Text",
+  "newNote": "New note",
+  "titleLabel": "Title",
+  "contentLabel": "Content",
+  "save": "Save",
+  "cancel": "Cancel",
+  "comingSoon": "Coming soon",
+  "searchHint": "Search your notes...",
+  "noResults": "No results"
+}
