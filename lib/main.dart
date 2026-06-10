@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/app_theme.dart';
@@ -26,6 +26,7 @@ class NoteSpotApp extends StatefulWidget {
 
 class NoteSpotAppState extends State<NoteSpotApp> {
   Locale? _locale;
+  Locale? get locale => _locale;
   bool _onboardingDone = false;
 
   @override

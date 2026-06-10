@@ -15,7 +15,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tagline => 'Capture anything. Find everything.';
 
   @override
-  String get chooseLanguage => 'Choose your language';
+  String get chooseLanguage => 'Choose language';
 
   @override
   String get notesTab => 'Notes';
@@ -30,13 +30,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noNotesYet => 'No notes yet';
 
   @override
-  String get captureHint => 'Tap + to capture your first note';
+  String get captureHint => 'Tap + for your first note';
 
   @override
   String get photoNote => 'Photo';
 
   @override
-  String get voiceNote => 'Voice memo';
+  String get voiceNote => 'Voice';
 
   @override
   String get handwritingNote => 'Handwriting';
@@ -67,4 +67,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noResults => 'No results';
+
+  @override
+  String get listening => 'Listening...';
+
+  @override
+  String get tapToRecord => 'Tap the mic to start';
+
+  @override
+  String get speechUnavailable => 'Speech recognition unavailable';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languageGreek => 'Ελληνικά';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get aiProvider => 'AI Provider';
+
+  @override
+  String get aiProviderSubtitle => 'Coming soon';
+
+  @override
+  String get about => 'About';
+
+  @override
+  String get version => 'Version';
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get deleteConfirmTitle => 'Delete note?';
+
+  @override
+  String get deleteConfirmBody => 'This cannot be undone.';
 }

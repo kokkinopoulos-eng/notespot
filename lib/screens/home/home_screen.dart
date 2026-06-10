@@ -1,12 +1,14 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/db_service.dart';
 import '../../services/media_service.dart';
 import '../../widgets/note_card.dart';
+import '../capture/voice_capture_screen.dart';
+import '../note_detail/note_detail_screen.dart';
 import 'search_tab.dart';
+import 'settings_tab.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -57,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: Text(l10n.voiceNote),
               onTap: () {
                 Navigator.pop(sheetContext);
-                _notImplemented();
+                _addVoiceNote();
               },
             ),
             ListTile(
@@ -82,11 +84,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _notImplemented() {
-    final l10n = AppLocalizations.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.comingSoon)),
+  Future<void> _addVoiceNote() async {
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const VoiceCaptureScreen()),
     );
+    if (saved == true) await _loadNotes();
   }
 
   Future<void> _addMediaNote(NoteType type) async {
@@ -94,9 +97,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final path = await MediaService.instance.capturePhoto();
     if (path == null || !mounted) return;
 
-    final defaultTitle = type == NoteType.photo
-        ? l10n.photoNote
-        : l10n.handwritingNote;
+    final defaultTitle =
+        type == NoteType.photo ? l10n.photoNote : l10n.handwritingNote;
     final stamp = DateFormat('d/M HH:mm').format(DateTime.now());
     final titleCtrl = TextEditingController(text: '$defaultTitle $stamp');
 
@@ -192,9 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _notesBody(AppLocalizations l10n) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    if (_loading) return const Center(child: CircularProgressIndicator());
     if (_notes.isEmpty) {
       return _EmptyState(message: l10n.noNotesYet, hint: l10n.captureHint);
     }
@@ -203,7 +203,18 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ListView.builder(
         padding: const EdgeInsets.only(top: 8, bottom: 88),
         itemCount: _notes.length,
-        itemBuilder: (context, i) => NoteCard(note: _notes[i]),
+        itemBuilder: (context, i) => NoteCard(
+          note: _notes[i],
+          onTap: () async {
+            final deleted = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => NoteDetailScreen(note: _notes[i]),
+              ),
+            );
+            if (deleted == true) _loadNotes();
+          },
+        ),
       ),
     );
   }
@@ -218,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _notesBody(l10n),
           const SearchTab(),
-          Center(child: Text(l10n.settingsTab)),
+          const SettingsTab(),
         ],
       ),
       floatingActionButton: _tab == 0
@@ -245,7 +256,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState({required this.message, required this.hint});
-
   final String message;
   final String hint;
 

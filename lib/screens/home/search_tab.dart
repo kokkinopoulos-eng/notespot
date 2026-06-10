@@ -1,11 +1,10 @@
-import 'dart:async';
-
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
-
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/db_service.dart';
 import '../../widgets/note_card.dart';
+import '../note_detail/note_detail_screen.dart';
 
 class SearchTab extends StatefulWidget {
   const SearchTab({super.key});
@@ -28,12 +27,9 @@ class _SearchTabState extends State<SearchTab> {
   }
 
   void _onChanged(String value) {
-    setState(() {}); // refresh clear button
+    setState(() {});
     _debounce?.cancel();
-    _debounce = Timer(
-      const Duration(milliseconds: 300),
-      () => _run(value),
-    );
+    _debounce = Timer(const Duration(milliseconds: 300), () => _run(value));
   }
 
   Future<void> _run(String query) async {
@@ -90,8 +86,19 @@ class _SearchTabState extends State<SearchTab> {
                   : ListView.builder(
                       padding: const EdgeInsets.only(top: 4, bottom: 16),
                       itemCount: _results.length,
-                      itemBuilder: (context, i) =>
-                          NoteCard(note: _results[i]),
+                      itemBuilder: (context, i) => NoteCard(
+                        note: _results[i],
+                        onTap: () async {
+                          final deleted = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  NoteDetailScreen(note: _results[i]),
+                            ),
+                          );
+                          if (deleted == true) _run(_controller.text);
+                        },
+                      ),
                     ),
         ),
       ],

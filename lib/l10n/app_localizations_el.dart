@@ -67,4 +67,46 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get noResults => 'Κανένα αποτέλεσμα';
+
+  @override
+  String get listening => 'Ακούω...';
+
+  @override
+  String get tapToRecord => 'Πάτησε το μικρόφωνο για να ξεκινήσεις';
+
+  @override
+  String get speechUnavailable => 'Η αναγνώριση ομιλίας δεν είναι διαθέσιμη';
+
+  @override
+  String get language => 'Γλώσσα';
+
+  @override
+  String get languageGreek => 'Ελληνικά';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get aiProvider => 'AI Provider';
+
+  @override
+  String get aiProviderSubtitle => 'Έρχεται σύντομα';
+
+  @override
+  String get about => 'Σχετικά';
+
+  @override
+  String get version => 'Έκδοση';
+
+  @override
+  String get share => 'Κοινοποίηση';
+
+  @override
+  String get delete => 'Διαγραφή';
+
+  @override
+  String get deleteConfirmTitle => 'Διαγραφή σημείωσης;';
+
+  @override
+  String get deleteConfirmBody => 'Αυτό δεν μπορεί να αναιρεθεί.';
 }

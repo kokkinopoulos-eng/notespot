@@ -113,7 +113,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseLanguage.
   ///
   /// In en, this message translates to:
-  /// **'Choose your language'**
+  /// **'Choose language'**
   String get chooseLanguage;
 
   /// No description provided for @notesTab.
@@ -143,7 +143,7 @@ abstract class AppLocalizations {
   /// No description provided for @captureHint.
   ///
   /// In en, this message translates to:
-  /// **'Tap + to capture your first note'**
+  /// **'Tap + for your first note'**
   String get captureHint;
 
   /// No description provided for @photoNote.
@@ -155,7 +155,7 @@ abstract class AppLocalizations {
   /// No description provided for @voiceNote.
   ///
   /// In en, this message translates to:
-  /// **'Voice memo'**
+  /// **'Voice'**
   String get voiceNote;
 
   /// No description provided for @handwritingNote.
@@ -217,6 +217,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No results'**
   String get noResults;
+
+  /// No description provided for @listening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening...'**
+  String get listening;
+
+  /// No description provided for @tapToRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the mic to start'**
+  String get tapToRecord;
+
+  /// No description provided for @speechUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech recognition unavailable'**
+  String get speechUnavailable;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @languageGreek.
+  ///
+  /// In en, this message translates to:
+  /// **'Ελληνικά'**
+  String get languageGreek;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @aiProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Provider'**
+  String get aiProvider;
+
+  /// No description provided for @aiProviderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get aiProviderSubtitle;
+
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// No description provided for @version.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get version;
+
+  /// No description provided for @share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get share;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @deleteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete note?'**
+  String get deleteConfirmTitle;
+
+  /// No description provided for @deleteConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be undone.'**
+  String get deleteConfirmBody;
 }
 
 class _AppLocalizationsDelegate
