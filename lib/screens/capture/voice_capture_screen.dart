@@ -1,3 +1,4 @@
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -5,6 +6,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
+import '../../services/cloud_ai_service.dart';
 import '../../services/db_service.dart';
 
 class VoiceCaptureScreen extends StatefulWidget {
@@ -80,18 +82,43 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
     final text = ('$_transcript $_partial').trim();
     if (text.isEmpty) return;
     final l10n = AppLocalizations.of(context);
+    final langName =
+        Localizations.localeOf(context).languageCode == 'el' ? 'Greek' : 'English';
     await _speech.stop();
     final now = DateTime.now();
     final stamp = DateFormat('d/M HH:mm').format(now);
-    await DbService.instance.insert(Note(
+    final noteId = await DbService.instance.insert(Note(
       type: NoteType.voice,
       title: '${l10n.voiceNote} $stamp',
       content: text,
       createdAt: now,
       updatedAt: now,
     ));
+    // fire-and-forget AI enrichment
+    unawaited(_enrichNote(noteId, text: text, langName: langName));
     if (!mounted) return;
     Navigator.pop(context, true);
+  }
+
+  Future<void> _enrichNote(int noteId,
+      {required String text, required String langName}) async {
+    final analysis =
+        await CloudAiService.instance.analyzeText(text, langName);
+    if (analysis == null) return;
+    final note = await DbService.instance.getById(noteId);
+    if (note == null) return;
+    final updated = Note(
+      id: note.id,
+      type: note.type,
+      title: note.title,
+      content: note.content,
+      category: analysis.category,
+      tags: analysis.tags,
+      mediaPath: note.mediaPath,
+      createdAt: note.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    await DbService.instance.update(updated);
   }
 
   @override
@@ -116,9 +143,7 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
               child: SingleChildScrollView(
                 child: Text(
                   text.isEmpty
-                      ? (_available
-                          ? l10n.tapToRecord
-                          : l10n.speechUnavailable)
+                      ? (_available ? l10n.tapToRecord : l10n.speechUnavailable)
                       : text,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
@@ -126,12 +151,9 @@ class _VoiceCaptureScreenState extends State<VoiceCaptureScreen> {
             ),
             const SizedBox(height: 16),
             if (_listening)
-              Text(
-                l10n.listening,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                ),
-              ),
+              Text(l10n.listening,
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.error)),
             const SizedBox(height: 16),
             FloatingActionButton.large(
               onPressed: _available ? _toggle : null,

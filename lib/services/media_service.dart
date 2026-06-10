@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
@@ -33,17 +34,32 @@ class MediaService {
     return _persist(file);
   }
 
+  /// Saves raw PNG bytes (e.g. from the drawing canvas) into the
+  /// permanent media folder and returns the file path.
+  Future<String> savePngBytes(Uint8List bytes) async {
+    final mediaDir = await _mediaDir();
+    final target =
+        p.join(mediaDir.path, '${DateTime.now().millisecondsSinceEpoch}.png');
+    await File(target).writeAsBytes(bytes, flush: true);
+    return target;
+  }
+
   Future<String> _persist(XFile file) async {
-    final docs = await getApplicationDocumentsDirectory();
-    final mediaDir = Directory(p.join(docs.path, 'notespot_media'));
-    if (!await mediaDir.exists()) {
-      await mediaDir.create(recursive: true);
-    }
+    final mediaDir = await _mediaDir();
     final name =
         '${DateTime.now().millisecondsSinceEpoch}${p.extension(file.path)}';
     final target = p.join(mediaDir.path, name);
     await File(file.path).copy(target);
     return target;
+  }
+
+  Future<Directory> _mediaDir() async {
+    final docs = await getApplicationDocumentsDirectory();
+    final dir = Directory(p.join(docs.path, 'notespot_media'));
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    return dir;
   }
 
   Future<void> deleteMedia(String? path) async {

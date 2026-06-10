@@ -1,4 +1,4 @@
-import 'package:path/path.dart';
+﻿import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../core/search_utils.dart';
@@ -6,7 +6,6 @@ import '../models/note.dart';
 
 class DbService {
   DbService._();
-
   static final DbService instance = DbService._();
 
   static const _dbName = 'notespot.db';
@@ -68,6 +67,14 @@ class DbService {
     return db.delete('notes', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<Note?> getById(int id) async {
+    final db = await database;
+    final rows =
+        await db.query('notes', where: 'id = ?', whereArgs: [id], limit: 1);
+    if (rows.isEmpty) return null;
+    return Note.fromMap(rows.first);
+  }
+
   Future<List<Note>> getAll() async {
     final db = await database;
     final rows = await db.query('notes', orderBy: 'created_at DESC');
@@ -83,6 +90,14 @@ class DbService {
       orderBy: 'created_at DESC',
     );
     return rows.map(Note.fromMap).toList();
+  }
+
+  Future<List<String>> getCategories() async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      "SELECT DISTINCT category FROM notes WHERE category != '' ORDER BY category",
+    );
+    return rows.map((r) => r['category'] as String).toList();
   }
 
   Future<List<Note>> search(String query) async {

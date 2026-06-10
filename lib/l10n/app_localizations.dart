@@ -301,6 +301,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This cannot be undone.'**
   String get deleteConfirmBody;
+
+  /// No description provided for @apiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key'**
+  String get apiKey;
+
+  /// No description provided for @apiKeySet.
+  ///
+  /// In en, this message translates to:
+  /// **'Key saved'**
+  String get apiKeySet;
+
+  /// No description provided for @apiKeyDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Key deleted'**
+  String get apiKeyDeleted;
+
+  /// No description provided for @noApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'No key set'**
+  String get noApiKey;
+
+  /// No description provided for @catReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipts'**
+  String get catReceipts;
+
+  /// No description provided for @catWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work'**
+  String get catWork;
+
+  /// No description provided for @catPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get catPersonal;
+
+  /// No description provided for @catShopping.
+  ///
+  /// In en, this message translates to:
+  /// **'Shopping'**
+  String get catShopping;
+
+  /// No description provided for @catIdeas.
+  ///
+  /// In en, this message translates to:
+  /// **'Ideas'**
+  String get catIdeas;
+
+  /// No description provided for @catFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Food'**
+  String get catFood;
+
+  /// No description provided for @catTravel.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel'**
+  String get catTravel;
+
+  /// No description provided for @catOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get catOther;
+
+  /// No description provided for @allCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get allCategories;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @drawNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw / Write'**
+  String get drawNote;
+
+  /// No description provided for @stylusOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Stylus only'**
+  String get stylusOnly;
+
+  /// No description provided for @undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undo;
+
+  /// No description provided for @clearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clearAll;
 }
 
 class _AppLocalizationsDelegate

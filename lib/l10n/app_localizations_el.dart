@@ -109,4 +109,58 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get deleteConfirmBody => 'Αυτό δεν μπορεί να αναιρεθεί.';
+
+  @override
+  String get apiKey => 'API Key';
+
+  @override
+  String get apiKeySet => 'Το key αποθηκεύτηκε';
+
+  @override
+  String get apiKeyDeleted => 'Το key διαγράφηκε';
+
+  @override
+  String get noApiKey => 'Δεν έχει οριστεί key';
+
+  @override
+  String get catReceipts => 'Αποδείξεις';
+
+  @override
+  String get catWork => 'Εργασία';
+
+  @override
+  String get catPersonal => 'Προσωπικά';
+
+  @override
+  String get catShopping => 'Αγορές';
+
+  @override
+  String get catIdeas => 'Ιδέες';
+
+  @override
+  String get catFood => 'Φαγητό';
+
+  @override
+  String get catTravel => 'Ταξίδια';
+
+  @override
+  String get catOther => 'Άλλα';
+
+  @override
+  String get allCategories => 'Όλα';
+
+  @override
+  String get edit => 'Επεξεργασία';
+
+  @override
+  String get drawNote => 'Γράψιμο / Σχέδιο';
+
+  @override
+  String get stylusOnly => 'Μόνο γραφίδα';
+
+  @override
+  String get undo => 'Αναίρεση';
+
+  @override
+  String get clearAll => 'Καθαρισμός';
 }

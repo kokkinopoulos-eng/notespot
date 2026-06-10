@@ -1,10 +1,14 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/category_labels.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
+import '../../services/cloud_ai_service.dart';
 import '../../services/db_service.dart';
 import '../../services/media_service.dart';
 import '../../widgets/note_card.dart';
+import '../capture/draw_capture_screen.dart';
 import '../capture/voice_capture_screen.dart';
 import '../note_detail/note_detail_screen.dart';
 import 'search_tab.dart';
@@ -20,6 +24,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tab = 0;
   List<Note> _notes = [];
+  List<String> _categories = [];
+  String? _selectedCategory;
   bool _loading = true;
 
   @override
@@ -29,12 +35,49 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadNotes() async {
-    final notes = await DbService.instance.getAll();
+    final cats = await DbService.instance.getCategories();
+    if (_selectedCategory != null && !cats.contains(_selectedCategory)) {
+      _selectedCategory = null;
+    }
+    final notes = _selectedCategory != null
+        ? await DbService.instance.getByCategory(_selectedCategory!)
+        : await DbService.instance.getAll();
     if (!mounted) return;
     setState(() {
+      _categories = cats;
       _notes = notes;
       _loading = false;
     });
+  }
+
+  Future<void> _enrichNote(int noteId,
+      {String? imagePath, String? text}) async {
+    final langCode = Localizations.localeOf(context).languageCode;
+    final langName = langCode == 'el' ? 'Greek' : 'English';
+    final analysis = imagePath != null
+        ? await CloudAiService.instance.analyzeImage(imagePath, langName)
+        : await CloudAiService.instance.analyzeText(text ?? '', langName);
+    if (analysis == null) return;
+    final note = await DbService.instance.getById(noteId);
+    if (note == null) return;
+    final autoTitlePattern = RegExp(r'^.+\s\d+/\d+\s\d+:\d+$');
+    final useAiTitle =
+        analysis.title.isNotEmpty && autoTitlePattern.hasMatch(note.title);
+    final updated = Note(
+      id: note.id,
+      type: note.type,
+      title: useAiTitle ? analysis.title : note.title,
+      content: analysis.extractedText.isNotEmpty
+          ? analysis.extractedText
+          : note.content,
+      category: analysis.category,
+      tags: analysis.tags,
+      mediaPath: note.mediaPath,
+      createdAt: note.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    await DbService.instance.update(updated);
+    await _loadNotes();
   }
 
   Future<void> _openCaptureSheet() async {
@@ -71,6 +114,14 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.gesture),
+              title: Text(l10n.drawNote),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _addDrawNote();
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.edit_note_outlined),
               title: Text(l10n.textNote),
               onTap: () {
@@ -82,6 +133,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _addDrawNote() async {
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const DrawCaptureScreen()),
+    );
+    if (saved == true) await _loadNotes();
   }
 
   Future<void> _addVoiceNote() async {
@@ -96,12 +155,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final l10n = AppLocalizations.of(context);
     final path = await MediaService.instance.capturePhoto();
     if (path == null || !mounted) return;
-
     final defaultTitle =
         type == NoteType.photo ? l10n.photoNote : l10n.handwritingNote;
     final stamp = DateFormat('d/M HH:mm').format(DateTime.now());
     final titleCtrl = TextEditingController(text: '$defaultTitle $stamp');
-
     final saved = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -124,16 +181,16 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
-
     if (saved == true && titleCtrl.text.trim().isNotEmpty) {
       final now = DateTime.now();
-      await DbService.instance.insert(Note(
+      final noteId = await DbService.instance.insert(Note(
         type: type,
         title: titleCtrl.text.trim(),
         mediaPath: path,
         createdAt: now,
         updatedAt: now,
       ));
+      unawaited(_enrichNote(noteId, imagePath: path));
       await _loadNotes();
     } else {
       await MediaService.instance.deleteMedia(path);
@@ -180,17 +237,56 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (saved == true && titleCtrl.text.trim().isNotEmpty) {
       final now = DateTime.now();
-      await DbService.instance.insert(Note(
+      final stamp = DateFormat('d/M HH:mm').format(now);
+      final noteId = await DbService.instance.insert(Note(
         type: NoteType.text,
-        title: titleCtrl.text.trim(),
+        title: titleCtrl.text.trim().isEmpty
+            ? '${l10n.textNote} $stamp'
+            : titleCtrl.text.trim(),
         content: contentCtrl.text.trim(),
         createdAt: now,
         updatedAt: now,
       ));
+      unawaited(_enrichNote(noteId, text: contentCtrl.text.trim()));
       await _loadNotes();
     }
     titleCtrl.dispose();
     contentCtrl.dispose();
+  }
+
+  Widget _filterRow(AppLocalizations l10n) {
+    if (_categories.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 44,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: FilterChip(
+              label: Text(l10n.allCategories),
+              selected: _selectedCategory == null,
+              onSelected: (_) {
+                setState(() => _selectedCategory = null);
+                _loadNotes();
+              },
+            ),
+          ),
+          ..._categories.map((c) => Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: FilterChip(
+                  label: Text(localizedCategory(l10n, c)),
+                  selected: _selectedCategory == c,
+                  onSelected: (_) {
+                    setState(() => _selectedCategory = c);
+                    _loadNotes();
+                  },
+                ),
+              )),
+        ],
+      ),
+    );
   }
 
   Widget _notesBody(AppLocalizations l10n) {
@@ -201,18 +297,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return RefreshIndicator(
       onRefresh: _loadNotes,
       child: ListView.builder(
-        padding: const EdgeInsets.only(top: 8, bottom: 88),
+        padding: const EdgeInsets.only(top: 4, bottom: 88),
         itemCount: _notes.length,
         itemBuilder: (context, i) => NoteCard(
           note: _notes[i],
           onTap: () async {
-            final deleted = await Navigator.push<bool>(
+            final result = await Navigator.push<bool>(
               context,
               MaterialPageRoute(
                 builder: (_) => NoteDetailScreen(note: _notes[i]),
               ),
             );
-            if (deleted == true) _loadNotes();
+            if (result == true) _loadNotes();
           },
         ),
       ),
@@ -227,7 +323,12 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _tab,
         children: [
-          _notesBody(l10n),
+          Column(
+            children: [
+              _filterRow(l10n),
+              Expanded(child: _notesBody(l10n)),
+            ],
+          ),
           const SearchTab(),
           const SettingsTab(),
         ],

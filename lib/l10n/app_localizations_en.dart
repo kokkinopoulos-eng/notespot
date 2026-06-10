@@ -109,4 +109,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteConfirmBody => 'This cannot be undone.';
+
+  @override
+  String get apiKey => 'API Key';
+
+  @override
+  String get apiKeySet => 'Key saved';
+
+  @override
+  String get apiKeyDeleted => 'Key deleted';
+
+  @override
+  String get noApiKey => 'No key set';
+
+  @override
+  String get catReceipts => 'Receipts';
+
+  @override
+  String get catWork => 'Work';
+
+  @override
+  String get catPersonal => 'Personal';
+
+  @override
+  String get catShopping => 'Shopping';
+
+  @override
+  String get catIdeas => 'Ideas';
+
+  @override
+  String get catFood => 'Food';
+
+  @override
+  String get catTravel => 'Travel';
+
+  @override
+  String get catOther => 'Other';
+
+  @override
+  String get allCategories => 'All';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get drawNote => 'Draw / Write';
+
+  @override
+  String get stylusOnly => 'Stylus only';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get clearAll => 'Clear';
 }
