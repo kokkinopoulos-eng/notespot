@@ -51,5 +51,9 @@
   "drawNote": "Draw / Write",
   "stylusOnly": "Stylus only",
   "undo": "Undo",
-  "clearAll": "Clear"
+  "clearAll": "Clear",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "thisWeek": "This week",
+  "earlier": "Earlier"
 }

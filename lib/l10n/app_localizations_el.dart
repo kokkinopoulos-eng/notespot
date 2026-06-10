@@ -163,4 +163,16 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get clearAll => 'Καθαρισμός';
+
+  @override
+  String get today => 'Σήμερα';
+
+  @override
+  String get yesterday => 'Χθες';
+
+  @override
+  String get thisWeek => 'Αυτή την εβδομάδα';
+
+  @override
+  String get earlier => 'Παλαιότερα';
 }

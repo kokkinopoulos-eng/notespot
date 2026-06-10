@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/category_labels.dart';
+import '../../core/timeline_utils.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/cloud_ai_service.dart';
@@ -254,6 +255,14 @@ class _HomeScreenState extends State<HomeScreen> {
     contentCtrl.dispose();
   }
 
+  String _bucketLabel(AppLocalizations l10n, TimelineBucket b) =>
+      switch (b) {
+        TimelineBucket.today => l10n.today,
+        TimelineBucket.yesterday => l10n.yesterday,
+        TimelineBucket.thisWeek => l10n.thisWeek,
+        TimelineBucket.earlier => l10n.earlier,
+      };
+
   Widget _filterRow(AppLocalizations l10n) {
     if (_categories.isEmpty) return const SizedBox.shrink();
     return SizedBox(
@@ -294,23 +303,46 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_notes.isEmpty) {
       return _EmptyState(message: l10n.noNotesYet, hint: l10n.captureHint);
     }
+
+    final now = DateTime.now();
+    final items = <Widget>[];
+    TimelineBucket? lastBucket;
+
+    for (int i = 0; i < _notes.length; i++) {
+      final note = _notes[i];
+      final bucket = bucketFor(note.createdAt, now);
+      if (bucket != lastBucket) {
+        items.add(Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text(
+            _bucketLabel(l10n, bucket),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+          ),
+        ));
+        lastBucket = bucket;
+      }
+      items.add(NoteCard(
+        note: note,
+        onTap: () async {
+          final result = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NoteDetailScreen(note: note),
+            ),
+          );
+          if (result == true) _loadNotes();
+        },
+      ));
+    }
+
     return RefreshIndicator(
       onRefresh: _loadNotes,
       child: ListView.builder(
         padding: const EdgeInsets.only(top: 4, bottom: 88),
-        itemCount: _notes.length,
-        itemBuilder: (context, i) => NoteCard(
-          note: _notes[i],
-          onTap: () async {
-            final result = await Navigator.push<bool>(
-              context,
-              MaterialPageRoute(
-                builder: (_) => NoteDetailScreen(note: _notes[i]),
-              ),
-            );
-            if (result == true) _loadNotes();
-          },
-        ),
+        itemCount: items.length,
+        itemBuilder: (_, i) => items[i],
       ),
     );
   }
