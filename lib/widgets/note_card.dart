@@ -1,13 +1,10 @@
-import 'dart:io';
-
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import '../models/note.dart';
 
 class NoteCard extends StatelessWidget {
   const NoteCard({super.key, required this.note, this.onTap});
-
   final Note note;
   final VoidCallback? onTap;
 
@@ -20,9 +17,9 @@ class NoteCard extends StatelessWidget {
 
   Widget _leading() {
     final path = note.mediaPath;
-    final isImage =
-        note.type == NoteType.photo || note.type == NoteType.handwriting;
-    if (path != null && isImage) {
+    if (path != null) {
+      // ignore: avoid_print
+      print('[MEDIA] stored=$path exists=${File(path).existsSync()}');
       return ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Image.file(

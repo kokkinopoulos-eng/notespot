@@ -1,16 +1,12 @@
 ﻿import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../core/category_labels.dart';
 import '../../core/timeline_utils.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
-import '../../services/cloud_ai_service.dart';
 import '../../services/db_service.dart';
-import '../../services/media_service.dart';
 import '../../widgets/note_card.dart';
-import '../capture/draw_capture_screen.dart';
-import '../capture/voice_capture_screen.dart';
+import '../capture/note_editor_screen.dart';
 import '../note_detail/note_detail_screen.dart';
 import 'search_tab.dart';
 import 'settings_tab.dart';
@@ -51,209 +47,9 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _enrichNote(int noteId,
-      {String? imagePath, String? text}) async {
-    final langCode = Localizations.localeOf(context).languageCode;
-    final langName = langCode == 'el' ? 'Greek' : 'English';
-    final analysis = imagePath != null
-        ? await CloudAiService.instance.analyzeImage(imagePath, langName)
-        : await CloudAiService.instance.analyzeText(text ?? '', langName);
-    if (analysis == null) return;
-    final note = await DbService.instance.getById(noteId);
-    if (note == null) return;
-    final autoTitlePattern = RegExp(r'^.+\s\d+/\d+\s\d+:\d+$');
-    final useAiTitle =
-        analysis.title.isNotEmpty && autoTitlePattern.hasMatch(note.title);
-    final updated = Note(
-      id: note.id,
-      type: note.type,
-      title: useAiTitle ? analysis.title : note.title,
-      content: analysis.extractedText.isNotEmpty
-          ? analysis.extractedText
-          : note.content,
-      category: analysis.category,
-      tags: analysis.tags,
-      mediaPath: note.mediaPath,
-      createdAt: note.createdAt,
-      updatedAt: DateTime.now(),
-    );
-    await DbService.instance.update(updated);
-    await _loadNotes();
-  }
 
-  Future<void> _openCaptureSheet() async {
-    final l10n = AppLocalizations.of(context);
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: Text(l10n.photoNote),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _addMediaNote(NoteType.photo);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.mic_outlined),
-              title: Text(l10n.voiceNote),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _addVoiceNote();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.draw_outlined),
-              title: Text(l10n.handwritingNote),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _addMediaNote(NoteType.handwriting);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.gesture),
-              title: Text(l10n.drawNote),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _addDrawNote();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit_note_outlined),
-              title: Text(l10n.textNote),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _addTextNote();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Future<void> _addDrawNote() async {
-    final saved = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => const DrawCaptureScreen()),
-    );
-    if (saved == true) await _loadNotes();
-  }
 
-  Future<void> _addVoiceNote() async {
-    final saved = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => const VoiceCaptureScreen()),
-    );
-    if (saved == true) await _loadNotes();
-  }
-
-  Future<void> _addMediaNote(NoteType type) async {
-    final l10n = AppLocalizations.of(context);
-    final path = await MediaService.instance.capturePhoto();
-    if (path == null || !mounted) return;
-    final defaultTitle =
-        type == NoteType.photo ? l10n.photoNote : l10n.handwritingNote;
-    final stamp = DateFormat('d/M HH:mm').format(DateTime.now());
-    final titleCtrl = TextEditingController(text: '$defaultTitle $stamp');
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.newNote),
-        scrollable: true,
-        content: TextField(
-          controller: titleCtrl,
-          autofocus: true,
-          decoration: InputDecoration(labelText: l10n.titleLabel),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
-    );
-    if (saved == true && titleCtrl.text.trim().isNotEmpty) {
-      final now = DateTime.now();
-      final noteId = await DbService.instance.insert(Note(
-        type: type,
-        title: titleCtrl.text.trim(),
-        mediaPath: path,
-        createdAt: now,
-        updatedAt: now,
-      ));
-      unawaited(_enrichNote(noteId, imagePath: path));
-      await _loadNotes();
-    } else {
-      await MediaService.instance.deleteMedia(path);
-    }
-    titleCtrl.dispose();
-  }
-
-  Future<void> _addTextNote() async {
-    final l10n = AppLocalizations.of(context);
-    final titleCtrl = TextEditingController();
-    final contentCtrl = TextEditingController();
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.newNote),
-        scrollable: true,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleCtrl,
-              autofocus: true,
-              decoration: InputDecoration(labelText: l10n.titleLabel),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: contentCtrl,
-              maxLines: 4,
-              decoration: InputDecoration(labelText: l10n.contentLabel),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
-    );
-    if (saved == true && titleCtrl.text.trim().isNotEmpty) {
-      final now = DateTime.now();
-      final stamp = DateFormat('d/M HH:mm').format(now);
-      final noteId = await DbService.instance.insert(Note(
-        type: NoteType.text,
-        title: titleCtrl.text.trim().isEmpty
-            ? '${l10n.textNote} $stamp'
-            : titleCtrl.text.trim(),
-        content: contentCtrl.text.trim(),
-        createdAt: now,
-        updatedAt: now,
-      ));
-      unawaited(_enrichNote(noteId, text: contentCtrl.text.trim()));
-      await _loadNotes();
-    }
-    titleCtrl.dispose();
-    contentCtrl.dispose();
-  }
 
   String _bucketLabel(AppLocalizations l10n, TimelineBucket b) =>
       switch (b) {
@@ -303,13 +99,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_notes.isEmpty) {
       return _EmptyState(message: l10n.noNotesYet, hint: l10n.captureHint);
     }
-
     final now = DateTime.now();
     final items = <Widget>[];
     TimelineBucket? lastBucket;
-
-    for (int i = 0; i < _notes.length; i++) {
-      final note = _notes[i];
+    for (final note in _notes) {
       final bucket = bucketFor(note.createdAt, now);
       if (bucket != lastBucket) {
         items.add(Padding(
@@ -328,15 +121,12 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: () async {
           final result = await Navigator.push<bool>(
             context,
-            MaterialPageRoute(
-              builder: (_) => NoteDetailScreen(note: note),
-            ),
+            MaterialPageRoute(builder: (_) => NoteDetailScreen(note: note)),
           );
           if (result == true) _loadNotes();
         },
       ));
     }
-
     return RefreshIndicator(
       onRefresh: _loadNotes,
       child: ListView.builder(
@@ -355,19 +145,24 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _tab,
         children: [
-          Column(
-            children: [
-              _filterRow(l10n),
-              Expanded(child: _notesBody(l10n)),
-            ],
-          ),
+          Column(children: [
+            _filterRow(l10n),
+            Expanded(child: _notesBody(l10n)),
+          ]),
           const SearchTab(),
           const SettingsTab(),
         ],
       ),
       floatingActionButton: _tab == 0
           ? FloatingActionButton(
-              onPressed: _openCaptureSheet,
+              onPressed: () async {
+                final saved = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const NoteEditorScreen()),
+                );
+                if (saved == true) _loadNotes();
+              },
               child: const Icon(Icons.add),
             )
           : null,

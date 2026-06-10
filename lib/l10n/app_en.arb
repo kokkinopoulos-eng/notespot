@@ -55,5 +55,6 @@
   "today": "Today",
   "yesterday": "Yesterday",
   "thisWeek": "This week",
-  "earlier": "Earlier"
+  "earlier": "Earlier",
+  "noteHint": "Write something..."
 }
