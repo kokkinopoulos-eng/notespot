@@ -1,7 +1,9 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+
 import '../l10n/app_localizations.dart';
 
 class DrawingStroke {
@@ -11,8 +13,8 @@ class DrawingStroke {
   final List<Offset> points = [];
 }
 
-class _DrawPainter extends CustomPainter {
-  const _DrawPainter(this.strokes, this.current);
+class DrawPainter extends CustomPainter {
+  const DrawPainter(this.strokes, this.current);
   final List<DrawingStroke> strokes;
   final DrawingStroke? current;
 
@@ -40,7 +42,7 @@ class _DrawPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_DrawPainter old) => true;
+  bool shouldRepaint(DrawPainter old) => true;
 }
 
 class DrawingCanvasController extends ChangeNotifier {
@@ -53,25 +55,61 @@ class DrawingCanvasController extends ChangeNotifier {
 
   bool get isEmpty => strokes.isEmpty;
 
-  void setColor(Color c) { color = c; notifyListeners(); }
-  void setWidth(double w) { width = w; notifyListeners(); }
-  void setStylusOnly(bool v) { stylusOnly = v; notifyListeners(); }
-
-  void undo() {
-    if (strokes.isNotEmpty) { strokes.removeLast(); notifyListeners(); }
+  /// Clamps a point inside the canvas bounds so strokes can never
+  /// leave the ink pane (pointer capture keeps sending moves outside).
+  Offset _clamp(Offset p) {
+    final s = lastLayoutSize;
+    if (s == null) return p;
+    return Offset(
+      p.dx.clamp(0.0, s.width),
+      p.dy.clamp(0.0, s.height),
+    );
   }
 
-  void clear() { strokes.clear(); current = null; notifyListeners(); }
-
-  void beginStroke(Offset pos) {
-    current = DrawingStroke(color: color, width: width)..points.add(pos);
+  void setColor(Color c) {
+    color = c;
     notifyListeners();
   }
 
-  void addPoint(Offset pos) { current?.points.add(pos); notifyListeners(); }
+  void setWidth(double w) {
+    width = w;
+    notifyListeners();
+  }
+
+  void setStylusOnly(bool v) {
+    stylusOnly = v;
+    notifyListeners();
+  }
+
+  void undo() {
+    if (strokes.isNotEmpty) {
+      strokes.removeLast();
+      notifyListeners();
+    }
+  }
+
+  void clear() {
+    strokes.clear();
+    current = null;
+    notifyListeners();
+  }
+
+  void beginStroke(Offset pos) {
+    current = DrawingStroke(color: color, width: width)..points.add(_clamp(pos));
+    notifyListeners();
+  }
+
+  void addPoint(Offset pos) {
+    current?.points.add(_clamp(pos));
+    notifyListeners();
+  }
 
   void endStroke() {
-    if (current != null) { strokes.add(current!); current = null; notifyListeners(); }
+    if (current != null) {
+      strokes.add(current!);
+      current = null;
+      notifyListeners();
+    }
   }
 
   Future<Uint8List?> toPngBytes() async {
@@ -83,23 +121,68 @@ class DrawingCanvasController extends ChangeNotifier {
       Rect.fromLTWH(0, 0, size.width, size.height),
       Paint()..color = Colors.white,
     );
-    _DrawPainter.paintStrokes(canvas, strokes);
+    DrawPainter.paintStrokes(canvas, strokes);
     final picture = recorder.endRecording();
-    final img = await picture.toImage(size.width.toInt(), size.height.toInt());
+    final img =
+        await picture.toImage(size.width.toInt(), size.height.toInt());
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
     return byteData?.buffer.asUint8List();
   }
 }
 
-class DrawingCanvas extends StatefulWidget {
-  const DrawingCanvas({super.key, required this.controller});
+/// Ink surface. Clipped to its own bounds; strokes are clamped so they
+/// can never bleed into neighbouring panes.
+class DrawingSurface extends StatelessWidget {
+  const DrawingSurface({super.key, required this.controller, this.onDrawStart});
+
   final DrawingCanvasController controller;
+  final VoidCallback? onDrawStart;
+
+  void _down(PointerDownEvent e) {
+    if (controller.stylusOnly && e.kind != PointerDeviceKind.stylus) return;
+    onDrawStart?.call();
+    controller.beginStroke(e.localPosition);
+  }
+
+  void _move(PointerMoveEvent e) {
+    if (controller.current == null) return;
+    if (controller.stylusOnly && e.kind != PointerDeviceKind.stylus) return;
+    controller.addPoint(e.localPosition);
+  }
+
+  void _up(PointerUpEvent e) => controller.endStroke();
 
   @override
-  State<DrawingCanvas> createState() => _DrawingCanvasState();
+  Widget build(BuildContext context) {
+    return ClipRect(
+      child: AnimatedBuilder(
+        animation: controller,
+        builder: (context, _) => LayoutBuilder(
+          builder: (context, constraints) {
+            controller.lastLayoutSize = constraints.biggest;
+            return Listener(
+              behavior: HitTestBehavior.opaque,
+              onPointerDown: _down,
+              onPointerMove: _move,
+              onPointerUp: _up,
+              child: CustomPaint(
+                painter: DrawPainter(controller.strokes, controller.current),
+                child: const SizedBox.expand(),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
 }
 
-class _DrawingCanvasState extends State<DrawingCanvas> {
+/// Pen toolbar: colors, widths, undo, clear, stylus-only toggle.
+class DrawingToolbar extends StatelessWidget {
+  const DrawingToolbar({super.key, required this.controller});
+
+  final DrawingCanvasController controller;
+
   static const _colors = [
     Colors.black,
     Color(0xFF1565C0),
@@ -108,23 +191,9 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
   ];
   static const _widths = [2.0, 4.0, 8.0];
 
-  DrawingCanvasController get _ctrl => widget.controller;
-
-  void _onPointerDown(PointerDownEvent e) {
-    if (_ctrl.stylusOnly && e.kind != PointerDeviceKind.stylus) return;
-    _ctrl.beginStroke(e.localPosition);
-  }
-
-  void _onPointerMove(PointerMoveEvent e) {
-    if (_ctrl.current == null) return;
-    if (_ctrl.stylusOnly && e.kind != PointerDeviceKind.stylus) return;
-    _ctrl.addPoint(e.localPosition);
-  }
-
-  void _onPointerUp(PointerUpEvent e) => _ctrl.endStroke();
-
-  Future<void> _confirmClear(AppLocalizations l10n) async {
-    if (_ctrl.strokes.isEmpty) return;
+  Future<void> _confirmClear(
+      BuildContext context, AppLocalizations l10n) async {
+    if (controller.strokes.isEmpty) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -144,21 +213,24 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
         ],
       ),
     );
-    if (confirmed == true) _ctrl.clear();
+    if (confirmed == true) controller.clear();
   }
 
-  Widget _colorSwatch(Color c) {
-    final active = _ctrl.color.value == c.value;
+  Widget _swatch(BuildContext context, Color c) {
+    final active = controller.color.value == c.value;
     return GestureDetector(
-      onTap: () => setState(() => _ctrl.setColor(c)),
+      onTap: () => controller.setColor(c),
       child: Container(
-        width: 28, height: 28,
+        width: 28,
+        height: 28,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           color: c,
           shape: BoxShape.circle,
           border: Border.all(
-            color: active ? Theme.of(context).colorScheme.primary : Colors.transparent,
+            color: active
+                ? Theme.of(context).colorScheme.primary
+                : Colors.transparent,
             width: 3,
           ),
         ),
@@ -167,14 +239,15 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
   }
 
   Widget _widthBtn(double w) {
-    final active = _ctrl.width == w;
+    final active = controller.width == w;
     return GestureDetector(
-      onTap: () => setState(() => _ctrl.setWidth(w)),
+      onTap: () => controller.setWidth(w),
       child: Container(
-        width: w + 12, height: w + 12,
+        width: w + 12,
+        height: w + 12,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: active ? _ctrl.color : Colors.grey,
+          color: active ? controller.color : Colors.grey,
           shape: BoxShape.circle,
         ),
       ),
@@ -185,61 +258,38 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (context, _) => Column(
-        children: [
-          Expanded(
-            child: Container(
-              color: Colors.white,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  _ctrl.lastLayoutSize = constraints.biggest;
-                  return Listener(
-                    onPointerDown: _onPointerDown,
-                    onPointerMove: _onPointerMove,
-                    onPointerUp: _onPointerUp,
-                    child: CustomPaint(
-                      painter: _DrawPainter(_ctrl.strokes, _ctrl.current),
-                      child: const SizedBox.expand(),
-                    ),
-                  );
-                },
+      animation: controller,
+      builder: (context, _) => Container(
+        color: Theme.of(context).colorScheme.surface,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(children: _colors.map((c) => _swatch(context, c)).toList()),
+            Row(children: _widths.map(_widthBtn).toList()),
+            Row(children: [
+              IconButton(
+                icon: const Icon(Icons.undo),
+                tooltip: l10n.undo,
+                onPressed: controller.isEmpty ? null : controller.undo,
               ),
-            ),
-          ),
-          Container(
-            color: Theme.of(context).colorScheme.surface,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(children: _colors.map(_colorSwatch).toList()),
-                Row(children: _widths.map(_widthBtn).toList()),
-                Row(children: [
-                  IconButton(
-                    icon: const Icon(Icons.undo),
-                    tooltip: l10n.undo,
-                    onPressed: _ctrl.isEmpty ? null : _ctrl.undo,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_sweep),
-                    tooltip: l10n.clearAll,
-                    onPressed: () => _confirmClear(l10n),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.edit,
-                      color: _ctrl.stylusOnly
-                          ? Theme.of(context).colorScheme.primary
-                          : null),
-                    tooltip: l10n.stylusOnly,
-                    onPressed: () =>
-                        setState(() => _ctrl.setStylusOnly(!_ctrl.stylusOnly)),
-                  ),
-                ]),
-              ],
-            ),
-          ),
-        ],
+              IconButton(
+                icon: const Icon(Icons.delete_sweep),
+                tooltip: l10n.clearAll,
+                onPressed: () => _confirmClear(context, l10n),
+              ),
+              IconButton(
+                icon: Icon(Icons.edit,
+                    color: controller.stylusOnly
+                        ? Theme.of(context).colorScheme.primary
+                        : null),
+                tooltip: l10n.stylusOnly,
+                onPressed: () =>
+                    controller.setStylusOnly(!controller.stylusOnly),
+              ),
+            ]),
+          ],
+        ),
       ),
     );
   }

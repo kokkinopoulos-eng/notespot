@@ -178,4 +178,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noteHint => 'Write something...';
+
+  @override
+  String get clearText => 'Clear text';
 }

@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -63,8 +63,7 @@ class CloudAiService {
     }
   }
 
-  Future<AiAnalysis?> analyzeImage(
-      String imagePath, String languageName) async {
+  Future<AiAnalysis?> analyzeImage(String imagePath, String languageName, {String? userText}) async {
     final svc = AiSettingsService.instance;
     if (!await svc.aiEnabled) return null;
     final provider = await svc.getSelectedProvider();
@@ -74,7 +73,10 @@ class CloudAiService {
       final bytes = await File(imagePath).readAsBytes();
       final b64 = base64Encode(bytes);
       final mime = _mimeFor(imagePath);
-      final prompt = _imagePrompt(languageName);
+      final extraText = userText != null && userText.isNotEmpty
+          ? '\n\nThe user also typed this text in the same note - use BOTH the image and this text for title/category/tags:\n$userText'
+          : '';
+      final prompt = _imagePrompt(languageName) + extraText;
       return await _callProvider(provider, key.trim(), prompt, b64, mime);
     } catch (e) {
       debugPrint('[AI] analyzeImage error');

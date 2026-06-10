@@ -178,4 +178,7 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get noteHint => 'Γράψε κάτι...';
+
+  @override
+  String get clearText => 'Καθαρισμός κειμένου';
 }

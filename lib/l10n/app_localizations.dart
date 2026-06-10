@@ -439,6 +439,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Write something...'**
   String get noteHint;
+
+  /// No description provided for @clearText.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear text'**
+  String get clearText;
 }
 
 class _AppLocalizationsDelegate

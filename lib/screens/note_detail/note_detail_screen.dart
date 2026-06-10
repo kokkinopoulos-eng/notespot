@@ -1,14 +1,14 @@
-﻿import 'dart:io';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+
 import '../../core/category_labels.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/db_service.dart';
 import '../../services/media_service.dart';
-
-// --- Edit dialog (pure StatefulWidget) ---
 
 class _EditNoteDialog extends StatefulWidget {
   const _EditNoteDialog({required this.title, required this.content});
@@ -76,8 +76,6 @@ class _EditNoteDialogState extends State<_EditNoteDialog> {
   }
 }
 
-// --- NoteDetailScreen ---
-
 class NoteDetailScreen extends StatefulWidget {
   const NoteDetailScreen({super.key, required this.note});
   final Note note;
@@ -88,11 +86,20 @@ class NoteDetailScreen extends StatefulWidget {
 
 class _NoteDetailScreenState extends State<NoteDetailScreen> {
   late Note _note;
+  final _topScroll = ScrollController();
+  final _bottomScroll = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _note = widget.note;
+  }
+
+  @override
+  void dispose() {
+    _topScroll.dispose();
+    _bottomScroll.dispose();
+    super.dispose();
   }
 
   String _typeLabel(AppLocalizations l10n) => switch (_note.type) {
@@ -121,15 +128,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     if (result == null || !mounted) return;
     final (newTitle, newContent) = result;
     if (newTitle.isEmpty) return;
-    final updated = Note(
-      id: _note.id,
-      type: _note.type,
+    final updated = _note.copyWith(
       title: newTitle,
       content: newContent,
-      category: _note.category,
-      tags: _note.tags,
-      mediaPath: _note.mediaPath,
-      createdAt: _note.createdAt,
       updatedAt: DateTime.now(),
     );
     await DbService.instance.update(updated);
@@ -164,98 +165,160 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     if (mounted) Navigator.pop(context, true);
   }
 
+  Widget _meta(AppLocalizations l10n, String date) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          date,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.outline,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children: [
+            Chip(label: Text(_typeLabel(l10n))),
+            if (_note.category.isNotEmpty)
+              Chip(
+                label: Text(localizedCategory(l10n, _note.category)),
+                avatar: const Icon(Icons.folder_outlined, size: 16),
+              ),
+            ..._note.tags.map((t) => Chip(
+                  label: Text(t),
+                  visualDensity: VisualDensity.compact,
+                )),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _image(String path) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => _FullscreenImage(path: path)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.file(
+          File(path),
+          width: double.infinity,
+          fit: BoxFit.fitWidth,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
     final date = DateFormat.yMMMd(locale).add_jm().format(_note.createdAt);
-    final hasImage = (_note.type == NoteType.photo ||
-            _note.type == NoteType.handwriting) &&
-        _note.mediaPath != null &&
-        File(_note.mediaPath!).existsSync();
+    final hasImage =
+        _note.mediaPath != null && File(_note.mediaPath!).existsSync();
+    final hasText = _note.content.isNotEmpty;
+    final cs = Theme.of(context).colorScheme;
+
+    final appBar = AppBar(
+      title: Text(
+        _note.title,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 2,
+        style: const TextStyle(fontSize: 16),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.edit_outlined),
+          tooltip: l10n.edit,
+          onPressed: () => _edit(l10n),
+        ),
+        IconButton(
+          icon: const Icon(Icons.share),
+          tooltip: l10n.share,
+          onPressed: _share,
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete_outline),
+          tooltip: l10n.delete,
+          onPressed: () => _delete(l10n),
+        ),
+      ],
+    );
+
+    if (hasImage && hasText) {
+      return Scaffold(
+        appBar: appBar,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: Scrollbar(
+                  controller: _topScroll,
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
+                    controller: _topScroll,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _meta(l10n, date),
+                        const SizedBox(height: 12),
+                        SelectableText(
+                          _note.content,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Container(height: 6, color: cs.surfaceContainerHighest),
+              Expanded(
+                child: Scrollbar(
+                  controller: _bottomScroll,
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
+                    controller: _bottomScroll,
+                    padding: const EdgeInsets.all(16),
+                    child: _image(_note.mediaPath!),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _note.title,
-          overflow: TextOverflow.ellipsis,
-          maxLines: 2,
-          style: const TextStyle(fontSize: 16),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: l10n.edit,
-            onPressed: () => _edit(l10n),
-          ),
-          IconButton(
-            icon: const Icon(Icons.share),
-            tooltip: l10n.share,
-            onPressed: _share,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            tooltip: l10n.delete,
-            onPressed: () => _delete(l10n),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (hasImage) ...[
-              GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        _FullscreenImage(path: _note.mediaPath!),
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    File(_note.mediaPath!),
-                    width: double.infinity,
-                    fit: BoxFit.fitWidth,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            Text(
-              date,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: [
-                Chip(label: Text(_typeLabel(l10n))),
-                if (_note.category.isNotEmpty)
-                  Chip(
-                    label: Text(localizedCategory(l10n, _note.category)),
-                    avatar: const Icon(Icons.folder_outlined, size: 16),
-                  ),
-                ..._note.tags.map((t) => Chip(
-                      label: Text(t),
-                      visualDensity: VisualDensity.compact,
-                    )),
+      appBar: appBar,
+      body: Scrollbar(
+        controller: _topScroll,
+        thumbVisibility: true,
+        child: SingleChildScrollView(
+          controller: _topScroll,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (hasImage) ...[
+                _image(_note.mediaPath!),
+                const SizedBox(height: 16),
               ],
-            ),
-            if (_note.content.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              SelectableText(
-                _note.content,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
+              _meta(l10n, date),
+              if (hasText) ...[
+                const SizedBox(height: 12),
+                SelectableText(
+                  _note.content,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

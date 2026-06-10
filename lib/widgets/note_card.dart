@@ -18,8 +18,6 @@ class NoteCard extends StatelessWidget {
   Widget _leading() {
     final path = note.mediaPath;
     if (path != null) {
-      // ignore: avoid_print
-      print('[MEDIA] stored=$path exists=${File(path).existsSync()}');
       return ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Image.file(

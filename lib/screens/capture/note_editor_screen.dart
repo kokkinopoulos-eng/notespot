@@ -1,11 +1,7 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
@@ -14,7 +10,26 @@ import '../../services/db_service.dart';
 import '../../services/media_service.dart';
 import '../../widgets/drawing_canvas.dart';
 
-enum _EditorMode { keyboard, pen }
+const double kInkCanvasHeight = 1000;
+
+class _DotGridPainter extends CustomPainter {
+  const _DotGridPainter(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    const step = 24.0;
+    for (double y = step; y < size.height; y += step) {
+      for (double x = step; x < size.width; x += step) {
+        canvas.drawCircle(Offset(x, y), 1.1, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DotGridPainter old) => old.color != color;
+}
 
 class NoteEditorScreen extends StatefulWidget {
   const NoteEditorScreen({super.key});
@@ -26,108 +41,51 @@ class NoteEditorScreen extends StatefulWidget {
 class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final _titleCtrl = TextEditingController();
   final _contentCtrl = TextEditingController();
+  final _contentFocus = FocusNode();
+  final _textScroll = ScrollController();
+  final _inkScroll = ScrollController();
   final _drawCtrl = DrawingCanvasController();
-  final _speech = SpeechToText();
-  _EditorMode _mode = _EditorMode.keyboard;
-  String? _attachedPhotoPath;
-  Uint8List? _drawPreview; // mini preview of the drawing in keyboard mode
-  bool _listening = false;
-  bool _speechAvailable = false;
-  bool _saved = false; // guards the PopScope cleanup
-
-  @override
-  void initState() {
-    super.initState();
-    _initSpeech();
-  }
-
-  Future<void> _initSpeech() async {
-    _speechAvailable = await _speech.initialize(onStatus: _onSpeechStatus);
-    if (mounted) setState(() {});
-  }
-
-  void _onSpeechStatus(String status) {
-    if (!mounted) return;
-    setState(() => _listening = _speech.isListening);
-  }
+  double _split = 0.5;
 
   @override
   void dispose() {
-    _speech.cancel();
     _titleCtrl.dispose();
     _contentCtrl.dispose();
+    _contentFocus.dispose();
+    _textScroll.dispose();
+    _inkScroll.dispose();
     _drawCtrl.dispose();
     super.dispose();
   }
 
   bool get _hasContent =>
-      _contentCtrl.text.trim().isNotEmpty ||
-      !_drawCtrl.isEmpty ||
-      _attachedPhotoPath != null;
+      _contentCtrl.text.trim().isNotEmpty || !_drawCtrl.isEmpty;
 
-  Future<void> _switchToKeyboard() async {
-    Uint8List? preview;
-    if (!_drawCtrl.isEmpty) {
-      preview = await _drawCtrl.toPngBytes();
-    }
-    if (!mounted) return;
-    setState(() {
-      _drawPreview = preview;
-      _mode = _EditorMode.keyboard;
-    });
-  }
-
-  void _switchToPen() {
-    FocusScope.of(context).unfocus();
-    setState(() => _mode = _EditorMode.pen);
-  }
-
-  Future<void> _capturePhoto() async {
-    final path = await MediaService.instance.capturePhoto();
-    if (path == null || !mounted) return;
-    setState(() {
-      _attachedPhotoPath = path;
-      _mode = _EditorMode.keyboard;
-    });
-  }
-
-  Future<void> _removePhoto() async {
-    final path = _attachedPhotoPath;
-    setState(() => _attachedPhotoPath = null);
-    await MediaService.instance.deleteMedia(path);
-  }
-
-  Future<void> _toggleDictation() async {
-    if (_listening) {
-      await _speech.stop();
-      return;
-    }
-    final localeId = Localizations.localeOf(context).languageCode == 'el'
-        ? 'el-GR'
-        : 'en-US';
-    await _speech.listen(
-      onResult: _onSpeechResult,
-      localeId: localeId,
-      listenOptions: SpeechListenOptions(
-        partialResults: false,
-        listenMode: ListenMode.dictation,
-        cancelOnError: true,
+  Future<void> _confirmClearText(AppLocalizations l10n) async {
+    if (_contentCtrl.text.isEmpty) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.deleteConfirmTitle),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: Text(l10n.clearText),
+          ),
+        ],
       ),
-      pauseFor: const Duration(seconds: 5),
-      listenFor: const Duration(minutes: 2),
     );
-    if (mounted) setState(() => _listening = true);
-  }
-
-  void _onSpeechResult(SpeechRecognitionResult result) {
-    if (!result.finalResult || !mounted) return;
-    final words = result.recognizedWords.trim();
-    if (words.isEmpty) return;
-    final current = _contentCtrl.text;
-    _contentCtrl.text = current.isEmpty ? words : '$current $words';
-    _contentCtrl.selection =
-        TextSelection.collapsed(offset: _contentCtrl.text.length);
-    setState(() {});
+    if (confirmed == true) {
+      _contentCtrl.clear();
+      setState(() {});
+    }
   }
 
   Future<void> _save(AppLocalizations l10n) async {
@@ -141,12 +99,10 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         ? 'Greek'
         : 'English';
 
-    String? mediaPath = _attachedPhotoPath;
+    String? mediaPath;
     NoteType type;
 
-    if (mediaPath != null) {
-      type = NoteType.photo;
-    } else if (!_drawCtrl.isEmpty) {
+    if (!_drawCtrl.isEmpty) {
       final bytes = await _drawCtrl.toPngBytes();
       if (bytes != null) {
         mediaPath = await MediaService.instance.savePngBytes(bytes);
@@ -167,8 +123,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       updatedAt: now,
     ));
 
-    _saved = true; // PopScope must NOT delete media after this point
-
     if (mediaPath != null) {
       unawaited(_enrichImage(noteId, mediaPath, langName));
     } else if (content.isNotEmpty) {
@@ -179,7 +133,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     Navigator.pop(context, true);
   }
 
-  /// AI extracted text must never overwrite what the user typed.
   String _mergeContent(String existing, String extracted) {
     final ex = extracted.trim();
     if (ex.isEmpty) return existing;
@@ -213,164 +166,210 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     ));
   }
 
+  Widget _paneHeader({
+    required IconData icon,
+    required String label,
+    required Color bg,
+    required Color fg,
+    Widget? action,
+  }) {
+    return Container(
+      height: 30,
+      color: bg,
+      child: Row(
+        children: [
+          const SizedBox(width: 12),
+          Icon(icon, size: 15, color: fg),
+          const SizedBox(width: 6),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.6,
+                  color: fg)),
+          const Spacer(),
+          if (action != null) action,
+        ],
+      ),
+    );
+  }
+
+  Widget _divider(BuildContext context, double totalHeight) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onVerticalDragUpdate: (d) {
+        if (totalHeight <= 0) return;
+        setState(() {
+          _split = (_split + d.delta.dy / totalHeight).clamp(0.2, 0.8);
+        });
+      },
+      child: Container(
+        height: 22,
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          border: Border.symmetric(
+            horizontal: BorderSide(color: cs.outlineVariant, width: 0.6),
+          ),
+        ),
+        child: Center(
+          child: Container(
+            width: 48,
+            height: 5,
+            decoration: BoxDecoration(
+              color: cs.primary.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final hasPhoto = _attachedPhotoPath != null;
-    final hasStrokes = !_drawCtrl.isEmpty;
-    final showDrawPreview =
-        _mode == _EditorMode.keyboard && hasStrokes && _drawPreview != null;
+    final cs = Theme.of(context).colorScheme;
+    final textFlex = (_split * 1000).round();
 
-    return PopScope(
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop && !_saved) {
-          await MediaService.instance.deleteMedia(_attachedPhotoPath);
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: TextField(
-            controller: _titleCtrl,
-            decoration: InputDecoration(
-              hintText: l10n.titleLabel,
-              border: InputBorder.none,
-            ),
-            style: Theme.of(context).textTheme.titleMedium,
-            onChanged: (_) => setState(() {}),
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      appBar: AppBar(
+        title: TextField(
+          controller: _titleCtrl,
+          decoration: InputDecoration(
+            hintText: l10n.titleLabel,
+            border: InputBorder.none,
           ),
-          actions: [
-            AnimatedBuilder(
-              animation: _drawCtrl,
-              builder: (_, __) => TextButton(
-                onPressed: _hasContent ? () => _save(l10n) : null,
-                child: Text(l10n.save),
-              ),
-            ),
-          ],
+          style: Theme.of(context).textTheme.titleMedium,
+          onChanged: (_) => setState(() {}),
         ),
-        body: Column(
-          children: [
-            if (hasPhoto)
-              Stack(
-                children: [
-                  Image.file(File(_attachedPhotoPath!),
-                      height: 160, width: double.infinity, fit: BoxFit.cover),
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: CircleAvatar(
-                      backgroundColor: Colors.black54,
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: _removePhoto,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            if (showDrawPreview)
-              GestureDetector(
-                onTap: _switchToPen,
+        actions: [
+          AnimatedBuilder(
+            animation: _drawCtrl,
+            builder: (_, __) => TextButton(
+              onPressed: _hasContent ? () => _save(l10n) : null,
+              child: Text(l10n.save),
+            ),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) => Column(
+            children: [
+              // ================= Text pane =================
+              Expanded(
+                flex: textFlex,
                 child: Container(
-                  height: 110,
-                  width: double.infinity,
-                  margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: Theme.of(context).colorScheme.outlineVariant),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(
+                  color: Colors.white,
+                  child: Column(
                     children: [
-                      Positioned.fill(
-                        child: Image.memory(_drawPreview!,
-                            fit: BoxFit.contain),
+                      _paneHeader(
+                        icon: Icons.keyboard_alt_outlined,
+                        label: l10n.textNote.toUpperCase(),
+                        bg: cs.secondaryContainer,
+                        fg: cs.onSecondaryContainer,
+                        action: IconButton(
+                          icon:
+                              const Icon(Icons.backspace_outlined, size: 17),
+                          tooltip: l10n.clearText,
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _confirmClearText(l10n),
+                        ),
                       ),
-                      Positioned(
-                        right: 6,
-                        bottom: 6,
-                        child: Icon(Icons.gesture,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.primary),
+                      Expanded(
+                        child: Scrollbar(
+                          controller: _textScroll,
+                          thumbVisibility: true,
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                            child: TextField(
+                              controller: _contentCtrl,
+                              focusNode: _contentFocus,
+                              scrollController: _textScroll,
+                              maxLines: null,
+                              expands: true,
+                              decoration: InputDecoration(
+                                hintText: l10n.noteHint,
+                                hintStyle:
+                                    TextStyle(color: Colors.grey.shade400),
+                                border: InputBorder.none,
+                              ),
+                              style: const TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 15,
+                                height: 1.5,
+                                color: Colors.black87,
+                              ),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-            if (_listening)
-              Container(
-                width: double.infinity,
-                color: Theme.of(context).colorScheme.errorContainer,
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(l10n.listening,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color:
-                            Theme.of(context).colorScheme.onErrorContainer)),
-              ),
-            Expanded(
-              child: IndexedStack(
-                index: _mode == _EditorMode.keyboard ? 0 : 1,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      controller: _contentCtrl,
-                      maxLines: null,
-                      expands: true,
-                      decoration: InputDecoration(
-                        hintText: l10n.noteHint,
-                        border: InputBorder.none,
+              // ================= Divider handle =================
+              _divider(context, constraints.maxHeight),
+              // ================= Ink pane (dot grid) =================
+              Expanded(
+                flex: 1000 - textFlex,
+                child: Container(
+                  color: Colors.white,
+                  child: Column(
+                    children: [
+                      _paneHeader(
+                        icon: Icons.gesture,
+                        label: l10n.drawNote.toUpperCase(),
+                        bg: cs.tertiaryContainer,
+                        fg: cs.onTertiaryContainer,
                       ),
-                      style: Theme.of(context).textTheme.bodyLarge,
-                      onChanged: (_) => setState(() {}),
-                    ),
+                      Expanded(
+                        child: Scrollbar(
+                          controller: _inkScroll,
+                          thumbVisibility: true,
+                          interactive: true,
+                          thickness: 8,
+                          child: SingleChildScrollView(
+                            controller: _inkScroll,
+                            child: SizedBox(
+                              height: kInkCanvasHeight,
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: CustomPaint(
+                                      painter: _DotGridPainter(
+                                          Colors.grey.shade300),
+                                    ),
+                                  ),
+                                  Positioned.fill(
+                                    child: Padding(
+                                      padding:
+                                          const EdgeInsets.only(right: 20),
+                                      child: Listener(
+                                        onPointerDown: (_) =>
+                                            _contentFocus.unfocus(),
+                                        child: DrawingSurface(
+                                            controller: _drawCtrl),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  DrawingCanvas(controller: _drawCtrl),
-                ],
-              ),
-            ),
-            SafeArea(
-              child: Container(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.keyboard_alt_outlined),
-                      color: _mode == _EditorMode.keyboard
-                          ? Theme.of(context).colorScheme.primary
-                          : null,
-                      onPressed: _switchToKeyboard,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.gesture),
-                      color: _mode == _EditorMode.pen
-                          ? Theme.of(context).colorScheme.primary
-                          : null,
-                      onPressed: hasPhoto ? null : _switchToPen,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.photo_camera_outlined),
-                      onPressed: hasStrokes ? null : _capturePhoto,
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        _listening ? Icons.mic : Icons.mic_outlined,
-                        color: _listening
-                            ? Theme.of(context).colorScheme.error
-                            : null,
-                      ),
-                      onPressed: _speechAvailable ? _toggleDictation : null,
-                    ),
-                  ],
                 ),
               ),
-            ),
-          ],
+              DrawingToolbar(controller: _drawCtrl),
+            ],
+          ),
         ),
       ),
     );
