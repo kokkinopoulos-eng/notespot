@@ -1,9 +1,6 @@
 ﻿import 'dart:convert';
 import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-
 import '../models/ai_analysis.dart';
 import '../models/ai_provider.dart';
 import 'ai_settings_service.dart';
@@ -12,7 +9,6 @@ const kGeminiModel = 'gemini-2.0-flash';
 
 class CloudAiService {
   CloudAiService._();
-
   static final instance = CloudAiService._();
 
   static const _timeout = Duration(seconds: 30);
@@ -42,6 +38,14 @@ class CloudAiService {
   String _textPrompt(String lang, String text) =>
       '${_textPromptTemplate.replaceAll('<LANG>', lang)}\n\nText to analyze:\n$text';
 
+  String _audioPrompt(String lang) =>
+      'Transcribe and analyze this audio recording for a note-taking app. '
+      'Respond ONLY with valid JSON, no markdown fences, no extra text: '
+      '{"title": "short title max 6 words in $lang", '
+      '"category": "one of [receipts, work, personal, shopping, ideas, food, travel, other]", '
+      '"tags": ["3-6 keywords in $lang"], '
+      '"extracted_text": "verbatim transcription of the audio in $lang"}';
+
   String _mimeFor(String path) {
     final ext = path.toLowerCase();
     if (ext.endsWith('.png')) return 'image/png';
@@ -50,6 +54,8 @@ class CloudAiService {
   }
 
   AiAnalysis? _parse(String raw) {
+    // ignore: avoid_print
+    print('[AI] raw response: $raw');
     try {
       final cleaned = raw
           .replaceAll(RegExp(r'```json\s*'), '')
@@ -58,12 +64,14 @@ class CloudAiService {
       final json = jsonDecode(cleaned) as Map<String, dynamic>;
       return AiAnalysis.fromJson(json);
     } catch (e) {
-      debugPrint('[AI] parse error: $e');
+      // ignore: avoid_print
+      print('[AI] parse error: $e');
       return null;
     }
   }
 
-  Future<AiAnalysis?> analyzeImage(String imagePath, String languageName, {String? userText}) async {
+  Future<AiAnalysis?> analyzeImage(
+      String imagePath, String languageName, {String? userText}) async {
     final svc = AiSettingsService.instance;
     if (!await svc.aiEnabled) return null;
     final provider = await svc.getSelectedProvider();
@@ -73,13 +81,14 @@ class CloudAiService {
       final bytes = await File(imagePath).readAsBytes();
       final b64 = base64Encode(bytes);
       final mime = _mimeFor(imagePath);
-      final extraText = userText != null && userText.isNotEmpty
+      final extra = userText != null && userText.isNotEmpty
           ? '\n\nThe user also typed this text in the same note - use BOTH the image and this text for title/category/tags:\n$userText'
           : '';
-      final prompt = _imagePrompt(languageName) + extraText;
+      final prompt = _imagePrompt(languageName) + extra;
       return await _callProvider(provider, key.trim(), prompt, b64, mime);
     } catch (e) {
-      debugPrint('[AI] analyzeImage error');
+      // ignore: avoid_print
+      print('[AI] analyzeImage error');
       return null;
     }
   }
@@ -94,7 +103,52 @@ class CloudAiService {
       final prompt = _textPrompt(languageName, text);
       return await _callProvider(provider, key.trim(), prompt, null, null);
     } catch (e) {
-      debugPrint('[AI] analyzeText error');
+      // ignore: avoid_print
+      print('[AI] analyzeText error');
+      return null;
+    }
+  }
+
+  Future<AiAnalysis?> analyzeAudio(
+      String path, String languageName) async {
+    final svc = AiSettingsService.instance;
+    if (!await svc.aiEnabled) return null;
+    final provider = await svc.getSelectedProvider();
+    if (provider != AiProvider.gemini) return null;
+    final key = await svc.getApiKey(provider);
+    if (key == null || key.trim().isEmpty) return null;
+    try {
+      final bytes = await File(path).readAsBytes();
+      final b64 = base64Encode(bytes);
+      final prompt = _audioPrompt(languageName);
+      final parts = <Map<String, dynamic>>[
+        {'text': prompt},
+        {'inline_data': {'mime_type': 'audio/mp4', 'data': b64}},
+      ];
+      final body = jsonEncode({
+        'contents': [{'parts': parts}],
+        'generationConfig': {
+          'response_mime_type': 'application/json',
+          'temperature': 0.2,
+        },
+      });
+      final res = await http.post(
+        Uri.parse(
+            'https://generativelanguage.googleapis.com/v1beta/models/$kGeminiModel:generateContent?key=$key'),
+        headers: {'content-type': 'application/json'},
+        body: body,
+      ).timeout(_timeout);
+      if (res.statusCode != 200) {
+        // ignore: avoid_print
+        print('[AI] Gemini audio HTTP ${res.statusCode}: ${res.body.substring(0, res.body.length.clamp(0, 300))}');
+        return null;
+      }
+      final json = jsonDecode(res.body) as Map<String, dynamic>;
+      final text = json['candidates'][0]['content']['parts'][0]['text'] as String;
+      return _parse(text);
+    } catch (e) {
+      // ignore: avoid_print
+      print('[AI] analyzeAudio error');
       return null;
     }
   }
@@ -121,35 +175,28 @@ class CloudAiService {
     final parts = <Map<String, dynamic>>[
       {'text': prompt},
       if (imageB64 != null)
-        {
-          'inline_data': {'mime_type': mime ?? 'image/jpeg', 'data': imageB64}
-        },
+        {'inline_data': {'mime_type': mime ?? 'image/jpeg', 'data': imageB64}},
     ];
     final body = jsonEncode({
-      'contents': [
-        {'parts': parts}
-      ],
+      'contents': [{'parts': parts}],
       'generationConfig': {
         'response_mime_type': 'application/json',
         'temperature': 0.2,
       },
     });
-    final res = await http
-        .post(
-          Uri.parse(
-              'https://generativelanguage.googleapis.com/v1beta/models/$kGeminiModel:generateContent?key=$key'),
-          headers: {'content-type': 'application/json'},
-          body: body,
-        )
-        .timeout(_timeout);
+    final res = await http.post(
+      Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models/$kGeminiModel:generateContent?key=$key'),
+      headers: {'content-type': 'application/json'},
+      body: body,
+    ).timeout(_timeout);
     if (res.statusCode != 200) {
-      debugPrint(
-          '[AI] Gemini HTTP ${res.statusCode}: ${res.body.substring(0, res.body.length.clamp(0, 300))}');
+      // ignore: avoid_print
+      print('[AI] Gemini HTTP ${res.statusCode}: ${res.body.substring(0, res.body.length.clamp(0, 300))}');
       return null;
     }
     final json = jsonDecode(res.body) as Map<String, dynamic>;
-    final text =
-        json['candidates'][0]['content']['parts'][0]['text'] as String;
+    final text = json['candidates'][0]['content']['parts'][0]['text'] as String;
     return _parse(text);
   }
 
@@ -171,24 +218,20 @@ class CloudAiService {
       'model': 'claude-haiku-4-5',
       'max_tokens': 1024,
       'temperature': 0.2,
-      'messages': [
-        {'role': 'user', 'content': content}
-      ],
+      'messages': [{'role': 'user', 'content': content}],
     });
-    final res = await http
-        .post(
-          Uri.parse('https://api.anthropic.com/v1/messages'),
-          headers: {
-            'content-type': 'application/json',
-            'x-api-key': key,
-            'anthropic-version': '2023-06-01',
-          },
-          body: body,
-        )
-        .timeout(_timeout);
+    final res = await http.post(
+      Uri.parse('https://api.anthropic.com/v1/messages'),
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+      },
+      body: body,
+    ).timeout(_timeout);
     if (res.statusCode != 200) {
-      debugPrint(
-          '[AI] Claude HTTP ${res.statusCode}: ${res.body.substring(0, res.body.length.clamp(0, 300))}');
+      // ignore: avoid_print
+      print('[AI] Claude HTTP ${res.statusCode}: ${res.body.substring(0, res.body.length.clamp(0, 300))}');
       return null;
     }
     final json = jsonDecode(res.body) as Map<String, dynamic>;
@@ -203,32 +246,26 @@ class CloudAiService {
       if (imageB64 != null)
         {
           'type': 'image_url',
-          'image_url': {
-            'url': 'data:${mime ?? 'image/jpeg'};base64,$imageB64'
-          },
+          'image_url': {'url': 'data:${mime ?? 'image/jpeg'};base64,$imageB64'},
         },
     ];
     final body = jsonEncode({
       'model': 'gpt-4o-mini',
       'temperature': 0.2,
       'response_format': {'type': 'json_object'},
-      'messages': [
-        {'role': 'user', 'content': contentParts}
-      ],
+      'messages': [{'role': 'user', 'content': contentParts}],
     });
-    final res = await http
-        .post(
-          Uri.parse('https://api.openai.com/v1/chat/completions'),
-          headers: {
-            'content-type': 'application/json',
-            'Authorization': 'Bearer $key',
-          },
-          body: body,
-        )
-        .timeout(_timeout);
+    final res = await http.post(
+      Uri.parse('https://api.openai.com/v1/chat/completions'),
+      headers: {
+        'content-type': 'application/json',
+        'Authorization': 'Bearer $key',
+      },
+      body: body,
+    ).timeout(_timeout);
     if (res.statusCode != 200) {
-      debugPrint(
-          '[AI] OpenAI HTTP ${res.statusCode}: ${res.body.substring(0, res.body.length.clamp(0, 300))}');
+      // ignore: avoid_print
+      print('[AI] OpenAI HTTP ${res.statusCode}: ${res.body.substring(0, res.body.length.clamp(0, 300))}');
       return null;
     }
     final json = jsonDecode(res.body) as Map<String, dynamic>;

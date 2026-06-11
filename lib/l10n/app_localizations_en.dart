@@ -181,4 +181,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearText => 'Clear text';
+
+  @override
+  String get dictation => 'Dictation';
+
+  @override
+  String get recordAudio => 'Record audio';
 }

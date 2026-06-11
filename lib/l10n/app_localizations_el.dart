@@ -181,4 +181,10 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get clearText => 'Καθαρισμός κειμένου';
+
+  @override
+  String get dictation => 'Υπαγόρευση';
+
+  @override
+  String get recordAudio => 'Εγγραφή ήχου';
 }

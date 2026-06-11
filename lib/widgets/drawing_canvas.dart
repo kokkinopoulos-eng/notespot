@@ -51,12 +51,11 @@ class DrawingCanvasController extends ChangeNotifier {
   Color color = Colors.black;
   double width = 3.0;
   bool stylusOnly = false;
+  bool eraserMode = false;
   Size? lastLayoutSize;
 
   bool get isEmpty => strokes.isEmpty;
 
-  /// Clamps a point inside the canvas bounds so strokes can never
-  /// leave the ink pane (pointer capture keeps sending moves outside).
   Offset _clamp(Offset p) {
     final s = lastLayoutSize;
     if (s == null) return p;
@@ -68,16 +67,23 @@ class DrawingCanvasController extends ChangeNotifier {
 
   void setColor(Color c) {
     color = c;
+    eraserMode = false;
     notifyListeners();
   }
 
   void setWidth(double w) {
     width = w;
+    eraserMode = false;
     notifyListeners();
   }
 
   void setStylusOnly(bool v) {
     stylusOnly = v;
+    notifyListeners();
+  }
+
+  void setEraser(bool v) {
+    eraserMode = v;
     notifyListeners();
   }
 
@@ -94,12 +100,30 @@ class DrawingCanvasController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Removes every stroke passing near [p].
+  void eraseAt(Offset p) {
+    final r = 18.0;
+    final before = strokes.length;
+    strokes.removeWhere(
+        (s) => s.points.any((q) => (q - p).distance <= r + s.width / 2));
+    if (strokes.length != before) notifyListeners();
+  }
+
   void beginStroke(Offset pos) {
-    current = DrawingStroke(color: color, width: width)..points.add(_clamp(pos));
+    if (eraserMode) {
+      eraseAt(_clamp(pos));
+      return;
+    }
+    current = DrawingStroke(color: color, width: width)
+      ..points.add(_clamp(pos));
     notifyListeners();
   }
 
   void addPoint(Offset pos) {
+    if (eraserMode) {
+      eraseAt(_clamp(pos));
+      return;
+    }
     current?.points.add(_clamp(pos));
     notifyListeners();
   }
@@ -114,26 +138,62 @@ class DrawingCanvasController extends ChangeNotifier {
 
   Future<Uint8List?> toPngBytes() async {
     if (strokes.isEmpty || lastLayoutSize == null) return null;
-    final size = lastLayoutSize!;
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..color = Colors.white,
-    );
-    DrawPainter.paintStrokes(canvas, strokes);
-    final picture = recorder.endRecording();
-    final img =
-        await picture.toImage(size.width.toInt(), size.height.toInt());
-    final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
-    return byteData?.buffer.asUint8List();
+    return renderPagesToPng([this]);
   }
+}
+
+/// Renders one or more ink pages into a single tall PNG:
+/// page 1 on top, page 2 below, etc., separated by a thin grey line.
+Future<Uint8List?> renderPagesToPng(List<DrawingCanvasController> pages) async {
+  final drawn =
+      pages.where((p) => !p.isEmpty && p.lastLayoutSize != null).toList();
+  if (drawn.isEmpty) return null;
+
+  const sep = 3.0;
+  double width = 0;
+  double totalH = 0;
+  for (final p in drawn) {
+    final s = p.lastLayoutSize!;
+    if (s.width > width) width = s.width;
+    totalH += s.height;
+  }
+  totalH += sep * (drawn.length - 1);
+
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder);
+  canvas.drawRect(
+    Rect.fromLTWH(0, 0, width, totalH),
+    Paint()..color = Colors.white,
+  );
+
+  double y = 0;
+  for (int i = 0; i < drawn.length; i++) {
+    final p = drawn[i];
+    canvas.save();
+    canvas.translate(0, y);
+    DrawPainter.paintStrokes(canvas, p.strokes);
+    canvas.restore();
+    y += p.lastLayoutSize!.height;
+    if (i < drawn.length - 1) {
+      canvas.drawRect(
+        Rect.fromLTWH(0, y, width, sep),
+        Paint()..color = const Color(0xFFE0E0E0),
+      );
+      y += sep;
+    }
+  }
+
+  final picture = recorder.endRecording();
+  final img = await picture.toImage(width.toInt(), totalH.toInt());
+  final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+  return byteData?.buffer.asUint8List();
 }
 
 /// Ink surface. Clipped to its own bounds; strokes are clamped so they
 /// can never bleed into neighbouring panes.
 class DrawingSurface extends StatelessWidget {
-  const DrawingSurface({super.key, required this.controller, this.onDrawStart});
+  const DrawingSurface(
+      {super.key, required this.controller, this.onDrawStart});
 
   final DrawingCanvasController controller;
   final VoidCallback? onDrawStart;
@@ -145,8 +205,8 @@ class DrawingSurface extends StatelessWidget {
   }
 
   void _move(PointerMoveEvent e) {
-    if (controller.current == null) return;
     if (controller.stylusOnly && e.kind != PointerDeviceKind.stylus) return;
+    if (!controller.eraserMode && controller.current == null) return;
     controller.addPoint(e.localPosition);
   }
 
@@ -177,7 +237,7 @@ class DrawingSurface extends StatelessWidget {
   }
 }
 
-/// Pen toolbar: colors, widths, undo, clear, stylus-only toggle.
+/// Pen toolbar: colors, widths, eraser, undo, clear, stylus-only toggle.
 class DrawingToolbar extends StatelessWidget {
   const DrawingToolbar({super.key, required this.controller});
 
@@ -217,7 +277,7 @@ class DrawingToolbar extends StatelessWidget {
   }
 
   Widget _swatch(BuildContext context, Color c) {
-    final active = controller.color.value == c.value;
+    final active = !controller.eraserMode && controller.color.value == c.value;
     return GestureDetector(
       onTap: () => controller.setColor(c),
       child: Container(
@@ -239,7 +299,7 @@ class DrawingToolbar extends StatelessWidget {
   }
 
   Widget _widthBtn(double w) {
-    final active = controller.width == w;
+    final active = !controller.eraserMode && controller.width == w;
     return GestureDetector(
       onTap: () => controller.setWidth(w),
       child: Container(
@@ -257,10 +317,11 @@ class DrawingToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) => Container(
-        color: Theme.of(context).colorScheme.surface,
+        color: cs.surface,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -269,21 +330,34 @@ class DrawingToolbar extends StatelessWidget {
             Row(children: _widths.map(_widthBtn).toList()),
             Row(children: [
               IconButton(
+                icon: const Icon(Icons.auto_fix_normal),
+                tooltip: 'Eraser',
+                color: controller.eraserMode ? cs.primary : null,
+                style: controller.eraserMode
+                    ? IconButton.styleFrom(
+                        backgroundColor: cs.primaryContainer)
+                    : null,
+                visualDensity: VisualDensity.compact,
+                onPressed: () =>
+                    controller.setEraser(!controller.eraserMode),
+              ),
+              IconButton(
                 icon: const Icon(Icons.undo),
                 tooltip: l10n.undo,
+                visualDensity: VisualDensity.compact,
                 onPressed: controller.isEmpty ? null : controller.undo,
               ),
               IconButton(
                 icon: const Icon(Icons.delete_sweep),
                 tooltip: l10n.clearAll,
+                visualDensity: VisualDensity.compact,
                 onPressed: () => _confirmClear(context, l10n),
               ),
               IconButton(
                 icon: Icon(Icons.edit,
-                    color: controller.stylusOnly
-                        ? Theme.of(context).colorScheme.primary
-                        : null),
+                    color: controller.stylusOnly ? cs.primary : null),
                 tooltip: l10n.stylusOnly,
+                visualDensity: VisualDensity.compact,
                 onPressed: () =>
                     controller.setStylusOnly(!controller.stylusOnly),
               ),

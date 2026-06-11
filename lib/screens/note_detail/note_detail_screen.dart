@@ -1,15 +1,15 @@
-import 'dart:io';
-
+﻿import 'dart:io';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
-
 import '../../core/category_labels.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/db_service.dart';
 import '../../services/media_service.dart';
 
+// --- Edit dialog ---
 class _EditNoteDialog extends StatefulWidget {
   const _EditNoteDialog({required this.title, required this.content});
   final String title;
@@ -76,6 +76,88 @@ class _EditNoteDialogState extends State<_EditNoteDialog> {
   }
 }
 
+// --- Audio player card ---
+class _AudioPlayerCard extends StatefulWidget {
+  const _AudioPlayerCard({required this.path});
+  final String path;
+
+  @override
+  State<_AudioPlayerCard> createState() => _AudioPlayerCardState();
+}
+
+class _AudioPlayerCardState extends State<_AudioPlayerCard> {
+  final _player = AudioPlayer();
+  PlayerState _state = PlayerState.stopped;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _player.onPlayerStateChanged.listen((s) {
+      if (mounted) setState(() => _state = s);
+    });
+    _player.onPositionChanged.listen((p) {
+      if (mounted) setState(() => _position = p);
+    });
+    _player.onDurationChanged.listen((d) {
+      if (mounted) setState(() => _duration = d);
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  String _fmt(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  Future<void> _toggle() async {
+    if (_state == PlayerState.playing) {
+      await _player.pause();
+    } else {
+      await _player.play(DeviceFileSource(widget.path));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isPlaying = _state == PlayerState.playing;
+    final total = _duration.inSeconds > 0 ? _duration.inSeconds.toDouble() : 1.0;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          children: [
+            IconButton(
+              icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+              onPressed: _toggle,
+            ),
+            Expanded(
+              child: Slider(
+                value: _position.inSeconds.toDouble().clamp(0, total),
+                max: total,
+                onChanged: (v) => _player.seek(Duration(seconds: v.toInt())),
+              ),
+            ),
+            Text(
+              '${_fmt(_position)} / ${_fmt(_duration)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- NoteDetailScreen ---
 class NoteDetailScreen extends StatefulWidget {
   const NoteDetailScreen({super.key, required this.note});
   final Note note;
@@ -86,20 +168,11 @@ class NoteDetailScreen extends StatefulWidget {
 
 class _NoteDetailScreenState extends State<NoteDetailScreen> {
   late Note _note;
-  final _topScroll = ScrollController();
-  final _bottomScroll = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _note = widget.note;
-  }
-
-  @override
-  void dispose() {
-    _topScroll.dispose();
-    _bottomScroll.dispose();
-    super.dispose();
   }
 
   String _typeLabel(AppLocalizations l10n) => switch (_note.type) {
@@ -109,10 +182,13 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         NoteType.text => l10n.textNote,
       };
 
+  static bool _isAudio(String? path) =>
+      path != null && path.toLowerCase().endsWith('.m4a');
+
   Future<void> _share() async {
     final text = '${_note.title}\n${_note.content}';
     final path = _note.mediaPath;
-    if (path != null && File(path).existsSync()) {
+    if (path != null && !_isAudio(path) && File(path).existsSync()) {
       await Share.shareXFiles([XFile(path)], text: text);
     } else {
       await Share.share(text);
@@ -128,10 +204,12 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     if (result == null || !mounted) return;
     final (newTitle, newContent) = result;
     if (newTitle.isEmpty) return;
-    final updated = _note.copyWith(
-      title: newTitle,
-      content: newContent,
-      updatedAt: DateTime.now(),
+    final updated = Note(
+      id: _note.id, type: _note.type,
+      title: newTitle, content: newContent,
+      category: _note.category, tags: _note.tags,
+      mediaPath: _note.mediaPath,
+      createdAt: _note.createdAt, updatedAt: DateTime.now(),
     );
     await DbService.instance.update(updated);
     if (!mounted) return;
@@ -165,160 +243,102 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     if (mounted) Navigator.pop(context, true);
   }
 
-  Widget _meta(AppLocalizations l10n, String date) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          date,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          runSpacing: 4,
-          children: [
-            Chip(label: Text(_typeLabel(l10n))),
-            if (_note.category.isNotEmpty)
-              Chip(
-                label: Text(localizedCategory(l10n, _note.category)),
-                avatar: const Icon(Icons.folder_outlined, size: 16),
-              ),
-            ..._note.tags.map((t) => Chip(
-                  label: Text(t),
-                  visualDensity: VisualDensity.compact,
-                )),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _image(String path) {
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => _FullscreenImage(path: path)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.file(
-          File(path),
-          width: double.infinity,
-          fit: BoxFit.fitWidth,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
     final date = DateFormat.yMMMd(locale).add_jm().format(_note.createdAt);
-    final hasImage =
-        _note.mediaPath != null && File(_note.mediaPath!).existsSync();
-    final hasText = _note.content.isNotEmpty;
-    final cs = Theme.of(context).colorScheme;
-
-    final appBar = AppBar(
-      title: Text(
-        _note.title,
-        overflow: TextOverflow.ellipsis,
-        maxLines: 2,
-        style: const TextStyle(fontSize: 16),
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.edit_outlined),
-          tooltip: l10n.edit,
-          onPressed: () => _edit(l10n),
-        ),
-        IconButton(
-          icon: const Icon(Icons.share),
-          tooltip: l10n.share,
-          onPressed: _share,
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete_outline),
-          tooltip: l10n.delete,
-          onPressed: () => _delete(l10n),
-        ),
-      ],
-    );
-
-    if (hasImage && hasText) {
-      return Scaffold(
-        appBar: appBar,
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: Scrollbar(
-                  controller: _topScroll,
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
-                    controller: _topScroll,
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _meta(l10n, date),
-                        const SizedBox(height: 12),
-                        SelectableText(
-                          _note.content,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Container(height: 6, color: cs.surfaceContainerHighest),
-              Expanded(
-                child: Scrollbar(
-                  controller: _bottomScroll,
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
-                    controller: _bottomScroll,
-                    padding: const EdgeInsets.all(16),
-                    child: _image(_note.mediaPath!),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final path = _note.mediaPath;
+    final hasAudio = _isAudio(path) &&
+        path != null &&
+        File(path).existsSync();
+    final hasImage = !hasAudio &&
+        path != null &&
+        File(path).existsSync();
 
     return Scaffold(
-      appBar: appBar,
-      body: Scrollbar(
-        controller: _topScroll,
-        thumbVisibility: true,
-        child: SingleChildScrollView(
-          controller: _topScroll,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (hasImage) ...[
-                _image(_note.mediaPath!),
-                const SizedBox(height: 16),
-              ],
-              _meta(l10n, date),
-              if (hasText) ...[
-                const SizedBox(height: 12),
-                SelectableText(
-                  _note.content,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ],
-            ],
+      appBar: AppBar(
+        title: Text(
+          _note.title,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
+          style: const TextStyle(fontSize: 16),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: l10n.edit,
+            onPressed: () => _edit(l10n),
           ),
+          IconButton(
+            icon: const Icon(Icons.share),
+            tooltip: l10n.share,
+            onPressed: _share,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: l10n.delete,
+            onPressed: () => _delete(l10n),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (hasAudio)
+              _AudioPlayerCard(path: path),
+            if (hasImage) ...[
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => _FullscreenImage(path: path),
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    File(path),
+                    width: double.infinity,
+                    fit: BoxFit.fitWidth,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            Text(
+              date,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                Chip(label: Text(_typeLabel(l10n))),
+                if (_note.category.isNotEmpty)
+                  Chip(
+                    label: Text(localizedCategory(l10n, _note.category)),
+                    avatar: const Icon(Icons.folder_outlined, size: 16),
+                  ),
+                ..._note.tags.map((t) => Chip(
+                      label: Text(t),
+                      visualDensity: VisualDensity.compact,
+                    )),
+              ],
+            ),
+            if (_note.content.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              SelectableText(
+                _note.content,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ],
+          ],
         ),
       ),
     );

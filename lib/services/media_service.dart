@@ -1,19 +1,15 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 class MediaService {
   MediaService._();
-
   static final MediaService instance = MediaService._();
 
   final _picker = ImagePicker();
 
-  /// Opens the camera, saves the captured photo into the app's
-  /// permanent media folder and returns its path (null if cancelled).
   Future<String?> capturePhoto() async {
     final XFile? shot = await _picker.pickImage(
       source: ImageSource.camera,
@@ -34,21 +30,24 @@ class MediaService {
     return _persist(file);
   }
 
-  /// Saves raw PNG bytes (e.g. from the drawing canvas) into the
-  /// permanent media folder and returns the file path.
   Future<String> savePngBytes(Uint8List bytes) async {
-    final mediaDir = await _mediaDir();
+    final dir = await _mediaDir();
     final target =
-        p.join(mediaDir.path, '${DateTime.now().millisecondsSinceEpoch}.png');
+        p.join(dir.path, '${DateTime.now().millisecondsSinceEpoch}.png');
     await File(target).writeAsBytes(bytes, flush: true);
     return target;
   }
 
+  Future<String> newAudioPath() async {
+    final dir = await _mediaDir();
+    return p.join(dir.path, '${DateTime.now().millisecondsSinceEpoch}.m4a');
+  }
+
   Future<String> _persist(XFile file) async {
-    final mediaDir = await _mediaDir();
+    final dir = await _mediaDir();
     final name =
         '${DateTime.now().millisecondsSinceEpoch}${p.extension(file.path)}';
-    final target = p.join(mediaDir.path, name);
+    final target = p.join(dir.path, name);
     await File(file.path).copy(target);
     return target;
   }
@@ -56,17 +55,13 @@ class MediaService {
   Future<Directory> _mediaDir() async {
     final docs = await getApplicationDocumentsDirectory();
     final dir = Directory(p.join(docs.path, 'notespot_media'));
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
+    if (!await dir.exists()) await dir.create(recursive: true);
     return dir;
   }
 
   Future<void> deleteMedia(String? path) async {
     if (path == null) return;
     final f = File(path);
-    if (await f.exists()) {
-      await f.delete();
-    }
+    if (await f.exists()) await f.delete();
   }
 }

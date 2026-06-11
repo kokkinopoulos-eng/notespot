@@ -445,6 +445,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear text'**
   String get clearText;
+
+  /// No description provided for @dictation.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictation'**
+  String get dictation;
+
+  /// No description provided for @recordAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Record audio'**
+  String get recordAudio;
 }
 
 class _AppLocalizationsDelegate

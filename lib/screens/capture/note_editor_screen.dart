@@ -10,25 +10,29 @@ import '../../services/db_service.dart';
 import '../../services/media_service.dart';
 import '../../widgets/drawing_canvas.dart';
 
-const double kInkCanvasHeight = 1000;
+const int kMaxInkPages = 5;
 
-class _DotGridPainter extends CustomPainter {
-  const _DotGridPainter(this.color);
-  final Color color;
+class _NotebookPainter extends CustomPainter {
+  const _NotebookPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    const step = 24.0;
+    final line = Paint()
+      ..color = const Color(0xFFB7D3E8)
+      ..strokeWidth = 1;
+    const step = 30.0;
     for (double y = step; y < size.height; y += step) {
-      for (double x = step; x < size.width; x += step) {
-        canvas.drawCircle(Offset(x, y), 1.1, paint);
-      }
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), line);
     }
+    final margin = Paint()
+      ..color = const Color(0xFFE8A0A0)
+      ..strokeWidth = 1.2;
+    canvas.drawLine(
+        const Offset(42, 0), Offset(42, size.height), margin);
   }
 
   @override
-  bool shouldRepaint(_DotGridPainter old) => old.color != color;
+  bool shouldRepaint(_NotebookPainter old) => false;
 }
 
 class NoteEditorScreen extends StatefulWidget {
@@ -43,9 +47,11 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final _contentCtrl = TextEditingController();
   final _contentFocus = FocusNode();
   final _textScroll = ScrollController();
-  final _inkScroll = ScrollController();
-  final _drawCtrl = DrawingCanvasController();
+  final List<DrawingCanvasController> _pages = [DrawingCanvasController()];
+  int _page = 0;
   double _split = 0.5;
+
+  DrawingCanvasController get _ink => _pages[_page];
 
   @override
   void dispose() {
@@ -53,13 +59,40 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     _contentCtrl.dispose();
     _contentFocus.dispose();
     _textScroll.dispose();
-    _inkScroll.dispose();
-    _drawCtrl.dispose();
+    for (final p in _pages) {
+      p.dispose();
+    }
     super.dispose();
   }
 
   bool get _hasContent =>
-      _contentCtrl.text.trim().isNotEmpty || !_drawCtrl.isEmpty;
+      _contentCtrl.text.trim().isNotEmpty ||
+      _pages.any((p) => !p.isEmpty);
+
+  void _goToPage(int i) {
+    if (i < 0 || i >= _pages.length) return;
+    final from = _ink;
+    setState(() {
+      _page = i;
+      // keep pen settings consistent across pages
+      _ink
+        ..color = from.color
+        ..width = from.width
+        ..stylusOnly = from.stylusOnly;
+    });
+  }
+
+  void _addPage() {
+    if (_pages.length >= kMaxInkPages) return;
+    final from = _ink;
+    setState(() {
+      _pages.add(DrawingCanvasController()
+        ..color = from.color
+        ..width = from.width
+        ..stylusOnly = from.stylusOnly);
+      _page = _pages.length - 1;
+    });
+  }
 
   Future<void> _confirmClearText(AppLocalizations l10n) async {
     if (_contentCtrl.text.isEmpty) return;
@@ -102,12 +135,13 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     String? mediaPath;
     NoteType type;
 
-    if (!_drawCtrl.isEmpty) {
-      final bytes = await _drawCtrl.toPngBytes();
+    final hasInk = _pages.any((p) => !p.isEmpty);
+    if (hasInk) {
+      final bytes = await renderPagesToPng(_pages);
       if (bytes != null) {
         mediaPath = await MediaService.instance.savePngBytes(bytes);
       } else {
-        debugPrint('[EDITOR] toPngBytes returned null with strokes present');
+        debugPrint('[EDITOR] renderPagesToPng returned null');
       }
       type = content.isEmpty ? NoteType.handwriting : NoteType.text;
     } else {
@@ -171,10 +205,10 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     required String label,
     required Color bg,
     required Color fg,
-    Widget? action,
+    List<Widget> actions = const [],
   }) {
     return Container(
-      height: 30,
+      height: 34,
       color: bg,
       child: Row(
         children: [
@@ -188,7 +222,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   letterSpacing: 0.6,
                   color: fg)),
           const Spacer(),
-          if (action != null) action,
+          ...actions,
         ],
       ),
     );
@@ -231,6 +265,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     final l10n = AppLocalizations.of(context);
     final cs = Theme.of(context).colorScheme;
     final textFlex = (_split * 1000).round();
+    final atLast = _page == _pages.length - 1;
+    final canAdd = atLast && _pages.length < kMaxInkPages && !_ink.isEmpty;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -246,7 +282,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         ),
         actions: [
           AnimatedBuilder(
-            animation: _drawCtrl,
+            animation: Listenable.merge(_pages),
             builder: (_, __) => TextButton(
               onPressed: _hasContent ? () => _save(l10n) : null,
               child: Text(l10n.save),
@@ -270,13 +306,15 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                         label: l10n.textNote.toUpperCase(),
                         bg: cs.secondaryContainer,
                         fg: cs.onSecondaryContainer,
-                        action: IconButton(
-                          icon:
-                              const Icon(Icons.backspace_outlined, size: 17),
-                          tooltip: l10n.clearText,
-                          visualDensity: VisualDensity.compact,
-                          onPressed: () => _confirmClearText(l10n),
-                        ),
+                        actions: [
+                          IconButton(
+                            icon: const Icon(Icons.backspace_outlined,
+                                size: 17),
+                            tooltip: l10n.clearText,
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => _confirmClearText(l10n),
+                          ),
+                        ],
                       ),
                       Expanded(
                         child: Scrollbar(
@@ -314,60 +352,72 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               ),
               // ================= Divider handle =================
               _divider(context, constraints.maxHeight),
-              // ================= Ink pane (dot grid) =================
+              // ================= Ink pane: fixed page, no scrolling =====
               Expanded(
                 flex: 1000 - textFlex,
                 child: Container(
                   color: Colors.white,
                   child: Column(
                     children: [
-                      _paneHeader(
-                        icon: Icons.gesture,
-                        label: l10n.drawNote.toUpperCase(),
-                        bg: cs.tertiaryContainer,
-                        fg: cs.onTertiaryContainer,
+                      AnimatedBuilder(
+                        animation: Listenable.merge(_pages),
+                        builder: (_, __) => _paneHeader(
+                          icon: Icons.gesture,
+                          label: l10n.drawNote.toUpperCase(),
+                          bg: cs.tertiaryContainer,
+                          fg: cs.onTertiaryContainer,
+                          actions: [
+                            IconButton(
+                              icon: const Icon(Icons.chevron_left, size: 20),
+                              visualDensity: VisualDensity.compact,
+                              onPressed: _page > 0
+                                  ? () => _goToPage(_page - 1)
+                                  : null,
+                            ),
+                            Text('${_page + 1}/${_pages.length}',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: cs.onTertiaryContainer)),
+                            IconButton(
+                              icon: Icon(
+                                  atLast
+                                      ? Icons.add
+                                      : Icons.chevron_right,
+                                  size: 20),
+                              visualDensity: VisualDensity.compact,
+                              onPressed: atLast
+                                  ? (canAdd ? _addPage : null)
+                                  : () => _goToPage(_page + 1),
+                            ),
+                          ],
+                        ),
                       ),
                       Expanded(
-                        child: Scrollbar(
-                          controller: _inkScroll,
-                          thumbVisibility: true,
-                          interactive: true,
-                          thickness: 8,
-                          child: SingleChildScrollView(
-                            controller: _inkScroll,
-                            child: SizedBox(
-                              height: kInkCanvasHeight,
-                              child: Stack(
-                                children: [
-                                  Positioned.fill(
-                                    child: CustomPaint(
-                                      painter: _DotGridPainter(
-                                          Colors.grey.shade300),
-                                    ),
-                                  ),
-                                  Positioned.fill(
-                                    child: Padding(
-                                      padding:
-                                          const EdgeInsets.only(right: 20),
-                                      child: Listener(
-                                        onPointerDown: (_) =>
-                                            _contentFocus.unfocus(),
-                                        child: DrawingSurface(
-                                            controller: _drawCtrl),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: CustomPaint(
+                                painter:
+                                    _NotebookPainter(),
                               ),
                             ),
-                          ),
+                            Positioned.fill(
+                              child: Listener(
+                                onPointerDown: (_) =>
+                                    _contentFocus.unfocus(),
+                                child:
+                                    DrawingSurface(controller: _ink),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              DrawingToolbar(controller: _drawCtrl),
+              DrawingToolbar(controller: _ink),
             ],
           ),
         ),

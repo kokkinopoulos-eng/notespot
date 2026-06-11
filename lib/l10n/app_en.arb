@@ -57,5 +57,7 @@
   "thisWeek": "This week",
   "earlier": "Earlier",
   "noteHint": "Write something...",
-  "clearText": "Clear text"
+  "clearText": "Clear text",
+  "dictation": "Dictation",
+  "recordAudio": "Record audio"
 }

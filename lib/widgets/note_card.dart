@@ -15,9 +15,14 @@ class NoteCard extends StatelessWidget {
         NoteType.text => Icons.edit_note_outlined,
       };
 
+  static bool _isAudio(String path) => path.toLowerCase().endsWith('.m4a');
+
   Widget _leading() {
     final path = note.mediaPath;
     if (path != null) {
+      if (_isAudio(path)) {
+        return const CircleAvatar(child: Icon(Icons.graphic_eq));
+      }
       return ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Image.file(
