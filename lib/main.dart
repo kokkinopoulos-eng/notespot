@@ -1,20 +1,23 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/app_theme.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
+import 'screens/splash/splash_screen.dart';
+import 'screens/splash/terms_screen.dart';
+import 'services/premium_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await PremiumService.instance.init();
   final prefs = await SharedPreferences.getInstance();
   runApp(NoteSpotApp(initialLocale: prefs.getString('locale')));
 }
 
 class NoteSpotApp extends StatefulWidget {
   const NoteSpotApp({super.key, this.initialLocale});
-
   final String? initialLocale;
 
   static NoteSpotAppState of(BuildContext context) =>
@@ -57,7 +60,13 @@ class NoteSpotAppState extends State<NoteSpotApp> {
       locale: _locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      home: _onboardingDone ? const HomeScreen() : const OnboardingScreen(),
+      home: SplashScreen(
+        next: TermsGate(
+          next: _onboardingDone
+              ? const HomeScreen()
+              : const OnboardingScreen(),
+        ),
+      ),
     );
   }
 }

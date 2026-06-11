@@ -1,0 +1,99 @@
+﻿import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+const kPremiumProductId = 'notespot_premium_unlock';
+
+class PremiumService extends ChangeNotifier {
+  PremiumService._();
+  static final instance = PremiumService._();
+
+  bool _isPremium = false;
+  String? _lastError;
+  StreamSubscription<List<PurchaseDetails>>? _sub;
+
+  bool get isPremium => _isPremium;
+  String? get lastError => _lastError;
+
+  Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+    _isPremium = prefs.getBool('premium_unlocked') ?? false;
+    notifyListeners();
+    _sub = InAppPurchase.instance.purchaseStream.listen(
+      _onPurchases,
+      onError: (e) {
+        _lastError = e.toString();
+        notifyListeners();
+      },
+    );
+  }
+
+  Future<void> _onPurchases(List<PurchaseDetails> purchases) async {
+    for (final p in purchases) {
+      if (p.productID == kPremiumProductId) {
+        if (p.status == PurchaseStatus.purchased ||
+            p.status == PurchaseStatus.restored) {
+          await _setPremium(true);
+        } else if (p.status == PurchaseStatus.error) {
+          _lastError = p.error?.message ?? 'Purchase error';
+          notifyListeners();
+        }
+        if (p.pendingCompletePurchase) {
+          await InAppPurchase.instance.completePurchase(p);
+        }
+      }
+    }
+  }
+
+  Future<void> _setPremium(bool value) async {
+    _isPremium = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('premium_unlocked', value);
+    notifyListeners();
+  }
+
+  Future<bool> buy() async {
+    _lastError = null;
+    final available = await InAppPurchase.instance.isAvailable();
+    if (!available) {
+      _lastError = 'Store not available';
+      notifyListeners();
+      return false;
+    }
+    final response = await InAppPurchase.instance
+        .queryProductDetails({kPremiumProductId});
+    if (response.productDetails.isEmpty) {
+      _lastError = 'Product not found';
+      notifyListeners();
+      return false;
+    }
+    final param = PurchaseParam(
+      productDetails: response.productDetails.first,
+    );
+    try {
+      await InAppPurchase.instance.buyNonConsumable(purchaseParam: param);
+      return true;
+    } catch (e) {
+      _lastError = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<void> restore() async {
+    _lastError = null;
+    try {
+      await InAppPurchase.instance.restorePurchases();
+    } catch (e) {
+      _lastError = e.toString();
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}

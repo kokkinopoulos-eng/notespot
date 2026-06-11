@@ -59,5 +59,11 @@
   "noteHint": "Write something...",
   "clearText": "Clear text",
   "dictation": "Dictation",
-  "recordAudio": "Record audio"
+  "recordAudio": "Record audio",
+  "premiumTitle": "NoteSpot Premium",
+  "premiumDesc": "Unlock AI auto-tagging, text extraction and audio transcription",
+  "buyPremium": "Unlock",
+  "restorePurchases": "Restore purchases",
+  "purchaseSuccess": "Premium unlocked!",
+  "purchaseError": "Purchase failed"
 }

@@ -457,6 +457,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Record audio'**
   String get recordAudio;
+
+  /// No description provided for @premiumTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'NoteSpot Premium'**
+  String get premiumTitle;
+
+  /// No description provided for @premiumDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock AI auto-tagging, text extraction and audio transcription'**
+  String get premiumDesc;
+
+  /// No description provided for @buyPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get buyPremium;
+
+  /// No description provided for @restorePurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get restorePurchases;
+
+  /// No description provided for @purchaseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium unlocked!'**
+  String get purchaseSuccess;
+
+  /// No description provided for @purchaseError.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase failed'**
+  String get purchaseError;
 }
 
 class _AppLocalizationsDelegate

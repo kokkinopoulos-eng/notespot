@@ -187,4 +187,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recordAudio => 'Record audio';
+
+  @override
+  String get premiumTitle => 'NoteSpot Premium';
+
+  @override
+  String get premiumDesc =>
+      'Unlock AI auto-tagging, text extraction and audio transcription';
+
+  @override
+  String get buyPremium => 'Unlock';
+
+  @override
+  String get restorePurchases => 'Restore purchases';
+
+  @override
+  String get purchaseSuccess => 'Premium unlocked!';
+
+  @override
+  String get purchaseError => 'Purchase failed';
 }

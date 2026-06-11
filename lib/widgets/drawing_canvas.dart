@@ -323,12 +323,13 @@ class DrawingToolbar extends StatelessWidget {
       builder: (context, _) => Container(
         color: cs.surface,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(children: _colors.map((c) => _swatch(context, c)).toList()),
-            Row(children: _widths.map(_widthBtn).toList()),
-            Row(children: [
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            ..._colors.map((c) => _swatch(context, c)),
+            const SizedBox(width: 6),
+            ..._widths.map(_widthBtn),
+            const SizedBox(width: 6),
               IconButton(
                 icon: const Icon(Icons.auto_fix_normal),
                 tooltip: 'Eraser',
@@ -361,8 +362,7 @@ class DrawingToolbar extends StatelessWidget {
                 onPressed: () =>
                     controller.setStylusOnly(!controller.stylusOnly),
               ),
-            ]),
-          ],
+          ]),
         ),
       ),
     );

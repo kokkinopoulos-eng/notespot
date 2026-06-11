@@ -187,4 +187,23 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get recordAudio => 'Εγγραφή ήχου';
+
+  @override
+  String get premiumTitle => 'NoteSpot Premium';
+
+  @override
+  String get premiumDesc =>
+      'Ξεκλείδωσε AI αυτόματη ταξινόμηση, εξαγωγή κειμένου και απομαγνητοφώνηση';
+
+  @override
+  String get buyPremium => 'Ξεκλείδωμα';
+
+  @override
+  String get restorePurchases => 'Επαναφορά αγορών';
+
+  @override
+  String get purchaseSuccess => 'Το Premium ξεκλειδώθηκε!';
+
+  @override
+  String get purchaseError => 'Η αγορά απέτυχε';
 }

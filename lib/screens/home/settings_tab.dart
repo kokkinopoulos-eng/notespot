@@ -1,11 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../models/ai_provider.dart';
 import '../../services/ai_settings_service.dart';
+import '../../services/premium_service.dart';
 
 // --- Dialog result types ---
-
 enum _ApiKeyAction { save, delete, cancel }
 
 class _ApiKeyDialogResult {
@@ -14,8 +14,7 @@ class _ApiKeyDialogResult {
   final String? key;
 }
 
-// --- Provider picker dialog (pure StatelessWidget) ---
-
+// --- Provider picker dialog ---
 class _ProviderPickerDialog extends StatelessWidget {
   const _ProviderPickerDialog({required this.current});
   final AiProvider current;
@@ -36,8 +35,7 @@ class _ProviderPickerDialog extends StatelessWidget {
   }
 }
 
-// --- API Key dialog (StatefulWidget, pure UI) ---
-
+// --- API Key dialog ---
 class _ApiKeyDialog extends StatefulWidget {
   const _ApiKeyDialog({
     required this.providerName,
@@ -72,18 +70,14 @@ class _ApiKeyDialogState extends State<_ApiKeyDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            widget.providerName,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-          ),
-          Text(
-            widget.providerHint,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-          ),
+          Text(widget.providerName,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  )),
+          Text(widget.providerHint,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  )),
           const SizedBox(height: 12),
           TextField(
             controller: _ctrl,
@@ -93,7 +87,8 @@ class _ApiKeyDialogState extends State<_ApiKeyDialog> {
               labelText: l10n.apiKey,
               helperText: widget.hasExistingKey ? l10n.apiKeySet : null,
               suffixIcon: IconButton(
-                icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                icon:
+                    Icon(_obscure ? Icons.visibility_off : Icons.visibility),
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
             ),
@@ -104,19 +99,14 @@ class _ApiKeyDialogState extends State<_ApiKeyDialog> {
         if (widget.hasExistingKey)
           TextButton(
             style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
+                foregroundColor: Theme.of(context).colorScheme.error),
             onPressed: () => Navigator.pop(
-              context,
-              const _ApiKeyDialogResult(_ApiKeyAction.delete),
-            ),
+                context, const _ApiKeyDialogResult(_ApiKeyAction.delete)),
             child: Text(l10n.delete),
           ),
         TextButton(
           onPressed: () => Navigator.pop(
-            context,
-            const _ApiKeyDialogResult(_ApiKeyAction.cancel),
-          ),
+              context, const _ApiKeyDialogResult(_ApiKeyAction.cancel)),
           child: Text(l10n.cancel),
         ),
         FilledButton(
@@ -124,9 +114,7 @@ class _ApiKeyDialogState extends State<_ApiKeyDialog> {
             final val = _ctrl.text.trim();
             if (val.isEmpty) return;
             Navigator.pop(
-              context,
-              _ApiKeyDialogResult(_ApiKeyAction.save, val),
-            );
+                context, _ApiKeyDialogResult(_ApiKeyAction.save, val));
           },
           child: Text(l10n.save),
         ),
@@ -136,7 +124,6 @@ class _ApiKeyDialogState extends State<_ApiKeyDialog> {
 }
 
 // --- SettingsTab ---
-
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
 
@@ -187,7 +174,6 @@ class _SettingsTabState extends State<SettingsTab> {
     final provider = _selectedProvider;
     final existing = await svc.getApiKey(provider);
     if (!mounted) return;
-
     final result = await showDialog<_ApiKeyDialogResult>(
       context: context,
       builder: (_) => _ApiKeyDialog(
@@ -197,7 +183,6 @@ class _SettingsTabState extends State<SettingsTab> {
       ),
     );
     if (result == null || !mounted) return;
-
     final l10n = AppLocalizations.of(context);
     if (result.action == _ApiKeyAction.save && result.key != null) {
       await svc.setApiKey(provider, result.key!);
@@ -255,52 +240,162 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
+  Future<void> _handleBuy(AppLocalizations l10n) async {
+    final ok = await PremiumService.instance.buy();
+    if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(
+            PremiumService.instance.lastError ?? l10n.purchaseError)),
+      );
+    }
+  }
+
+  Future<void> _handleRestore(AppLocalizations l10n) async {
+    await PremiumService.instance.restore();
+    if (!mounted) return;
+    if (PremiumService.instance.lastError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.purchaseError)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final currentLocale = NoteSpotApp.of(context).locale;
 
-    return ListView(
-      children: [
-        _SectionHeader(title: l10n.language),
-        ListTile(
-          leading: const Icon(Icons.language),
-          title: Text(l10n.language),
-          subtitle: Text(
-            currentLocale?.languageCode == 'en'
-                ? l10n.languageEnglish
-                : l10n.languageGreek,
-          ),
-          onTap: _openLanguageDialog,
-        ),
-        const Divider(),
-        _SectionHeader(title: l10n.aiProvider),
-        ListTile(
-          leading: const Icon(Icons.psychology_outlined),
-          title: Text(l10n.aiProvider),
-          subtitle: Text(_selectedProvider.displayName),
-          trailing: Icon(
-            _hasKey ? Icons.check_circle : Icons.key_off,
-            color: _hasKey
-                ? Colors.green
-                : Theme.of(context).colorScheme.outline,
-          ),
-          onTap: _openProviderDialog,
-        ),
-        ListTile(
-          leading: const Icon(Icons.key_outlined),
-          title: Text(l10n.apiKey),
-          subtitle: Text(_maskedKey ?? l10n.noApiKey),
-          onTap: _openApiKeyDialog,
-        ),
-        const Divider(),
-        _SectionHeader(title: l10n.about),
-        ListTile(
-          leading: const Icon(Icons.info_outline),
-          title: Text(l10n.version),
-          subtitle: const Text('1.0.0'),
-        ),
-      ],
+    return ListenableBuilder(
+      listenable: PremiumService.instance,
+      builder: (context, _) {
+        final isPremium = PremiumService.instance.isPremium;
+
+        // Show success snack when premium just unlocked
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (isPremium && PremiumService.instance.lastError == null) {
+            // only show once — handled by stream
+          }
+        });
+
+        return ListView(
+          children: [
+            // Language section
+            _SectionHeader(title: l10n.language),
+            ListTile(
+              leading: const Icon(Icons.language),
+              title: Text(l10n.language),
+              subtitle: Text(
+                currentLocale?.languageCode == 'en'
+                    ? l10n.languageEnglish
+                    : l10n.languageGreek,
+              ),
+              onTap: _openLanguageDialog,
+            ),
+            const Divider(),
+
+            // Premium section
+            if (!isPremium) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                child: Card(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Icon(Icons.star,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(l10n.premiumTitle,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                    fontWeight: FontWeight.bold,
+                                  ))),
+                        ]),
+                        const SizedBox(height: 8),
+                        Text(l10n.premiumDesc,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer,
+                                )),
+                        const SizedBox(height: 12),
+                        Wrap(spacing: 8, children: [
+                          FilledButton(
+                            onPressed: () => _handleBuy(l10n),
+                            child: Text(l10n.buyPremium),
+                          ),
+                          TextButton(
+                            onPressed: () => _handleRestore(l10n),
+                            child: Text(l10n.restorePurchases),
+                          ),
+                        ]),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const Divider(),
+            ] else ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Chip(
+                  avatar: const Icon(Icons.star, size: 16),
+                  label: Text('${l10n.premiumTitle} ✓'),
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primaryContainer,
+                ),
+              ),
+              const SizedBox(height: 4),
+            ],
+
+            // AI section
+            _SectionHeader(title: l10n.aiProvider),
+            ListTile(
+              enabled: isPremium,
+              leading: const Icon(Icons.psychology_outlined),
+              title: Text(l10n.aiProvider),
+              subtitle: Text(_selectedProvider.displayName),
+              trailing: Icon(
+                _hasKey ? Icons.check_circle : Icons.key_off,
+                color: _hasKey
+                    ? Colors.green
+                    : Theme.of(context).colorScheme.outline,
+              ),
+              onTap: isPremium ? _openProviderDialog : null,
+            ),
+            ListTile(
+              enabled: isPremium,
+              leading: const Icon(Icons.key_outlined),
+              title: Text(l10n.apiKey),
+              subtitle: Text(_maskedKey ?? l10n.noApiKey),
+              onTap: isPremium ? _openApiKeyDialog : null,
+            ),
+            const Divider(),
+
+            // About section
+            _SectionHeader(title: l10n.about),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: Text(l10n.version),
+              subtitle: const Text('1.0.0'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -1,4 +1,5 @@
-﻿import 'dart:convert';
+﻿import 'premium_service.dart';
+import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/ai_analysis.dart';
@@ -94,6 +95,7 @@ class CloudAiService {
   }
 
   Future<AiAnalysis?> analyzeText(String text, String languageName) async {
+    if (!PremiumService.instance.isPremium) return null;
     final svc = AiSettingsService.instance;
     if (!await svc.aiEnabled) return null;
     final provider = await svc.getSelectedProvider();
@@ -111,6 +113,7 @@ class CloudAiService {
 
   Future<AiAnalysis?> analyzeAudio(
       String path, String languageName) async {
+    if (!PremiumService.instance.isPremium) return null;
     final svc = AiSettingsService.instance;
     if (!await svc.aiEnabled) return null;
     final provider = await svc.getSelectedProvider();

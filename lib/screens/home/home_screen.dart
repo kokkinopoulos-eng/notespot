@@ -1,9 +1,11 @@
-﻿import 'dart:async';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:record/record.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+
 import '../../core/category_labels.dart';
 import '../../core/timeline_utils.dart';
 import '../../l10n/app_localizations.dart';
@@ -30,6 +32,9 @@ class _HomeScreenState extends State<HomeScreen> {
   List<String> _categories = [];
   String? _selectedCategory;
   bool _loading = true;
+  final Set<int> _selected = {};
+
+  bool get _selecting => _selected.isNotEmpty;
 
   @override
   void initState() {
@@ -50,7 +55,16 @@ class _HomeScreenState extends State<HomeScreen> {
       _categories = cats;
       _notes = notes;
       _loading = false;
+      _selected.removeWhere((id) => !notes.any((n) => n.id == id));
     });
+  }
+
+  Future<void> _openEditor() async {
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const NoteEditorScreen()),
+    );
+    if (saved == true) _loadNotes();
   }
 
   Future<void> _quickPhoto() async {
@@ -58,7 +72,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (path == null || !mounted) return;
     final l10n = AppLocalizations.of(context);
     final langName = Localizations.localeOf(context).languageCode == 'el'
-        ? 'Greek' : 'English';
+        ? 'Greek'
+        : 'English';
     final now = DateTime.now();
     final stamp = DateFormat('d/M HH:mm').format(now);
     final noteId = await DbService.instance.insert(Note(
@@ -79,14 +94,19 @@ class _HomeScreenState extends State<HomeScreen> {
     if (note == null) return;
     final autoTitle = RegExp(r'^.+\s\d+/\d+\s\d+:\d+$');
     await DbService.instance.update(Note(
-      id: note.id, type: note.type,
+      id: note.id,
+      type: note.type,
       title: analysis.title.isNotEmpty && autoTitle.hasMatch(note.title)
-          ? analysis.title : note.title,
+          ? analysis.title
+          : note.title,
       content: analysis.extractedText.isNotEmpty
-          ? analysis.extractedText : note.content,
-      category: analysis.category, tags: analysis.tags,
+          ? analysis.extractedText
+          : note.content,
+      category: analysis.category,
+      tags: analysis.tags,
       mediaPath: note.mediaPath,
-      createdAt: note.createdAt, updatedAt: DateTime.now(),
+      createdAt: note.createdAt,
+      updatedAt: DateTime.now(),
     ));
     await _loadNotes();
   }
@@ -99,8 +119,40 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  String _bucketLabel(AppLocalizations l10n, TimelineBucket b) =>
-      switch (b) {
+  Future<void> _deleteSelected(AppLocalizations l10n) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('${l10n.deleteConfirmTitle} (${_selected.length})'),
+        content: Text(l10n.deleteConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    for (final id in _selected.toList()) {
+      final note = _notes.where((n) => n.id == id).firstOrNull;
+      await DbService.instance.delete(id);
+      if (note != null) {
+        await MediaService.instance.deleteMedia(note.mediaPath);
+      }
+    }
+    _selected.clear();
+    await _loadNotes();
+  }
+
+  String _bucketLabel(AppLocalizations l10n, TimelineBucket b) => switch (b) {
         TimelineBucket.today => l10n.today,
         TimelineBucket.yesterday => l10n.yesterday,
         TimelineBucket.thisWeek => l10n.thisWeek,
@@ -142,6 +194,55 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _noteItem(Note note) {
+    final cs = Theme.of(context).colorScheme;
+    final sel = _selected.contains(note.id);
+    return GestureDetector(
+      onLongPress: () => setState(() => _selected.add(note.id!)),
+      child: Stack(
+        children: [
+          AbsorbPointer(
+            absorbing: _selecting,
+            child: NoteCard(
+              note: note,
+              onTap: () async {
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => NoteDetailScreen(note: note)),
+                );
+                if (result == true) _loadNotes();
+              },
+            ),
+          ),
+          if (_selecting)
+            Positioned.fill(
+              child: Material(
+                color: sel
+                    ? cs.primary.withValues(alpha: 0.10)
+                    : Colors.transparent,
+                child: InkWell(
+                  onTap: () => setState(() {
+                    if (sel) {
+                      _selected.remove(note.id);
+                    } else {
+                      _selected.add(note.id!);
+                    }
+                  }),
+                ),
+              ),
+            ),
+          if (sel)
+            Positioned(
+              top: 10,
+              right: 22,
+              child: Icon(Icons.check_circle, color: cs.primary),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _notesBody(AppLocalizations l10n) {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_notes.isEmpty) {
@@ -164,16 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ));
         lastBucket = bucket;
       }
-      items.add(NoteCard(
-        note: note,
-        onTap: () async {
-          final result = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(builder: (_) => NoteDetailScreen(note: note)),
-          );
-          if (result == true) _loadNotes();
-        },
-      ));
+      items.add(_noteItem(note));
     }
     return RefreshIndicator(
       onRefresh: _loadNotes,
@@ -185,11 +277,50 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _tabBtn(int index, IconData icon, String tooltip) {
+    final cs = Theme.of(context).colorScheme;
+    final active = _tab == index;
+    return IconButton(
+      icon: Icon(icon),
+      color: active ? cs.primary : cs.onPrimaryContainer,
+      style: active
+          ? IconButton.styleFrom(backgroundColor: cs.surface)
+          : null,
+      onPressed: () => setState(() {
+        _tab = index;
+        _selected.clear();
+      }),
+      tooltip: tooltip,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('NoteSpot')),
+      appBar: _selecting
+          ? AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(() => _selected.clear()),
+              ),
+              title: Text('${_selected.length}'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.select_all),
+                  onPressed: () => setState(() {
+                    _selected.addAll(
+                        _notes.where((n) => n.id != null).map((n) => n.id!));
+                  }),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () => _deleteSelected(l10n),
+                ),
+              ],
+            )
+          : AppBar(title: const Text('NoteSpot')),
       body: IndexedStack(
         index: _tab,
         children: [
@@ -201,52 +332,37 @@ class _HomeScreenState extends State<HomeScreen> {
           const SettingsTab(),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final saved = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(builder: (_) => const NoteEditorScreen()),
-          );
-          if (saved == true) _loadNotes();
-        },
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
       bottomNavigationBar: BottomAppBar(
-        notchMargin: 8,
-        shape: const CircularNotchedRectangle(),
+        color: cs.primaryContainer,
         child: Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.notes),
-              color: _tab == 0 ? Theme.of(context).colorScheme.primary : null,
-              onPressed: () => setState(() => _tab = 0),
-              tooltip: l10n.notesTab,
-            ),
-            IconButton(
-              icon: const Icon(Icons.search),
-              color: _tab == 1 ? Theme.of(context).colorScheme.primary : null,
-              onPressed: () => setState(() => _tab = 1),
-              tooltip: l10n.searchTab,
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings),
-              color: _tab == 2 ? Theme.of(context).colorScheme.primary : null,
-              onPressed: () => setState(() => _tab = 2),
-              tooltip: l10n.settingsTab,
-            ),
+            _tabBtn(0, Icons.notes, l10n.notesTab),
+            _tabBtn(1, Icons.search, l10n.searchTab),
+            _tabBtn(2, Icons.settings, l10n.settingsTab),
             const Spacer(),
             IconButton(
               icon: const Icon(Icons.mic_outlined),
+              color: cs.onPrimaryContainer,
               onPressed: _quickDictation,
               tooltip: l10n.voiceNote,
             ),
             IconButton(
               icon: const Icon(Icons.photo_camera_outlined),
+              color: cs.onPrimaryContainer,
               onPressed: _quickPhoto,
               tooltip: l10n.photoNote,
             ),
-            const SizedBox(width: 56),
+            const SizedBox(width: 6),
+            IconButton.filled(
+              icon: const Icon(Icons.menu_book),
+              onPressed: _openEditor,
+              tooltip: l10n.newNote,
+              style: IconButton.styleFrom(
+                backgroundColor: cs.primary,
+                foregroundColor: cs.onPrimary,
+                padding: const EdgeInsets.all(10),
+              ),
+            ),
           ],
         ),
       ),
@@ -254,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ─── Quick Dictation Sheet ───────────────────────────────────────────────────
+// --- Quick Dictation / Record Sheet ---
 
 enum _SheetMode { dictation, record }
 
@@ -269,14 +385,12 @@ class _QuickDictationSheet extends StatefulWidget {
 class _QuickDictationSheetState extends State<_QuickDictationSheet> {
   _SheetMode _mode = _SheetMode.dictation;
 
-  // Dictation
   final _speech = SpeechToText();
   bool _speechAvailable = false;
   bool _listening = false;
   String _transcript = '';
   String _partial = '';
 
-  // Record
   final _recorder = AudioRecorder();
   bool _recording = false;
   String? _recordPath;
@@ -320,12 +434,14 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
   }
 
   Future<void> _toggleDictation() async {
-    if (_listening) {
+    if (_speech.isListening || _listening) {
       await _speech.stop();
+      if (mounted) setState(() => _listening = false);
       return;
     }
     final localeId = Localizations.localeOf(context).languageCode == 'el'
-        ? 'el-GR' : 'en-US';
+        ? 'el-GR'
+        : 'en-US';
     await _speech.listen(
       onResult: _onResult,
       localeId: localeId,
@@ -372,7 +488,11 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
       _timer?.cancel();
       final path = await _recorder.stop();
       if (path != null) await MediaService.instance.deleteMedia(path);
-      setState(() { _recording = false; _recordPath = null; _seconds = 0; });
+      setState(() {
+        _recording = false;
+        _recordPath = null;
+        _seconds = 0;
+      });
     }
     setState(() => _mode = m);
   }
@@ -383,7 +503,8 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
     await _speech.stop();
     final l10n = AppLocalizations.of(context);
     final langName = Localizations.localeOf(context).languageCode == 'el'
-        ? 'Greek' : 'English';
+        ? 'Greek'
+        : 'English';
     final now = DateTime.now();
     final stamp = DateFormat('d/M HH:mm').format(now);
     final noteId = await DbService.instance.insert(Note(
@@ -404,7 +525,8 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
     if (path == null) return;
     final l10n = AppLocalizations.of(context);
     final langName = Localizations.localeOf(context).languageCode == 'el'
-        ? 'Greek' : 'English';
+        ? 'Greek'
+        : 'English';
     final now = DateTime.now();
     final stamp = DateFormat('d/M HH:mm').format(now);
     final noteId = await DbService.instance.insert(Note(
@@ -436,10 +558,15 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
     final note = await DbService.instance.getById(noteId);
     if (note == null) return;
     await DbService.instance.update(Note(
-      id: note.id, type: note.type, title: note.title,
-      content: note.content, category: analysis.category,
-      tags: analysis.tags, mediaPath: note.mediaPath,
-      createdAt: note.createdAt, updatedAt: DateTime.now(),
+      id: note.id,
+      type: note.type,
+      title: note.title,
+      content: note.content,
+      category: analysis.category,
+      tags: analysis.tags,
+      mediaPath: note.mediaPath,
+      createdAt: note.createdAt,
+      updatedAt: DateTime.now(),
     ));
   }
 
@@ -449,12 +576,17 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
     final note = await DbService.instance.getById(noteId);
     if (note == null) return;
     await DbService.instance.update(Note(
-      id: note.id, type: note.type, title: note.title,
+      id: note.id,
+      type: note.type,
+      title: note.title,
       content: analysis.extractedText.isNotEmpty
-          ? analysis.extractedText : note.content,
-      category: analysis.category, tags: analysis.tags,
+          ? analysis.extractedText
+          : note.content,
+      category: analysis.category,
+      tags: analysis.tags,
       mediaPath: note.mediaPath,
-      createdAt: note.createdAt, updatedAt: DateTime.now(),
+      createdAt: note.createdAt,
+      updatedAt: DateTime.now(),
     ));
   }
 
@@ -474,7 +606,6 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Mode toggle
             SegmentedButton<_SheetMode>(
               segments: [
                 ButtonSegment(
@@ -492,7 +623,6 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
               onSelectionChanged: (s) => _switchMode(s.first),
             ),
             const SizedBox(height: 16),
-
             if (_mode == _SheetMode.dictation) ...[
               if (dictText.isNotEmpty)
                 Container(
@@ -500,7 +630,9 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
                   padding: const EdgeInsets.all(12),
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(dictText,
@@ -536,7 +668,6 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
                 ],
               ),
             ] else ...[
-              // Record mode
               Text(
                 _fmtSecs(_seconds),
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
@@ -548,7 +679,8 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Icon(Icons.check_circle,
-                      color: Theme.of(context).colorScheme.primary, size: 32),
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 32),
                 ),
               const SizedBox(height: 8),
               FloatingActionButton.large(
@@ -556,7 +688,8 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
                 onPressed: _toggleRecord,
                 backgroundColor:
                     _recording ? Theme.of(context).colorScheme.error : null,
-                child: Icon(_recording ? Icons.stop : Icons.fiber_manual_record),
+                child:
+                    Icon(_recording ? Icons.stop : Icons.fiber_manual_record),
               ),
               const SizedBox(height: 16),
               Row(
