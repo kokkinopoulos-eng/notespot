@@ -128,12 +128,56 @@ class DrawingCanvasController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void endStroke() {
-    if (current != null) {
-      strokes.add(current!);
-      current = null;
-      notifyListeners();
+  /// Scribble-to-erase: fast back-and-forth in a confined bounding box.
+  /// Works with S Pen (dense points, low pressure variance).
+  bool _isScribble(DrawingStroke s) {
+    if (s.points.length < 10) return false;
+    // Bounding box
+    double minX = s.points[0].dx, maxX = minX;
+    double minY = s.points[0].dy, maxY = minY;
+    for (final p in s.points) {
+      if (p.dx < minX) minX = p.dx;
+      if (p.dx > maxX) maxX = p.dx;
+      if (p.dy < minY) minY = p.dy;
+      if (p.dy > maxY) maxY = p.dy;
     }
+    final w = maxX - minX;
+    final h = maxY - minY;
+    // Must be wide (horizontal scribble) or a compact zigzag
+    if (w < 40 && h < 40) return false;
+    // Count horizontal direction reversals
+    int flips = 0;
+    double prevDx = 0;
+    for (int i = 4; i < s.points.length; i += 3) {
+      final dx = s.points[i].dx - s.points[i - 3].dx;
+      if (dx.abs() > 3) {
+        if (prevDx != 0 && dx.sign != prevDx.sign) flips++;
+        prevDx = dx;
+      }
+    }
+    // Total path length vs bounding box perimeter
+    double len = 0;
+    for (int i = 1; i < s.points.length; i++) {
+      len += (s.points[i] - s.points[i - 1]).distance;
+    }
+    final perim = 2 * (w + h);
+    // Scribble = many reversals AND path much longer than bounding box
+    return flips >= 3 && len > 1.8 * perim;
+  }
+
+  void endStroke() {
+    final c = current;
+    if (c == null) return;
+    current = null;
+    if (!eraserMode && _isScribble(c)) {
+      // Erase all strokes that overlap with the scribble path
+      strokes.removeWhere((s) => s.points.any((q) =>
+          c.points.any((p) => (q - p).distance <= 16 + s.width / 2)));
+      notifyListeners();
+      return;
+    }
+    strokes.add(c);
+    notifyListeners();
   }
 
   Future<Uint8List?> toPngBytes() async {

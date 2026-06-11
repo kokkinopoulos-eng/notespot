@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io' as dart_io;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -36,7 +38,10 @@ class _NotebookPainter extends CustomPainter {
 }
 
 class NoteEditorScreen extends StatefulWidget {
-  const NoteEditorScreen({super.key});
+  const NoteEditorScreen({super.key, this.editNote});
+
+  /// If set, the editor opens in edit mode with existing ink as ghost layer.
+  final Note? editNote;
 
   @override
   State<NoteEditorScreen> createState() => _NoteEditorScreenState();
@@ -50,8 +55,29 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final List<DrawingCanvasController> _pages = [DrawingCanvasController()];
   int _page = 0;
   double _split = 0.5;
+  ui.Image? _ghostImage;
 
   DrawingCanvasController get _ink => _pages[_page];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEditNote();
+  }
+
+  Future<void> _loadEditNote() async {
+    final note = widget.editNote;
+    if (note == null) return;
+    _titleCtrl.text = note.title;
+    _contentCtrl.text = note.content;
+    final path = note.mediaPath;
+    if (path != null) {
+      final bytes = await dart_io.File(path).readAsBytes();
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      if (mounted) setState(() => _ghostImage = frame.image);
+    }
+  }
 
   @override
   void dispose() {
@@ -148,14 +174,52 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       type = NoteType.text;
     }
 
-    final noteId = await DbService.instance.insert(Note(
-      type: type,
-      title: title,
-      content: content,
-      mediaPath: mediaPath,
-      createdAt: now,
-      updatedAt: now,
-    ));
+    // If editing and we have a ghost + new ink, composite them
+    if (widget.editNote != null && _ghostImage != null && mediaPath != null) {
+      final ghost = _ghostImage!;
+      final inkBytes = await dart_io.File(mediaPath).readAsBytes();
+      final inkCodec = await ui.instantiateImageCodec(inkBytes);
+      final inkFrame = await inkCodec.getNextFrame();
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      final w = ghost.width.toDouble();
+      final h = ghost.height.toDouble();
+      canvas.drawRect(Rect.fromLTWH(0, 0, w, h),
+          Paint()..color = Colors.white);
+      canvas.drawImage(ghost, Offset.zero, Paint());
+      canvas.drawImage(inkFrame.image, Offset.zero, Paint());
+      final pic = recorder.endRecording();
+      final composed = await pic.toImage(ghost.width, ghost.height);
+      final bd = await composed.toByteData(format: ui.ImageByteFormat.png);
+      if (bd != null) {
+        mediaPath = await MediaService.instance
+            .savePngBytes(bd.buffer.asUint8List());
+        // delete old media
+        await MediaService.instance.deleteMedia(widget.editNote!.mediaPath);
+      }
+    }
+
+    int noteId;
+    if (widget.editNote != null) {
+      final updated = widget.editNote!.copyWith(
+        type: type,
+        title: title,
+        content: content,
+        mediaPath: mediaPath,
+        updatedAt: now,
+      );
+      await DbService.instance.update(updated);
+      noteId = updated.id!;
+    } else {
+      noteId = await DbService.instance.insert(Note(
+        type: type,
+        title: title,
+        content: content,
+        mediaPath: mediaPath,
+        createdAt: now,
+        updatedAt: now,
+      ));
+    }
 
     if (mediaPath != null) {
       unawaited(_enrichImage(noteId, mediaPath, langName));
