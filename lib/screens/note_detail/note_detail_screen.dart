@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -216,6 +219,35 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     setState(() => _note = updated);
   }
 
+  Future<void> _print() async {
+    final doc = pw.Document();
+    final hasImage = _note.mediaPath != null &&
+        File(_note.mediaPath!).existsSync() &&
+        !_note.mediaPath!.endsWith('.m4a');
+    doc.addPage(pw.Page(
+      pageFormat: PdfPageFormat.a4,
+      build: (pw.Context ctx) => pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(_note.title,
+              style: pw.TextStyle(
+                  fontSize: 20, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          if (_note.content.isNotEmpty)
+            pw.Text(_note.content,
+                style: const pw.TextStyle(fontSize: 13)),
+          if (hasImage) ...[
+            pw.SizedBox(height: 12),
+            pw.Image(pw.MemoryImage(
+                File(_note.mediaPath!).readAsBytesSync())),
+          ],
+        ],
+      ),
+    ));
+    await Printing.layoutPdf(
+        onLayout: (_) async => doc.save());
+  }
+
   Future<void> _delete(AppLocalizations l10n) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -265,6 +297,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           style: const TextStyle(fontSize: 16),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.print_outlined),
+            tooltip: 'Print',
+            onPressed: _print,
+          ),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: l10n.edit,
