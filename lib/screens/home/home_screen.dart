@@ -307,12 +307,16 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               title: Text('${_selected.length}'),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.select_all),
+                TextButton(
                   onPressed: () => setState(() {
                     _selected.addAll(
                         _notes.where((n) => n.id != null).map((n) => n.id!));
                   }),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: const [
+                    Icon(Icons.select_all, size: 18),
+                    SizedBox(width: 4),
+                    Text('\u0395\u03C0\u03B9\u03BB\u03BF\u03B3\u03AE \u038C\u03BB\u03C9\u03BD', style: TextStyle(fontSize: 13)),
+                  ]),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete_outline),

@@ -298,18 +298,28 @@ class DrawingToolbar extends StatelessWidget {
     );
   }
 
-  Widget _widthBtn(double w) {
-    final active = !controller.eraserMode && controller.width == w;
-    return GestureDetector(
-      onTap: () => controller.setWidth(w),
-      child: Container(
-        width: w + 12,
-        height: w + 12,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        decoration: BoxDecoration(
-          color: active ? controller.color : Colors.grey,
-          shape: BoxShape.circle,
-        ),
+
+
+  Widget _toolBtn({
+    required IconData icon,
+    required VoidCallback? onPressed,
+    String? tooltip,
+    bool active = false,
+    required ColorScheme cs,
+  }) {
+    return SizedBox(
+      width: 44,
+      height: 36,
+      child: IconButton(
+        icon: Icon(icon, size: 20),
+        tooltip: tooltip,
+        color: active ? cs.primary : cs.onSurface,
+        style: active
+            ? IconButton.styleFrom(backgroundColor: cs.primaryContainer)
+            : null,
+        visualDensity: VisualDensity.compact,
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
       ),
     );
   }
@@ -322,47 +332,73 @@ class DrawingToolbar extends StatelessWidget {
       animation: controller,
       builder: (context, _) => Container(
         color: cs.surface,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(children: [
-            ..._colors.map((c) => _swatch(context, c)),
-            const SizedBox(width: 6),
-            ..._widths.map(_widthBtn),
-            const SizedBox(width: 6),
-              IconButton(
-                icon: const Icon(Icons.auto_fix_normal),
-                tooltip: 'Eraser',
-                color: controller.eraserMode ? cs.primary : null,
-                style: controller.eraserMode
-                    ? IconButton.styleFrom(
-                        backgroundColor: cs.primaryContainer)
-                    : null,
-                visualDensity: VisualDensity.compact,
-                onPressed: () =>
-                    controller.setEraser(!controller.eraserMode),
-              ),
-              IconButton(
-                icon: const Icon(Icons.undo),
-                tooltip: l10n.undo,
-                visualDensity: VisualDensity.compact,
-                onPressed: controller.isEmpty ? null : controller.undo,
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_sweep),
-                tooltip: l10n.clearAll,
-                visualDensity: VisualDensity.compact,
-                onPressed: () => _confirmClear(context, l10n),
-              ),
-              IconButton(
-                icon: Icon(Icons.edit,
-                    color: controller.stylusOnly ? cs.primary : null),
-                tooltip: l10n.stylusOnly,
-                visualDensity: VisualDensity.compact,
-                onPressed: () =>
-                    controller.setStylusOnly(!controller.stylusOnly),
-              ),
-          ]),
+        padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Row 1: colors + widths
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ..._colors.map((c) => _swatch(context, c)),
+                Container(width: 1, height: 24, color: cs.outlineVariant),
+                ..._widths.map((w) {
+                  final active = !controller.eraserMode && controller.width == w;
+                  return GestureDetector(
+                    onTap: () => controller.setWidth(w),
+                    child: SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: Center(
+                        child: Container(
+                          width: w + 10,
+                          height: w + 10,
+                          decoration: BoxDecoration(
+                            color: active ? controller.color : Colors.grey,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+            Divider(height: 6, thickness: 0.5, color: cs.outlineVariant),
+            // Row 2: tools — evenly spaced, same size
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _toolBtn(
+                  icon: Icons.auto_fix_normal,
+                  tooltip: 'Eraser',
+                  active: controller.eraserMode,
+                  cs: cs,
+                  onPressed: () => controller.setEraser(!controller.eraserMode),
+                ),
+                _toolBtn(
+                  icon: Icons.undo,
+                  tooltip: l10n.undo,
+                  cs: cs,
+                  onPressed: controller.isEmpty ? null : controller.undo,
+                ),
+                _toolBtn(
+                  icon: Icons.delete_sweep,
+                  tooltip: l10n.clearAll,
+                  cs: cs,
+                  onPressed: () => _confirmClear(context, l10n),
+                ),
+                _toolBtn(
+                  icon: Icons.edit,
+                  tooltip: l10n.stylusOnly,
+                  active: controller.stylusOnly,
+                  cs: cs,
+                  onPressed: () =>
+                      controller.setStylusOnly(!controller.stylusOnly),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
