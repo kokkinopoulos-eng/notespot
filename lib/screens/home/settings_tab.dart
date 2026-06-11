@@ -3,6 +3,7 @@ import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../models/ai_provider.dart';
 import '../../services/ai_settings_service.dart';
+import '../../services/backup_service.dart';
 import '../../services/premium_service.dart';
 
 // --- Dialog result types ---
@@ -386,6 +387,50 @@ class _SettingsTabState extends State<SettingsTab> {
             ),
             const Divider(),
 
+            // Backup section
+            const Divider(),
+            _SectionHeader(title: l10n.backupData),
+            ListTile(
+              leading: const Icon(Icons.backup_outlined),
+              title: Text(l10n.backupData),
+              subtitle: const Text('Drive, Dropbox, OneDrive...'),
+              onTap: () => BackupService.instance.backup(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.restore_outlined),
+              title: Text(l10n.restoreData),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(l10n.restoreConfirmTitle),
+                    content: Text(l10n.restoreConfirmBody),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: Text(l10n.cancel),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.error,
+                        ),
+                        child: Text(l10n.restoreData),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed != true || !context.mounted) return;
+                final ok =
+                    await BackupService.instance.restore(context);
+                if (ok && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.restoreSuccess)),
+                  );
+                }
+              },
+            ),
             // About section
             _SectionHeader(title: l10n.about),
             ListTile(

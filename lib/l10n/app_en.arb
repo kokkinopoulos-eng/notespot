@@ -1,4 +1,4 @@
-﻿{
+{
   "@@locale": "en",
   "appTitle": "NoteSpot",
   "tagline": "Capture anything. Find everything.",
@@ -65,5 +65,10 @@
   "buyPremium": "Unlock",
   "restorePurchases": "Restore purchases",
   "purchaseSuccess": "Premium unlocked!",
-  "purchaseError": "Purchase failed"
+  "purchaseError": "Purchase failed",
+  "backupData": "Backup data",
+  "restoreData": "Restore data",
+  "restoreConfirmTitle": "Restore?",
+  "restoreConfirmBody": "This will replace all your current notes. Are you sure?",
+  "restoreSuccess": "Restore successful! Please restart the app."
 }

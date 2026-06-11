@@ -493,6 +493,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Purchase failed'**
   String get purchaseError;
+
+  /// No description provided for @backupData.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup data'**
+  String get backupData;
+
+  /// No description provided for @restoreData.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore data'**
+  String get restoreData;
+
+  /// No description provided for @restoreConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore?'**
+  String get restoreConfirmTitle;
+
+  /// No description provided for @restoreConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This will replace all your current notes. Are you sure?'**
+  String get restoreConfirmBody;
+
+  /// No description provided for @restoreSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore successful! Please restart the app.'**
+  String get restoreSuccess;
 }
 
 class _AppLocalizationsDelegate

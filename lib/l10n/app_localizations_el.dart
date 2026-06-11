@@ -206,4 +206,21 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get purchaseError => 'Η αγορά απέτυχε';
+
+  @override
+  String get backupData => 'Αντίγραφο ασφαλείας';
+
+  @override
+  String get restoreData => 'Επαναφορά δεδομένων';
+
+  @override
+  String get restoreConfirmTitle => 'Επαναφορά;';
+
+  @override
+  String get restoreConfirmBody =>
+      'Αυτό θα αντικαταστήσει όλες τις τρέχουσες σημειώσεις. Είστε σίγουροι;';
+
+  @override
+  String get restoreSuccess =>
+      'Επαναφορά επιτυχής! Επανεκκινήστε την εφαρμογή.';
 }

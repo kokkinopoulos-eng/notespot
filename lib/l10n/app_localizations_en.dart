@@ -206,4 +206,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get purchaseError => 'Purchase failed';
+
+  @override
+  String get backupData => 'Backup data';
+
+  @override
+  String get restoreData => 'Restore data';
+
+  @override
+  String get restoreConfirmTitle => 'Restore?';
+
+  @override
+  String get restoreConfirmBody =>
+      'This will replace all your current notes. Are you sure?';
+
+  @override
+  String get restoreSuccess => 'Restore successful! Please restart the app.';
 }
