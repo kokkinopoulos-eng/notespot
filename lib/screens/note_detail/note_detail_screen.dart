@@ -10,6 +10,7 @@ import '../../core/category_labels.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/db_service.dart';
+import '../capture/note_editor_screen.dart';
 import '../../services/media_service.dart';
 
 // --- Edit dialog ---
@@ -199,6 +200,20 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   }
 
   Future<void> _edit(AppLocalizations l10n) async {
+    final hasInk = _note.mediaPath != null &&
+        File(_note.mediaPath!).existsSync() &&
+        !_note.mediaPath!.endsWith('.m4a');
+    if (hasInk) {
+      final saved = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => NoteEditorScreen(editNote: _note)),
+      );
+      if (saved == true && mounted) {
+        final refreshed = await DbService.instance.getById(_note.id!);
+        if (refreshed != null && mounted) setState(() => _note = refreshed);
+      }
+      return;
+    }
     final result = await showDialog<(String, String)>(
       context: context,
       builder: (_) =>

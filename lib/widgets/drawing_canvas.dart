@@ -53,6 +53,24 @@ class DrawingCanvasController extends ChangeNotifier {
   bool stylusOnly = false;
   bool eraserMode = false;
   Size? lastLayoutSize;
+  Size? _maxLayout;
+
+  /// Largest size the canvas has ever had - an open keyboard can never
+  /// shrink the saved drawing.
+  Size? get renderSize => _maxLayout ?? lastLayoutSize;
+
+  void updateLayout(Size s) {
+    lastLayoutSize = s;
+    final m = _maxLayout;
+    if (m == null) {
+      _maxLayout = s;
+    } else if (s.width > m.width || s.height > m.height) {
+      _maxLayout = Size(
+        s.width > m.width ? s.width : m.width,
+        s.height > m.height ? s.height : m.height,
+      );
+    }
+  }
 
   bool get isEmpty => strokes.isEmpty;
 
@@ -190,14 +208,14 @@ class DrawingCanvasController extends ChangeNotifier {
 /// page 1 on top, page 2 below, etc., separated by a thin grey line.
 Future<Uint8List?> renderPagesToPng(List<DrawingCanvasController> pages) async {
   final drawn =
-      pages.where((p) => !p.isEmpty && p.lastLayoutSize != null).toList();
+      pages.where((p) => !p.isEmpty && p.renderSize != null).toList();
   if (drawn.isEmpty) return null;
 
   const sep = 3.0;
   double width = 0;
   double totalH = 0;
   for (final p in drawn) {
-    final s = p.lastLayoutSize!;
+    final s = p.renderSize!;
     if (s.width > width) width = s.width;
     totalH += s.height;
   }
@@ -217,7 +235,7 @@ Future<Uint8List?> renderPagesToPng(List<DrawingCanvasController> pages) async {
     canvas.translate(0, y);
     DrawPainter.paintStrokes(canvas, p.strokes);
     canvas.restore();
-    y += p.lastLayoutSize!.height;
+    y += p.renderSize!.height;
     if (i < drawn.length - 1) {
       canvas.drawRect(
         Rect.fromLTWH(0, y, width, sep),
@@ -263,7 +281,7 @@ class DrawingSurface extends StatelessWidget {
         animation: controller,
         builder: (context, _) => LayoutBuilder(
           builder: (context, constraints) {
-            controller.lastLayoutSize = constraints.biggest;
+            controller.updateLayout(constraints.biggest);
             return Listener(
               behavior: HitTestBehavior.opaque,
               onPointerDown: _down,

@@ -206,12 +206,12 @@ class _HomeScreenState extends State<HomeScreen> {
             child: NoteCard(
               note: note,
               onTap: () async {
-                final result = await Navigator.push<bool>(
+                await Navigator.push<bool>(
                   context,
                   MaterialPageRoute(
                       builder: (_) => NoteDetailScreen(note: note)),
                 );
-                if (result == true) _loadNotes();
+                _loadNotes();
               },
             ),
           ),

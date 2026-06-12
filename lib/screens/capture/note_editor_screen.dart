@@ -72,10 +72,14 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     _contentCtrl.text = note.content;
     final path = note.mediaPath;
     if (path != null) {
-      final bytes = await dart_io.File(path).readAsBytes();
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      if (mounted) setState(() => _ghostImage = frame.image);
+      try {
+        final f = dart_io.File(path);
+        final bytes = await f.readAsBytes();
+        final codec = await ui.instantiateImageCodec(bytes);
+        final frame = await codec.getNextFrame();
+        if (mounted) setState(() => _ghostImage = frame.image);
+      } catch (e) {
+      }
     }
   }
 
@@ -176,26 +180,41 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
     // If editing and we have a ghost + new ink, composite them
     if (widget.editNote != null && _ghostImage != null && mediaPath != null) {
+      // Composite: ghost image + NEW STROKES drawn as vectors on top
+      // (never the intermediate ink PNG - its white background would
+      // cover the ghost).
       final ghost = _ghostImage!;
-      final inkBytes = await dart_io.File(mediaPath).readAsBytes();
-      final inkCodec = await ui.instantiateImageCodec(inkBytes);
-      final inkFrame = await inkCodec.getNextFrame();
+      final intermediate = mediaPath;
+      final drawnPages =
+          _pages.where((p) => !p.isEmpty && p.renderSize != null).toList();
+      double pw = 0, ph = 0;
+      for (final p in drawnPages) {
+        if (p.renderSize!.width > pw) pw = p.renderSize!.width;
+        ph += p.renderSize!.height;
+      }
+      final w = ghost.width.toDouble() > pw ? ghost.width.toDouble() : pw;
+      final h = ghost.height.toDouble() > ph ? ghost.height.toDouble() : ph;
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
-      final w = ghost.width.toDouble();
-      final h = ghost.height.toDouble();
-      canvas.drawRect(Rect.fromLTWH(0, 0, w, h),
-          Paint()..color = Colors.white);
+      canvas.drawRect(
+          Rect.fromLTWH(0, 0, w, h), Paint()..color = Colors.white);
       canvas.drawImage(ghost, Offset.zero, Paint());
-      canvas.drawImage(inkFrame.image, Offset.zero, Paint());
+      double yOff = 0;
+      for (final p in drawnPages) {
+        canvas.save();
+        canvas.translate(0, yOff);
+        DrawPainter.paintStrokes(canvas, p.strokes);
+        canvas.restore();
+        yOff += p.renderSize!.height;
+      }
       final pic = recorder.endRecording();
-      final composed = await pic.toImage(ghost.width, ghost.height);
+      final composed = await pic.toImage(w.toInt(), h.toInt());
       final bd = await composed.toByteData(format: ui.ImageByteFormat.png);
       if (bd != null) {
         mediaPath = await MediaService.instance
             .savePngBytes(bd.buffer.asUint8List());
-        // delete old media
         await MediaService.instance.deleteMedia(widget.editNote!.mediaPath);
+        await MediaService.instance.deleteMedia(intermediate);
       }
     }
 
@@ -231,21 +250,13 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     Navigator.pop(context, true);
   }
 
-  String _mergeContent(String existing, String extracted) {
-    final ex = extracted.trim();
-    if (ex.isEmpty) return existing;
-    if (existing.isEmpty) return ex;
-    if (existing.contains(ex)) return existing;
-    return '$existing\n\n$ex';
-  }
-
   Future<void> _enrichImage(int noteId, String path, String lang) async {
     final analysis = await CloudAiService.instance.analyzeImage(path, lang);
     if (analysis == null) return;
     final note = await DbService.instance.getById(noteId);
     if (note == null) return;
+    // Drawings: AI is used for categorisation only - never touches content.
     await DbService.instance.update(note.copyWith(
-      content: _mergeContent(note.content, analysis.extractedText),
       category: analysis.category,
       tags: analysis.tags,
       updatedAt: DateTime.now(),
@@ -464,6 +475,13 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                               child: CustomPaint(
                                 painter:
                                     _NotebookPainter(),
+                              ),
+                            ),
+                          if (_ghostImage != null)
+                            Positioned.fill(
+                              child: Opacity(
+                                opacity: 0.3,
+                                child: RawImage(image: _ghostImage, fit: BoxFit.fill),
                               ),
                             ),
                             Positioned.fill(
