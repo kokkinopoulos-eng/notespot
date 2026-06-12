@@ -86,18 +86,24 @@ class _SearchTabState extends State<SearchTab> {
                   : ListView.builder(
                       padding: const EdgeInsets.only(top: 4, bottom: 16),
                       itemCount: _results.length,
-                      itemBuilder: (context, i) => NoteCard(
-                        note: _results[i],
-                        onTap: () async {
-                          final deleted = await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  NoteDetailScreen(note: _results[i]),
-                            ),
-                          );
-                          if (deleted == true) _run(_controller.text);
-                        },
+                      itemBuilder: (context, i) => Card(
+                        color: const Color(0xFFF3EEF8),
+                        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: NoteCard(
+                          note: _results[i],
+                          onTap: () async {
+                            final deleted = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    NoteDetailScreen(note: _results[i]),
+                              ),
+                            );
+                            if (deleted == true) _run(_controller.text);
+                          },
+                        ),
                       ),
                     ),
         ),

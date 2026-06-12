@@ -222,4 +222,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get restoreSuccess => 'Restore complete!';
+
+  @override
+  String get favorites => 'Favorites';
+
+  @override
+  String get noFavorites => 'No favorites yet';
 }

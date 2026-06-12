@@ -70,5 +70,7 @@
   "restoreData": "Restore data",
   "restoreConfirmTitle": "Restore?",
   "restoreConfirmBody": "Notes from the backup will be merged with your existing notes - nothing is deleted. For duplicates the newer version wins.",
-  "restoreSuccess": "Restore complete!"
+  "restoreSuccess": "Restore complete!",
+  "favorites": "Favorites",
+  "noFavorites": "No favorites yet"
 }

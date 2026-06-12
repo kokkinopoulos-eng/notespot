@@ -42,17 +42,14 @@ class NoteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).toString();
     final date = DateFormat.yMMMd(locale).format(note.createdAt);
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: ListTile(
-        onTap: onTap,
-        leading: _leading(),
-        title: Text(note.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Text(
-          note.content.isEmpty ? date : '${note.content}\n$date',
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
+    return ListTile(
+      onTap: onTap,
+      leading: _leading(),
+      title: Text(note.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(
+        note.content.isEmpty ? date : '${note.content}\n$date',
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

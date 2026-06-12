@@ -197,7 +197,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _noteItem(Note note) {
     final cs = Theme.of(context).colorScheme;
     final sel = _selected.contains(note.id);
-    return GestureDetector(
+    return Card(
+      color: const Color(0xFFF3EEF8),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: GestureDetector(
       onLongPress: () => setState(() => _selected.add(note.id!)),
       child: Stack(
         children: [
@@ -240,6 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
         ],
       ),
+    ),
     );
   }
 
@@ -278,13 +284,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _tabBtn(int index, IconData icon, String tooltip) {
-    final cs = Theme.of(context).colorScheme;
     final active = _tab == index;
     return IconButton(
-      icon: Icon(icon),
-      color: active ? cs.primary : cs.onPrimaryContainer,
+      icon: Icon(icon, size: 28),
+      color: active ? Colors.white : Colors.white60,
       style: active
-          ? IconButton.styleFrom(backgroundColor: cs.surface)
+          ? IconButton.styleFrom(
+              backgroundColor: Colors.white.withOpacity(0.15))
           : null,
       onPressed: () => setState(() {
         _tab = index;
@@ -337,7 +343,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       bottomNavigationBar: BottomAppBar(
-        color: cs.primaryContainer,
+        color: const Color(0xFF6B4FA0),
+        surfaceTintColor: Colors.transparent,
         child: Row(
           children: [
             _tabBtn(0, Icons.notes, l10n.notesTab),
@@ -345,14 +352,23 @@ class _HomeScreenState extends State<HomeScreen> {
             _tabBtn(2, Icons.settings, l10n.settingsTab),
             const Spacer(),
             IconButton(
+              icon: Icon(
+                _tab == 3 ? Icons.star : Icons.star_border,
+                size: 28,
+                color: _tab == 3 ? Colors.amber : Colors.white60,
+              ),
+              tooltip: l10n.favorites,
+              onPressed: () => setState(() => _tab = 3),
+            ),
+            IconButton(
               icon: const Icon(Icons.mic_outlined),
-              color: cs.onPrimaryContainer,
+              color: Colors.white,
               onPressed: _quickDictation,
               tooltip: l10n.voiceNote,
             ),
             IconButton(
               icon: const Icon(Icons.photo_camera_outlined),
-              color: cs.onPrimaryContainer,
+              color: Colors.white,
               onPressed: _quickPhoto,
               tooltip: l10n.photoNote,
             ),

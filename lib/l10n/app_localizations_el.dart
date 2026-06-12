@@ -222,4 +222,10 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get restoreSuccess => 'Η επαναφορά ολοκληρώθηκε!';
+
+  @override
+  String get favorites => 'Αγαπημένα';
+
+  @override
+  String get noFavorites => 'Δεν υπάρχουν αγαπημένα';
 }

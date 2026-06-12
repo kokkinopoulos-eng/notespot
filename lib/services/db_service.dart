@@ -9,7 +9,7 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const _dbName = 'notespot.db';
-  static const _dbVersion = 1;
+  static const _dbVersion = 2;
 
   Database? _db;
 
@@ -17,7 +17,14 @@ class DbService {
 
   Future<Database> _open() async {
     final path = join(await getDatabasesPath(), _dbName);
-    return openDatabase(path, version: _dbVersion, onCreate: _onCreate);
+    return openDatabase(path, version: _dbVersion, onCreate: _onCreate, onUpgrade: _onUpgrade);
+  }
+
+  Future<void> _onUpgrade(Database db, int oldV, int newV) async {
+    if (oldV < 2) {
+      await db.execute(
+          'ALTER TABLE notes ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -31,6 +38,7 @@ class DbService {
         tags TEXT NOT NULL DEFAULT '',
         media_path TEXT,
         search_text TEXT NOT NULL DEFAULT '',
+        is_favorite INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       )
@@ -73,6 +81,13 @@ class DbService {
         await db.query('notes', where: 'id = ?', whereArgs: [id], limit: 1);
     if (rows.isEmpty) return null;
     return Note.fromMap(rows.first);
+  }
+
+  Future<List<Note>> getFavorites() async {
+    final db = await database;
+    final rows = await db.query('notes',
+        where: 'is_favorite = 1', orderBy: 'updated_at DESC');
+    return rows.map(Note.fromMap).toList();
   }
 
   Future<List<Note>> getAll() async {

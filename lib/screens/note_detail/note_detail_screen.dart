@@ -234,6 +234,12 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     setState(() => _note = updated);
   }
 
+  Future<void> _toggleFavorite() async {
+    final updated = _note.copyWith(isFavorite: !_note.isFavorite);
+    await DbService.instance.update(updated);
+    if (mounted) setState(() => _note = updated);
+  }
+
   Future<void> _print() async {
     final doc = pw.Document();
     final hasImage = _note.mediaPath != null &&
@@ -312,6 +318,14 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           style: const TextStyle(fontSize: 16),
         ),
         actions: [
+          IconButton(
+            icon: Icon(
+              _note.isFavorite ? Icons.star : Icons.star_border,
+              color: _note.isFavorite ? Colors.amber : null,
+            ),
+            tooltip: _note.isFavorite ? 'Αφαίρεση από αγαπημένα' : 'Προσθήκη στα αγαπημένα',
+            onPressed: _toggleFavorite,
+          ),
           IconButton(
             icon: const Icon(Icons.print_outlined),
             tooltip: 'Print',

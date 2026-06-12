@@ -9,6 +9,7 @@ class Note {
     this.category = '',
     this.tags = const [],
     this.mediaPath,
+    this.isFavorite = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -20,6 +21,7 @@ class Note {
   final String category;
   final List<String> tags;
   final String? mediaPath;
+  final bool isFavorite;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -31,6 +33,7 @@ class Note {
     String? category,
     List<String>? tags,
     String? mediaPath,
+    bool? isFavorite,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -42,6 +45,7 @@ class Note {
       category: category ?? this.category,
       tags: tags ?? this.tags,
       mediaPath: mediaPath ?? this.mediaPath,
+      isFavorite: isFavorite ?? this.isFavorite,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -55,6 +59,7 @@ class Note {
         'category': category,
         'tags': tags.join(','),
         'media_path': mediaPath,
+        'is_favorite': isFavorite ? 1 : 0,
         'created_at': createdAt.millisecondsSinceEpoch,
         'updated_at': updatedAt.millisecondsSinceEpoch,
       };
@@ -70,6 +75,7 @@ class Note {
             .where((t) => t.isNotEmpty)
             .toList(),
         mediaPath: map['media_path'] as String?,
+        isFavorite: (map['is_favorite'] as int? ?? 0) == 1,
         createdAt:
             DateTime.fromMillisecondsSinceEpoch(map['created_at'] as int),
         updatedAt:
