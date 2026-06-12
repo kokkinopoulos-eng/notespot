@@ -31,6 +31,7 @@ dependencies:
   in_app_purchase: ^3.3.0
   printing: ^5.14.3
   archive: ^4.0.9
+  flutter_colorpicker: ^1.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -14,27 +14,44 @@ import '../../widgets/drawing_canvas.dart';
 
 const int kMaxInkPages = 5;
 
+/// Notebook lines for the ink canvas pane. Fills the bgColor first, then
+/// draws ruled lines and a left margin guide on top.
 class _NotebookPainter extends CustomPainter {
-  const _NotebookPainter();
+  const _NotebookPainter({this.bgColor = Colors.black});
+  final Color bgColor;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final line = Paint()
-      ..color = const Color(0xFFB7D3E8)
-      ..strokeWidth = 1;
-    const step = 30.0;
-    for (double y = step; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), line);
-    }
-    final margin = Paint()
-      ..color = const Color(0xFFE8A0A0)
-      ..strokeWidth = 1.2;
-    canvas.drawLine(
-        const Offset(42, 0), Offset(42, size.height), margin);
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..color = bgColor,
+    );
+  
   }
 
   @override
-  bool shouldRepaint(_NotebookPainter old) => false;
+  bool shouldRepaint(_NotebookPainter old) => old.bgColor != bgColor;
+}
+
+/// Lightweight notebook lines for the text pane (always white bg).
+/// Thin 0.5 px blue-tinted rules and margin, independent of canvas bg.
+class _TextNotebookPainter extends CustomPainter {
+  const _TextNotebookPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.blue.withValues(alpha: 0.3)
+      ..strokeWidth = 0.5;
+    const step = 30.0;
+    for (double y = step; y < size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+    canvas.drawLine(const Offset(42, 0), Offset(42, size.height), paint);
+  }
+
+  @override
+  bool shouldRepaint(_TextNotebookPainter old) => false;
 }
 
 class NoteEditorScreen extends StatefulWidget {
@@ -70,6 +87,10 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     if (note == null) return;
     _titleCtrl.text = note.title;
     _contentCtrl.text = note.content;
+    // Restore canvas background for all existing pages.
+    for (final p in _pages) {
+      p.bgColor = note.canvasBg;
+    }
     final path = note.mediaPath;
     if (path != null) {
       try {
@@ -78,8 +99,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         final codec = await ui.instantiateImageCodec(bytes);
         final frame = await codec.getNextFrame();
         if (mounted) setState(() => _ghostImage = frame.image);
-      } catch (e) {
-      }
+      } catch (_) {}
     }
   }
 
@@ -104,11 +124,11 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     final from = _ink;
     setState(() {
       _page = i;
-      // keep pen settings consistent across pages
       _ink
         ..color = from.color
         ..width = from.width
-        ..stylusOnly = from.stylusOnly;
+        ..stylusOnly = from.stylusOnly
+        ..bgColor = from.bgColor;
     });
   }
 
@@ -119,7 +139,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       _pages.add(DrawingCanvasController()
         ..color = from.color
         ..width = from.width
-        ..stylusOnly = from.stylusOnly);
+        ..stylusOnly = from.stylusOnly
+        ..bgColor = from.bgColor);
       _page = _pages.length - 1;
     });
   }
@@ -161,6 +182,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     final langName = Localizations.localeOf(context).languageCode == 'el'
         ? 'Greek'
         : 'English';
+    final canvasBg = _pages[0].bgColor;
 
     String? mediaPath;
     NoteType type;
@@ -178,11 +200,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       type = NoteType.text;
     }
 
-    // If editing and we have a ghost + new ink, composite them
+    // If editing and we have a ghost + new ink, composite them.
     if (widget.editNote != null && _ghostImage != null && mediaPath != null) {
-      // Composite: ghost image + NEW STROKES drawn as vectors on top
-      // (never the intermediate ink PNG - its white background would
-      // cover the ghost).
       final ghost = _ghostImage!;
       final intermediate = mediaPath;
       final drawnPages =
@@ -197,7 +216,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
       canvas.drawRect(
-          Rect.fromLTWH(0, 0, w, h), Paint()..color = Colors.white);
+          Rect.fromLTWH(0, 0, w, h), Paint()..color = canvasBg);
       canvas.drawImage(ghost, Offset.zero, Paint());
       double yOff = 0;
       for (final p in drawnPages) {
@@ -225,6 +244,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         title: title,
         content: content,
         mediaPath: mediaPath,
+        canvasBg: canvasBg,
         updatedAt: now,
       );
       await DbService.instance.update(updated);
@@ -235,6 +255,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         title: title,
         content: content,
         mediaPath: mediaPath,
+        canvasBg: canvasBg,
         createdAt: now,
         updatedAt: now,
       ));
@@ -255,7 +276,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     if (analysis == null) return;
     final note = await DbService.instance.getById(noteId);
     if (note == null) return;
-    // Drawings: AI is used for categorisation only - never touches content.
     await DbService.instance.update(note.copyWith(
       category: analysis.category,
       tags: analysis.tags,
@@ -358,7 +378,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         actions: [
           AnimatedBuilder(
             animation: Listenable.merge(_pages),
-            builder: (_, __) => TextButton(
+            builder: (_, _) => TextButton(
               onPressed: _hasContent ? () => _save(l10n) : null,
               child: Text(l10n.save),
             ),
@@ -392,33 +412,42 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                         ],
                       ),
                       Expanded(
-                        child: Scrollbar(
-                          controller: _textScroll,
-                          thumbVisibility: true,
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                            child: TextField(
-                              controller: _contentCtrl,
-                              focusNode: _contentFocus,
-                              scrollController: _textScroll,
-                              maxLines: null,
-                              expands: true,
-                              decoration: InputDecoration(
-                                hintText: l10n.noteHint,
-                                hintStyle:
-                                    TextStyle(color: Colors.grey.shade400),
-                                border: InputBorder.none,
+                        child: Stack(
+                          children: [
+                            const Positioned.fill(
+                              child: CustomPaint(
+                                painter: _TextNotebookPainter(),
                               ),
-                              style: const TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 15,
-                                height: 1.5,
-                                color: Colors.black87,
-                              ),
-                              onChanged: (_) => setState(() {}),
                             ),
-                          ),
+                            Scrollbar(
+                              controller: _textScroll,
+                              thumbVisibility: true,
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                                child: TextField(
+                                  controller: _contentCtrl,
+                                  focusNode: _contentFocus,
+                                  scrollController: _textScroll,
+                                  maxLines: null,
+                                  expands: true,
+                                  decoration: InputDecoration(
+                                    hintText: l10n.noteHint,
+                                    hintStyle: TextStyle(
+                                        color: Colors.grey.shade400),
+                                    border: InputBorder.none,
+                                  ),
+                                  style: const TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontSize: 15,
+                                    height: 1.5,
+                                    color: Colors.black87,
+                                  ),
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -427,16 +456,16 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               ),
               // ================= Divider handle =================
               _divider(context, constraints.maxHeight),
-              // ================= Ink pane: fixed page, no scrolling =====
+              // ================= Ink pane =================
               Expanded(
                 flex: 1000 - textFlex,
-                child: Container(
-                  color: Colors.white,
-                  child: Column(
-                    children: [
-                      AnimatedBuilder(
-                        animation: Listenable.merge(_pages),
-                        builder: (_, __) => _paneHeader(
+                child: AnimatedBuilder(
+                  animation: Listenable.merge(_pages),
+                  builder: (_, _) => Container(
+                    color: _ink.bgColor,
+                    child: Column(
+                      children: [
+                        _paneHeader(
                           icon: Icons.gesture,
                           label: l10n.drawNote.toUpperCase(),
                           bg: cs.tertiaryContainer,
@@ -456,9 +485,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                                     color: cs.onTertiaryContainer)),
                             IconButton(
                               icon: Icon(
-                                  atLast
-                                      ? Icons.add
-                                      : Icons.chevron_right,
+                                  atLast ? Icons.add : Icons.chevron_right,
                                   size: 20),
                               visualDensity: VisualDensity.compact,
                               onPressed: atLast
@@ -467,35 +494,36 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                             ),
                           ],
                         ),
-                      ),
-                      Expanded(
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: CustomPaint(
-                                painter:
-                                    _NotebookPainter(),
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: CustomPaint(
+                                  painter:
+                                      _NotebookPainter(bgColor: _ink.bgColor),
+                                ),
                               ),
-                            ),
-                          if (_ghostImage != null)
-                            Positioned.fill(
-                              child: Opacity(
-                                opacity: 0.3,
-                                child: RawImage(image: _ghostImage, fit: BoxFit.fill),
+                              if (_ghostImage != null)
+                                Positioned.fill(
+                                  child: Opacity(
+                                    opacity: 0.3,
+                                    child: RawImage(
+                                        image: _ghostImage,
+                                        fit: BoxFit.fill),
+                                  ),
+                                ),
+                              Positioned.fill(
+                                child: Listener(
+                                  onPointerDown: (_) =>
+                                      _contentFocus.unfocus(),
+                                  child: DrawingSurface(controller: _ink),
+                                ),
                               ),
-                            ),
-                            Positioned.fill(
-                              child: Listener(
-                                onPointerDown: (_) =>
-                                    _contentFocus.unfocus(),
-                                child:
-                                    DrawingSurface(controller: _ink),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -44,10 +44,14 @@ class _SplashScreenState extends State<SplashScreen> {
     ),
   );
   @override
-  Widget build(BuildContext context) => AnimatedSwitcher(
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () { if (!_done && mounted) setState(() => _done = true); },
+    behavior: HitTestBehavior.opaque,
+    child: AnimatedSwitcher(
     duration: const Duration(milliseconds: 400),
     child: _done
         ? KeyedSubtree(key: const ValueKey('app'), child: widget.next)
         : _body(),
+    ),
   );
 }

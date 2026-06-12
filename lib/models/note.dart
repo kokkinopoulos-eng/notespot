@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum NoteType { photo, voice, handwriting, text }
 
 class Note {
@@ -10,6 +12,7 @@ class Note {
     this.tags = const [],
     this.mediaPath,
     this.isFavorite = false,
+    this.canvasBg = const Color(0xFF000000),
     required this.createdAt,
     required this.updatedAt,
   });
@@ -22,6 +25,7 @@ class Note {
   final List<String> tags;
   final String? mediaPath;
   final bool isFavorite;
+  final Color canvasBg;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -34,6 +38,7 @@ class Note {
     List<String>? tags,
     String? mediaPath,
     bool? isFavorite,
+    Color? canvasBg,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -46,6 +51,7 @@ class Note {
       tags: tags ?? this.tags,
       mediaPath: mediaPath ?? this.mediaPath,
       isFavorite: isFavorite ?? this.isFavorite,
+      canvasBg: canvasBg ?? this.canvasBg,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -60,6 +66,7 @@ class Note {
         'tags': tags.join(','),
         'media_path': mediaPath,
         'is_favorite': isFavorite ? 1 : 0,
+        'canvas_bg': canvasBg.value,
         'created_at': createdAt.millisecondsSinceEpoch,
         'updated_at': updatedAt.millisecondsSinceEpoch,
       };
@@ -76,6 +83,7 @@ class Note {
             .toList(),
         mediaPath: map['media_path'] as String?,
         isFavorite: (map['is_favorite'] as int? ?? 0) == 1,
+        canvasBg: Color(map['canvas_bg'] as int? ?? 0xFFFFFFFF),
         createdAt:
             DateTime.fromMillisecondsSinceEpoch(map['created_at'] as int),
         updatedAt:

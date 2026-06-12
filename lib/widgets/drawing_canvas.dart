@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import '../l10n/app_localizations.dart';
 
@@ -37,7 +38,7 @@ class DrawPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final all = [...strokes, if (current != null) current!];
+    final all = [...strokes, ?current];
     paintStrokes(canvas, all);
   }
 
@@ -48,14 +49,16 @@ class DrawPainter extends CustomPainter {
 class DrawingCanvasController extends ChangeNotifier {
   final List<DrawingStroke> strokes = [];
   DrawingStroke? current;
-  Color color = Colors.black;
+  Color color = Colors.white;
   double width = 3.0;
   bool stylusOnly = false;
   bool eraserMode = false;
+  Color bgColor = Colors.black;
+  Color strokeColor = Colors.white;
   Size? lastLayoutSize;
   Size? _maxLayout;
 
-  /// Largest size the canvas has ever had - an open keyboard can never
+  /// Largest size the canvas has ever had — an open keyboard can never
   /// shrink the saved drawing.
   Size? get renderSize => _maxLayout ?? lastLayoutSize;
 
@@ -105,6 +108,17 @@ class DrawingCanvasController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setBgColor(Color c) {
+    bgColor = c;
+    // Auto-switch stroke to white on dark backgrounds, back to black on light.
+    if (c.computeLuminance() < 0.3 && color == Colors.black) {
+      color = Colors.white;
+    } else if (c.computeLuminance() >= 0.3 && color == Colors.white) {
+      color = Colors.black;
+    }
+    notifyListeners();
+  }
+
   void undo() {
     if (strokes.isNotEmpty) {
       strokes.removeLast();
@@ -120,7 +134,7 @@ class DrawingCanvasController extends ChangeNotifier {
 
   /// Removes every stroke passing near [p].
   void eraseAt(Offset p) {
-    final r = 18.0;
+    const r = 18.0;
     final before = strokes.length;
     strokes.removeWhere(
         (s) => s.points.any((q) => (q - p).distance <= r + s.width / 2));
@@ -147,10 +161,8 @@ class DrawingCanvasController extends ChangeNotifier {
   }
 
   /// Scribble-to-erase: fast back-and-forth in a confined bounding box.
-  /// Works with S Pen (dense points, low pressure variance).
   bool _isScribble(DrawingStroke s) {
     if (s.points.length < 10) return false;
-    // Bounding box
     double minX = s.points[0].dx, maxX = minX;
     double minY = s.points[0].dy, maxY = minY;
     for (final p in s.points) {
@@ -161,9 +173,7 @@ class DrawingCanvasController extends ChangeNotifier {
     }
     final w = maxX - minX;
     final h = maxY - minY;
-    // Must be wide (horizontal scribble) or a compact zigzag
     if (w < 40 && h < 40) return false;
-    // Count horizontal direction reversals
     int flips = 0;
     double prevDx = 0;
     for (int i = 4; i < s.points.length; i += 3) {
@@ -173,13 +183,11 @@ class DrawingCanvasController extends ChangeNotifier {
         prevDx = dx;
       }
     }
-    // Total path length vs bounding box perimeter
     double len = 0;
     for (int i = 1; i < s.points.length; i++) {
       len += (s.points[i] - s.points[i - 1]).distance;
     }
     final perim = 2 * (w + h);
-    // Scribble = many reversals AND path much longer than bounding box
     return flips >= 3 && len > 1.8 * perim;
   }
 
@@ -188,7 +196,6 @@ class DrawingCanvasController extends ChangeNotifier {
     if (c == null) return;
     current = null;
     if (!eraserMode && _isScribble(c)) {
-      // Erase all strokes that overlap with the scribble path
       strokes.removeWhere((s) => s.points.any((q) =>
           c.points.any((p) => (q - p).distance <= 16 + s.width / 2)));
       notifyListeners();
@@ -204,8 +211,8 @@ class DrawingCanvasController extends ChangeNotifier {
   }
 }
 
-/// Renders one or more ink pages into a single tall PNG:
-/// page 1 on top, page 2 below, etc., separated by a thin grey line.
+/// Renders one or more ink pages into a single tall PNG.
+/// Each page section is filled with that page's bgColor before strokes.
 Future<Uint8List?> renderPagesToPng(List<DrawingCanvasController> pages) async {
   final drawn =
       pages.where((p) => !p.isEmpty && p.renderSize != null).toList();
@@ -223,16 +230,16 @@ Future<Uint8List?> renderPagesToPng(List<DrawingCanvasController> pages) async {
 
   final recorder = ui.PictureRecorder();
   final canvas = Canvas(recorder);
-  canvas.drawRect(
-    Rect.fromLTWH(0, 0, width, totalH),
-    Paint()..color = Colors.white,
-  );
 
   double y = 0;
   for (int i = 0; i < drawn.length; i++) {
     final p = drawn[i];
     canvas.save();
     canvas.translate(0, y);
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, width, p.renderSize!.height),
+      Paint()..color = p.bgColor,
+    );
     DrawPainter.paintStrokes(canvas, p.strokes);
     canvas.restore();
     y += p.renderSize!.height;
@@ -299,7 +306,8 @@ class DrawingSurface extends StatelessWidget {
   }
 }
 
-/// Pen toolbar: colors, widths, eraser, undo, clear, stylus-only toggle.
+/// Pen toolbar: stroke colors, widths, eraser, undo, clear, stylus-only,
+/// and canvas background color picker.
 class DrawingToolbar extends StatelessWidget {
   const DrawingToolbar({super.key, required this.controller});
 
@@ -338,8 +346,43 @@ class DrawingToolbar extends StatelessWidget {
     if (confirmed == true) controller.clear();
   }
 
+  Future<void> _pickBgColor(
+      BuildContext context, AppLocalizations l10n) async {
+    Color picked = controller.bgColor;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Canvas color'),
+        content: StatefulBuilder(
+          builder: (ctx, setS) => ColorPicker(
+            pickerColor: picked,
+            onColorChanged: (c) => setS(() => picked = c),
+            pickerAreaHeightPercent: 0.7,
+            enableAlpha: false,
+            displayThumbColor: true,
+            labelTypes: const [],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              controller.setBgColor(picked);
+              Navigator.pop(ctx);
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _swatch(BuildContext context, Color c) {
-    final active = !controller.eraserMode && controller.color.value == c.value;
+    final active =
+        !controller.eraserMode && controller.color.toARGB32() == c.toARGB32();
     return GestureDetector(
       onTap: () => controller.setColor(c),
       child: Container(
@@ -359,8 +402,6 @@ class DrawingToolbar extends StatelessWidget {
       ),
     );
   }
-
-
 
   Widget _toolBtn({
     required IconData icon,
@@ -398,14 +439,15 @@ class DrawingToolbar extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Row 1: colors + widths
+            // Row 1: stroke colors + widths
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ..._colors.map((c) => _swatch(context, c)),
                 Container(width: 1, height: 24, color: cs.outlineVariant),
                 ..._widths.map((w) {
-                  final active = !controller.eraserMode && controller.width == w;
+                  final active =
+                      !controller.eraserMode && controller.width == w;
                   return GestureDetector(
                     onTap: () => controller.setWidth(w),
                     child: SizedBox(
@@ -427,7 +469,7 @@ class DrawingToolbar extends StatelessWidget {
               ],
             ),
             Divider(height: 6, thickness: 0.5, color: cs.outlineVariant),
-            // Row 2: tools — evenly spaced, same size
+            // Row 2: tools + bg color swatch
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -457,6 +499,23 @@ class DrawingToolbar extends StatelessWidget {
                   cs: cs,
                   onPressed: () =>
                       controller.setStylusOnly(!controller.stylusOnly),
+                ),
+                GestureDetector(
+                  onTap: () => _pickBgColor(context, l10n),
+                  child: Tooltip(
+                    message: 'Canvas color',
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: controller.bgColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: cs.outline, width: 1.5),
+                      ),
+                      child: Icon(Icons.palette_outlined,
+                          size: 14, color: cs.outline),
+                    ),
+                  ),
                 ),
               ],
             ),
