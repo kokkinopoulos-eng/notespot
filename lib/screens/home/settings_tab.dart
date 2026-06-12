@@ -434,6 +434,49 @@ class _SettingsTabState extends State<SettingsTab> {
             // About section
             _SectionHeader(title: l10n.about),
             ListTile(
+              leading: const Icon(Icons.help_outline),
+              title: const Text('Οδηγίες χρήσης'),
+              onTap: () => showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Οδηγίες χρήσης'),
+                  content: const SingleChildScrollView(
+                    child: Text(
+                      'Το NoteSpot είναι η εφαρμογή που συλλαμβάνει ό,τι θέλετε — '
+                      'κείμενο, σχέδιο, φωτογραφία ή φωνή — και το οργανώνει αυτόματα. '
+                      'Με AI (Gemini, Claude ή OpenAI) κάθε σημείωση αναλύεται και '
+                      'κατηγοριοποιείται αυτόματα: αποδείξεις, δουλειά, ιδέες, ψώνια, '
+                      'φαγητό, ταξίδια και άλλα. Η αναζήτηση βρίσκει τα πάντα σε δευτερόλεπτα.\n\n'
+                      '✏️ Νέα σημείωση\n'
+                      'Πατήστε το 📖 κουμπί στο navbar για να ανοίξετε τον editor. '
+                      'Γράψτε κείμενο πάνω και σχεδιάστε με S Pen ή δάχτυλο κάτω.\n\n'
+                      '🎨 Χρώμα καμβά\n'
+                      'Στον editor, η toolbar έχει κουμπί χρώματος για να αλλάξετε το φόντο του σχεδίου.\n\n'
+                      '⭐ Αγαπημένα\n'
+                      'Ανοίξτε μια σημείωση και πατήστε το ⭐ στην κορυφή για να την προσθέσετε στα αγαπημένα. '
+                      'Βρείτε τα αγαπημένα από το ⭐ κουμπί στο navbar.\n\n'
+                      '🎤 Φωνητική υπαγόρευση\n'
+                      'Πατήστε το 🎤 στο navbar για γρήγορη υπαγόρευση κειμένου ή ηχογράφηση.\n\n'
+                      '📷 Φωτογραφία\n'
+                      'Πατήστε το 📷 στο navbar για να τραβήξετε φωτογραφία απευθείας.\n\n'
+                      '🤖 AI ταξινόμηση\n'
+                      'Στις Ρυθμίσεις → AI, προσθέστε το δικό σας API key (Gemini, Claude ή OpenAI) '
+                      'για αυτόματη κατηγοριοποίηση.\n\n'
+                      '💾 Αντίγραφο ασφαλείας\n'
+                      'Ρυθμίσεις → Αντίγραφο ασφαλείας για εξαγωγή όλων των σημειώσεων σε zip.',
+                      style: TextStyle(height: 1.6),
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            ListTile(
               leading: const Icon(Icons.info_outline),
               title: Text(l10n.version),
               subtitle: const Text('1.0.0'),
