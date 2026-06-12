@@ -218,8 +218,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get restoreConfirmBody =>
-      'This will replace all your current notes. Are you sure?';
+      'Notes from the backup will be merged with your existing notes - nothing is deleted. For duplicates the newer version wins.';
 
   @override
-  String get restoreSuccess => 'Restore successful! Please restart the app.';
+  String get restoreSuccess => 'Restore complete!';
 }

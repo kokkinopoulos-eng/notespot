@@ -218,9 +218,8 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get restoreConfirmBody =>
-      'Αυτό θα αντικαταστήσει όλες τις τρέχουσες σημειώσεις. Είστε σίγουροι;';
+      'Οι σημειώσεις από το αντίγραφο θα συγχωνευθούν με τις υπάρχουσες — δεν διαγράφεται τίποτα. Σε διπλότυπα κρατιέται η νεότερη έκδοση.';
 
   @override
-  String get restoreSuccess =>
-      'Επαναφορά επιτυχής! Επανεκκινήστε την εφαρμογή.';
+  String get restoreSuccess => 'Η επαναφορά ολοκληρώθηκε!';
 }

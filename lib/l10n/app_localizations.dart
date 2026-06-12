@@ -515,13 +515,13 @@ abstract class AppLocalizations {
   /// No description provided for @restoreConfirmBody.
   ///
   /// In en, this message translates to:
-  /// **'This will replace all your current notes. Are you sure?'**
+  /// **'Notes from the backup will be merged with your existing notes - nothing is deleted. For duplicates the newer version wins.'**
   String get restoreConfirmBody;
 
   /// No description provided for @restoreSuccess.
   ///
   /// In en, this message translates to:
-  /// **'Restore successful! Please restart the app.'**
+  /// **'Restore complete!'**
   String get restoreSuccess;
 }
 
