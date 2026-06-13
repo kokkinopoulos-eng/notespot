@@ -13,6 +13,7 @@ class Note {
     this.mediaPath,
     this.isFavorite = false,
     this.canvasBg = const Color(0xFF000000),
+    this.ocrText = '',
     required this.createdAt,
     required this.updatedAt,
   });
@@ -26,6 +27,7 @@ class Note {
   final String? mediaPath;
   final bool isFavorite;
   final Color canvasBg;
+  final String ocrText;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -39,6 +41,7 @@ class Note {
     String? mediaPath,
     bool? isFavorite,
     Color? canvasBg,
+    String? ocrText,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -52,6 +55,7 @@ class Note {
       mediaPath: mediaPath ?? this.mediaPath,
       isFavorite: isFavorite ?? this.isFavorite,
       canvasBg: canvasBg ?? this.canvasBg,
+      ocrText: ocrText ?? this.ocrText,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -67,6 +71,7 @@ class Note {
         'media_path': mediaPath,
         'is_favorite': isFavorite ? 1 : 0,
         'canvas_bg': canvasBg.value,
+        'ocr_text': ocrText,
         'created_at': createdAt.millisecondsSinceEpoch,
         'updated_at': updatedAt.millisecondsSinceEpoch,
       };
@@ -84,6 +89,7 @@ class Note {
         mediaPath: map['media_path'] as String?,
         isFavorite: (map['is_favorite'] as int? ?? 0) == 1,
         canvasBg: Color(map['canvas_bg'] as int? ?? 0xFFFFFFFF),
+        ocrText: (map['ocr_text'] as String?) ?? '',
         createdAt:
             DateTime.fromMillisecondsSinceEpoch(map['created_at'] as int),
         updatedAt:

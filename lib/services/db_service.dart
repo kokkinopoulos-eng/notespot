@@ -9,7 +9,7 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const _dbName = 'notespot.db';
-  static const _dbVersion = 3;
+  static const _dbVersion = 4;
 
   Database? _db;
 
@@ -29,6 +29,10 @@ class DbService {
       await db.execute(
           'ALTER TABLE notes ADD COLUMN canvas_bg INTEGER NOT NULL DEFAULT 4294967295');
     }
+    if (oldV < 4) {
+      await db.execute(
+          "ALTER TABLE notes ADD COLUMN ocr_text TEXT NOT NULL DEFAULT ''");
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -44,6 +48,7 @@ class DbService {
         search_text TEXT NOT NULL DEFAULT '',
         is_favorite INTEGER NOT NULL DEFAULT 0,
         canvas_bg INTEGER NOT NULL DEFAULT 4294967295,
+        ocr_text TEXT NOT NULL DEFAULT '',
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       )
@@ -55,7 +60,7 @@ class DbService {
   Map<String, dynamic> _withSearchText(Note note) {
     final map = note.toMap();
     map['search_text'] = normalizeForSearch(
-        '${note.title} ${note.content} ${note.category} ${note.tags.join(' ')}');
+        '${note.title} ${note.content} ${note.category} ${note.tags.join(' ')} ${note.ocrText}');
     return map;
   }
 

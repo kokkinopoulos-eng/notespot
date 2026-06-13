@@ -136,6 +136,7 @@ class _SettingsTabState extends State<SettingsTab> {
   AiProvider _selectedProvider = AiProvider.gemini;
   String? _maskedKey;
   bool _hasKey = false;
+  bool _aiEnabled = false;
 
   @override
   void initState() {
@@ -151,11 +152,13 @@ class _SettingsTabState extends State<SettingsTab> {
     final masked = hasKey && key.length >= 4
         ? '****${key.substring(key.length - 4)}'
         : null;
+    final enabled = await svc.aiEnabled;
     if (!mounted) return;
     setState(() {
       _selectedProvider = provider;
       _hasKey = hasKey;
       _maskedKey = masked;
+      _aiEnabled = enabled;
     });
   }
 
@@ -365,6 +368,17 @@ class _SettingsTabState extends State<SettingsTab> {
 
             // AI section
             _SectionHeader(title: l10n.aiProvider),
+            SwitchListTile(
+              secondary: const Icon(Icons.cloud_outlined),
+              title: const Text('Χρήση Cloud AI'),
+              subtitle: const Text(
+                  'Βελτιώνει την κατηγοριοποίηση χρησιμοποιώντας το API key σας'),
+              value: _aiEnabled,
+              onChanged: (v) async {
+                await AiSettingsService.instance.setAiEnabled(v);
+                await _reload();
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.psychology_outlined),
               title: Text(l10n.aiProvider),

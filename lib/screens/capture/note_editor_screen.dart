@@ -4,11 +4,13 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/cloud_ai_service.dart';
 import '../../services/db_service.dart';
+import '../../services/local_analysis_service.dart';
 import '../../services/media_service.dart';
 import '../../widgets/drawing_canvas.dart';
 
@@ -80,6 +82,20 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   void initState() {
     super.initState();
     _loadEditNote();
+    _loadSplit();
+  }
+
+  Future<void> _loadSplit() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getDouble('editor_split');
+    if (saved != null && mounted) {
+      setState(() => _split = saved.clamp(0.2, 0.8));
+    }
+  }
+
+  Future<void> _saveSplit() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('editor_split', _split);
   }
 
   Future<void> _loadEditNote() async {
@@ -274,25 +290,42 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   }
 
   Future<void> _enrichImage(int noteId, String path, String lang) async {
-    final analysis = await CloudAiService.instance.analyzeImage(path, lang);
-    if (analysis == null) return;
-    final note = await DbService.instance.getById(noteId);
+    final local = await LocalAnalysisService.instance.analyzeImage(path);
+    var note = await DbService.instance.getById(noteId);
     if (note == null) return;
     await DbService.instance.update(note.copyWith(
-      category: analysis.category,
-      tags: analysis.tags,
+      ocrText: local.ocrText,
+      category: local.category,
+      tags: local.tags,
+      updatedAt: DateTime.now(),
+    ));
+    final cloud = await CloudAiService.instance.analyzeImage(path, lang);
+    if (cloud == null) return;
+    note = await DbService.instance.getById(noteId);
+    if (note == null) return;
+    await DbService.instance.update(note.copyWith(
+      category: cloud.category.isNotEmpty ? cloud.category : note.category,
+      tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
       updatedAt: DateTime.now(),
     ));
   }
 
   Future<void> _enrichText(int noteId, String text, String lang) async {
-    final analysis = await CloudAiService.instance.analyzeText(text, lang);
-    if (analysis == null) return;
-    final note = await DbService.instance.getById(noteId);
+    final local = LocalAnalysisService.instance.classifyText(text);
+    var note = await DbService.instance.getById(noteId);
     if (note == null) return;
     await DbService.instance.update(note.copyWith(
-      category: analysis.category,
-      tags: analysis.tags,
+      category: local.category,
+      tags: local.tags,
+      updatedAt: DateTime.now(),
+    ));
+    final cloud = await CloudAiService.instance.analyzeText(text, lang);
+    if (cloud == null) return;
+    note = await DbService.instance.getById(noteId);
+    if (note == null) return;
+    await DbService.instance.update(note.copyWith(
+      category: cloud.category.isNotEmpty ? cloud.category : note.category,
+      tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
       updatedAt: DateTime.now(),
     ));
   }
@@ -335,6 +368,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           _split = (_split + d.delta.dy / totalHeight).clamp(0.2, 0.8);
         });
       },
+      onVerticalDragEnd: (_) => _saveSplit(),
       child: Container(
         height: 22,
         decoration: BoxDecoration(

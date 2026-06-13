@@ -1,4 +1,4 @@
-﻿import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ai_provider.dart';
 
@@ -7,6 +7,7 @@ class AiSettingsService {
   static final instance = AiSettingsService._();
 
   static const _providerKey = 'ai_provider';
+  static const _enabledKey = 'ai_enabled';
   final _storage = const FlutterSecureStorage();
 
   Future<void> setApiKey(AiProvider p, String key) =>
@@ -33,8 +34,12 @@ class AiSettingsService {
   }
 
   Future<bool> get aiEnabled async {
-    final p = await getSelectedProvider();
-    final key = await getApiKey(p);
-    return key != null && key.trim().isNotEmpty;
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_enabledKey) ?? false;
+  }
+
+  Future<void> setAiEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_enabledKey, value);
   }
 }

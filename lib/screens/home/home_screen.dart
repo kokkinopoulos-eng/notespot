@@ -12,6 +12,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/cloud_ai_service.dart';
 import '../../services/db_service.dart';
+import '../../services/local_analysis_service.dart';
 import '../../services/media_service.dart';
 import '../../widgets/note_card.dart';
 import '../capture/note_editor_screen.dart';
@@ -84,8 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
       updatedAt: now,
     ));
     await _loadNotes();
-    await _enrichPhoto(noteId, path, langName);
-    await _loadNotes();
+    unawaited(_enrichPhoto(noteId, path, langName));
   }
 
   Widget _buildFavorites() {
@@ -134,32 +134,38 @@ class _HomeScreenState extends State<HomeScreen> {
       updatedAt: now,
     ));
     await _loadNotes();
-    await _enrichPhoto(noteId, path, langName);
-    await _loadNotes();
+    unawaited(_enrichPhoto(noteId, path, langName));
   }
 
   Future<void> _enrichPhoto(int noteId, String path, String lang) async {
-    final analysis = await CloudAiService.instance.analyzeImage(path, lang);
-    if (analysis == null) return;
+    final local = await LocalAnalysisService.instance.analyzeImage(path);
     final note = await DbService.instance.getById(noteId);
     if (note == null) return;
-    final autoTitle = RegExp(r'^.+\s\d+/\d+\s\d+:\d+$');
-    await DbService.instance.update(Note(
-      id: note.id,
-      type: note.type,
-      title: analysis.title.isNotEmpty && autoTitle.hasMatch(note.title)
-          ? analysis.title
-          : note.title,
-      content: analysis.extractedText.isNotEmpty
-          ? analysis.extractedText
-          : note.content,
-      category: analysis.category,
-      tags: analysis.tags,
-      mediaPath: note.mediaPath,
-      createdAt: note.createdAt,
+    await DbService.instance.update(note.copyWith(
+      ocrText: local.ocrText,
+      category: local.category,
+      tags: local.tags,
       updatedAt: DateTime.now(),
     ));
     await _loadNotes();
+    unawaited(_cloudUpgradeImage(noteId, path, lang));
+  }
+
+  Future<void> _cloudUpgradeImage(int noteId, String path, String lang) async {
+    final cloud = await CloudAiService.instance.analyzeImage(path, lang);
+    if (cloud == null) return;
+    final note = await DbService.instance.getById(noteId);
+    if (note == null) return;
+    final autoTitle = RegExp(r'^.+\s\d+/\d+\s\d+:\d+$');
+    await DbService.instance.update(note.copyWith(
+      title: cloud.title.isNotEmpty && autoTitle.hasMatch(note.title)
+          ? cloud.title
+          : note.title,
+      category: cloud.category.isNotEmpty ? cloud.category : note.category,
+      tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
+      updatedAt: DateTime.now(),
+    ));
+    if (mounted) _loadNotes();
   }
 
   Future<void> _quickDictation() async {
@@ -637,19 +643,21 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
   }
 
   Future<void> _enrichText(int noteId, String text, String lang) async {
-    final analysis = await CloudAiService.instance.analyzeText(text, lang);
-    if (analysis == null) return;
-    final note = await DbService.instance.getById(noteId);
+    final local = LocalAnalysisService.instance.classifyText(text);
+    var note = await DbService.instance.getById(noteId);
     if (note == null) return;
-    await DbService.instance.update(Note(
-      id: note.id,
-      type: note.type,
-      title: note.title,
-      content: note.content,
-      category: analysis.category,
-      tags: analysis.tags,
-      mediaPath: note.mediaPath,
-      createdAt: note.createdAt,
+    await DbService.instance.update(note.copyWith(
+      category: local.category,
+      tags: local.tags,
+      updatedAt: DateTime.now(),
+    ));
+    final cloud = await CloudAiService.instance.analyzeText(text, lang);
+    if (cloud == null) return;
+    note = await DbService.instance.getById(noteId);
+    if (note == null) return;
+    await DbService.instance.update(note.copyWith(
+      category: cloud.category.isNotEmpty ? cloud.category : note.category,
+      tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
       updatedAt: DateTime.now(),
     ));
   }
@@ -659,17 +667,12 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
     if (analysis == null) return;
     final note = await DbService.instance.getById(noteId);
     if (note == null) return;
-    await DbService.instance.update(Note(
-      id: note.id,
-      type: note.type,
-      title: note.title,
+    await DbService.instance.update(note.copyWith(
       content: analysis.extractedText.isNotEmpty
           ? analysis.extractedText
           : note.content,
       category: analysis.category,
       tags: analysis.tags,
-      mediaPath: note.mediaPath,
-      createdAt: note.createdAt,
       updatedAt: DateTime.now(),
     ));
   }

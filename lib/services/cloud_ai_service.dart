@@ -136,16 +136,10 @@ class CloudAiService {
       String imagePath, String languageName, {String? userText}) async {
     lastError = null;
     final svc = AiSettingsService.instance;
-    if (!await svc.aiEnabled) {
-      _emitError('Η AI ανάλυση είναι απενεργοποιημένη. Ενεργοποιήστε την στις Ρυθμίσεις → AI.');
-      return null;
-    }
+    if (!await svc.aiEnabled) return null;
     final provider = await svc.getSelectedProvider();
     final key = await svc.getApiKey(provider);
-    if (key == null || key.trim().isEmpty) {
-      _emitError('Δεν έχετε ορίσει API key. Προσθέστε το στις Ρυθμίσεις → AI.');
-      return null;
-    }
+    if (key == null || key.trim().isEmpty) return null;
     try {
       final bytes = await File(imagePath).readAsBytes();
       final b64 = base64Encode(bytes);
