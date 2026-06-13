@@ -314,6 +314,7 @@ class DrawingToolbar extends StatelessWidget {
   final DrawingCanvasController controller;
 
   static const _colors = [
+    Colors.white,
     Colors.black,
     Color(0xFF1565C0),
     Color(0xFFC62828),
@@ -381,6 +382,7 @@ class DrawingToolbar extends StatelessWidget {
   }
 
   Widget _swatch(BuildContext context, Color c) {
+    final cs = Theme.of(context).colorScheme;
     final active =
         !controller.eraserMode && controller.color.toARGB32() == c.toARGB32();
     return GestureDetector(
@@ -394,8 +396,10 @@ class DrawingToolbar extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(
             color: active
-                ? Theme.of(context).colorScheme.primary
-                : Colors.transparent,
+                ? cs.primary
+                : (c.computeLuminance() > 0.8
+                    ? cs.outlineVariant
+                    : Colors.transparent),
             width: 3,
           ),
         ),

@@ -201,7 +201,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     }
 
     // If editing and we have a ghost + new ink, composite them.
-    if (widget.editNote != null && _ghostImage != null && mediaPath != null) {
+    if (widget.editNote != null &&
+        _ghostImage != null &&
+        mediaPath != null) {
       final ghost = _ghostImage!;
       final intermediate = mediaPath;
       final drawnPages =

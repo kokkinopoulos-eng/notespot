@@ -535,6 +535,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No favorites yet'**
   String get noFavorites;
+
+  /// No description provided for @uploadPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload photo from gallery'**
+  String get uploadPhoto;
 }
 
 class _AppLocalizationsDelegate

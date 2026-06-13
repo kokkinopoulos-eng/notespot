@@ -228,4 +228,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noFavorites => 'No favorites yet';
+
+  @override
+  String get uploadPhoto => 'Upload photo from gallery';
 }

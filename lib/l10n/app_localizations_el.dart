@@ -228,4 +228,7 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get noFavorites => 'Δεν υπάρχουν αγαπημένα';
+
+  @override
+  String get uploadPhoto => 'Εικόνα από τη συλλογή';
 }

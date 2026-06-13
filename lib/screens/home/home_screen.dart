@@ -87,6 +87,55 @@ class _HomeScreenState extends State<HomeScreen> {
     await _loadNotes();
   }
 
+  Widget _buildFavorites() {
+    return FutureBuilder<List<Note>>(
+      future: DbService.instance.getFavorites(),
+      builder: (context, snap) {
+        if (!snap.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final notes = snap.data!;
+        if (notes.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.star_border, size: 64, color: Colors.amber),
+                SizedBox(height: 12),
+                Text('Δεν υπάρχουν αγαπημένα'),
+              ],
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: notes.length,
+          itemBuilder: (ctx, i) => _noteItem(notes[i]),
+        );
+      },
+    );
+  }
+
+  Future<void> _quickGallery() async {
+    final path = await MediaService.instance.pickFromGallery();
+    if (path == null || !mounted) return;
+    final l10n = AppLocalizations.of(context);
+    final langName = Localizations.localeOf(context).languageCode == 'el'
+        ? 'Greek'
+        : 'English';
+    final now = DateTime.now();
+    final stamp = DateFormat('d/M HH:mm').format(now);
+    final noteId = await DbService.instance.insert(Note(
+      type: NoteType.photo,
+      title: '${l10n.photoNote} $stamp',
+      mediaPath: path,
+      createdAt: now,
+      updatedAt: now,
+    ));
+    unawaited(_enrichPhoto(noteId, path, langName));
+    await _loadNotes();
+  }
+
   Future<void> _enrichPhoto(int noteId, String path, String lang) async {
     final analysis = await CloudAiService.instance.analyzeImage(path, lang);
     if (analysis == null) return;
@@ -286,7 +335,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _tabBtn(int index, IconData icon, String tooltip) {
     final active = _tab == index;
     return IconButton(
-      icon: Icon(icon, size: 28),
+      icon: Icon(icon, size: 24),
       color: active ? Colors.white : Colors.white60,
       style: active
           ? IconButton.styleFrom(
@@ -331,6 +380,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             )
           : AppBar(title: const Text('NoteSpot')),
+      floatingActionButton: (!_selecting && _tab == 0)
+          ? FloatingActionButton(
+              onPressed: _openEditor,
+              tooltip: l10n.newNote,
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: IndexedStack(
         index: _tab,
         children: [
@@ -340,6 +396,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ]),
           const SearchTab(),
           const SettingsTab(),
+          _buildFavorites(),
         ],
       ),
       bottomNavigationBar: BottomAppBar(
@@ -347,18 +404,17 @@ class _HomeScreenState extends State<HomeScreen> {
         surfaceTintColor: Colors.transparent,
         child: Row(
           children: [
-            _tabBtn(0, Icons.notes, l10n.notesTab),
             _tabBtn(1, Icons.search, l10n.searchTab),
             _tabBtn(2, Icons.settings, l10n.settingsTab),
             const Spacer(),
             IconButton(
               icon: Icon(
                 _tab == 3 ? Icons.star : Icons.star_border,
-                size: 28,
+                size: 24,
                 color: _tab == 3 ? Colors.amber : Colors.white60,
               ),
               tooltip: l10n.favorites,
-              onPressed: () => setState(() => _tab = 3),
+              onPressed: () => setState(() => _tab = _tab == 3 ? 0 : 3),
             ),
             IconButton(
               icon: const Icon(Icons.mic_outlined),
@@ -372,9 +428,15 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: _quickPhoto,
               tooltip: l10n.photoNote,
             ),
-            const SizedBox(width: 6),
+            IconButton(
+              icon: const Icon(Icons.photo_library_outlined, size: 24),
+              color: Colors.white,
+              onPressed: _quickGallery,
+              tooltip: 'Από συλλογή',
+            ),
+            const SizedBox(width: 2),
             IconButton.filled(
-              icon: const Icon(Icons.menu_book),
+              icon: const Icon(Icons.edit),
               onPressed: _openEditor,
               tooltip: l10n.newNote,
               style: IconButton.styleFrom(

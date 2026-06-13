@@ -72,5 +72,6 @@
   "restoreConfirmBody": "Notes from the backup will be merged with your existing notes - nothing is deleted. For duplicates the newer version wins.",
   "restoreSuccess": "Restore complete!",
   "favorites": "Favorites",
-  "noFavorites": "No favorites yet"
+  "noFavorites": "No favorites yet",
+  "uploadPhoto": "Upload photo from gallery"
 }
