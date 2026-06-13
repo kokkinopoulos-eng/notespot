@@ -366,7 +366,6 @@ class _SettingsTabState extends State<SettingsTab> {
             // AI section
             _SectionHeader(title: l10n.aiProvider),
             ListTile(
-              enabled: isPremium,
               leading: const Icon(Icons.psychology_outlined),
               title: Text(l10n.aiProvider),
               subtitle: Text(_selectedProvider.displayName),
@@ -376,14 +375,13 @@ class _SettingsTabState extends State<SettingsTab> {
                     ? Colors.green
                     : Theme.of(context).colorScheme.outline,
               ),
-              onTap: isPremium ? _openProviderDialog : null,
+              onTap: _openProviderDialog,
             ),
             ListTile(
-              enabled: isPremium,
               leading: const Icon(Icons.key_outlined),
               title: Text(l10n.apiKey),
               subtitle: Text(_maskedKey ?? l10n.noApiKey),
-              onTap: isPremium ? _openApiKeyDialog : null,
+              onTap: _openApiKeyDialog,
             ),
             const Divider(),
 

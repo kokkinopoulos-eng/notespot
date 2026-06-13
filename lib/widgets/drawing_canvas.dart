@@ -52,6 +52,7 @@ class DrawingCanvasController extends ChangeNotifier {
   Color color = Colors.white;
   double width = 3.0;
   bool stylusOnly = false;
+  bool stylusDetected = false;
   bool eraserMode = false;
   Color bgColor = Colors.black;
   Color strokeColor = Colors.white;
@@ -103,7 +104,20 @@ class DrawingCanvasController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Color _lastColor = Colors.white;
+  void markStylusDetected() {
+    if (!stylusDetected) {
+      stylusDetected = true;
+      notifyListeners();
+    }
+  }
+
   void setEraser(bool v) {
+    if (v) {
+      _lastColor = color;
+    } else {
+      color = _lastColor;
+    }
     eraserMode = v;
     notifyListeners();
   }
@@ -268,6 +282,9 @@ class DrawingSurface extends StatelessWidget {
   final VoidCallback? onDrawStart;
 
   void _down(PointerDownEvent e) {
+    if (e.kind == PointerDeviceKind.stylus) {
+      controller.markStylusDetected();
+    }
     if (controller.stylusOnly && e.kind != PointerDeviceKind.stylus) return;
     onDrawStart?.call();
     controller.beginStroke(e.localPosition);
@@ -496,14 +513,15 @@ class DrawingToolbar extends StatelessWidget {
                   cs: cs,
                   onPressed: () => _confirmClear(context, l10n),
                 ),
-                _toolBtn(
-                  icon: Icons.edit,
-                  tooltip: l10n.stylusOnly,
-                  active: controller.stylusOnly,
-                  cs: cs,
-                  onPressed: () =>
-                      controller.setStylusOnly(!controller.stylusOnly),
-                ),
+                if (controller.stylusDetected)
+                  _toolBtn(
+                    icon: Icons.draw,
+                    tooltip: l10n.stylusOnly,
+                    active: controller.stylusOnly,
+                    cs: cs,
+                    onPressed: () =>
+                        controller.setStylusOnly(!controller.stylusOnly),
+                  ),
                 GestureDetector(
                   onTap: () => _pickBgColor(context, l10n),
                   child: Tooltip(

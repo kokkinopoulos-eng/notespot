@@ -9,6 +9,8 @@ import 'screens/splash/splash_screen.dart';
 import 'screens/splash/terms_screen.dart';
 import 'services/premium_service.dart';
 
+final rootMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await PremiumService.instance.init();
@@ -53,6 +55,7 @@ class NoteSpotAppState extends State<NoteSpotApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      scaffoldMessengerKey: rootMessengerKey,
       title: 'NoteSpot',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,

@@ -83,7 +83,8 @@ class _HomeScreenState extends State<HomeScreen> {
       createdAt: now,
       updatedAt: now,
     ));
-    unawaited(_enrichPhoto(noteId, path, langName));
+    await _loadNotes();
+    await _enrichPhoto(noteId, path, langName);
     await _loadNotes();
   }
 
@@ -132,7 +133,8 @@ class _HomeScreenState extends State<HomeScreen> {
       createdAt: now,
       updatedAt: now,
     ));
-    unawaited(_enrichPhoto(noteId, path, langName));
+    await _loadNotes();
+    await _enrichPhoto(noteId, path, langName);
     await _loadNotes();
   }
 
@@ -342,7 +344,7 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: Colors.white.withOpacity(0.15))
           : null,
       onPressed: () => setState(() {
-        _tab = index;
+        _tab = (_tab == index) ? 0 : index;
         _selected.clear();
       }),
       tooltip: tooltip,

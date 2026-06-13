@@ -441,7 +441,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                                   ),
                                   style: const TextStyle(
                                     fontFamily: 'monospace',
-                                    fontSize: 15,
+                                    fontSize: 20,
                                     height: 1.5,
                                     color: Colors.black87,
                                   ),

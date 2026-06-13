@@ -1,4 +1,5 @@
-﻿import 'premium_service.dart';
+﻿import 'package:flutter/material.dart';
+import '../main.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -11,6 +12,38 @@ const kGeminiModel = 'gemini-2.0-flash';
 class CloudAiService {
   CloudAiService._();
   static final instance = CloudAiService._();
+
+  /// Set when the last AI call failed; UI can show it.
+  String? lastError;
+
+  void _emitError(String msg) {
+    lastError = msg;
+    final m = rootMessengerKey.currentState;
+    m?.showSnackBar(
+      SnackBar(content: Text(msg), duration: const Duration(seconds: 6)),
+    );
+  }
+
+  String _friendlyError(int status, String body) {
+    final b = body.toLowerCase();
+    if (b.contains('credit balance') ||
+        b.contains('quota') ||
+        b.contains('billing') ||
+        b.contains('insufficient')) {
+      return 'Τελείωσαν τα credits του AI κλειδιού σας. Ελέγξτε χρέωση/υπόλοιπο στον πάροχο.';
+    }
+    if (status == 401 ||
+        status == 403 ||
+        b.contains('api key') ||
+        b.contains('api_key') ||
+        b.contains('invalid x-api-key')) {
+      return 'Μη έγκυρο API key. Ελέγξτε το κλειδί στις Ρυθμίσεις → AI.';
+    }
+    if (status == 429) {
+      return 'Υπέρβαση ορίου αιτημάτων. Δοκιμάστε ξανά σε λίγο.';
+    }
+    return 'Η AI ανάλυση απέτυχε (κωδικός $status).';
+  }
 
   static const _timeout = Duration(seconds: 30);
 
@@ -48,6 +81,36 @@ class CloudAiService {
       '"extracted_text": "verbatim transcription of the audio in $lang"}';
 
   String _mimeFor(String path) {
+    // Detect from magic bytes, not extension - gallery images often have
+    // a .jpg name but PNG content (or vice versa).
+    try {
+      final bytes = File(path).readAsBytesSync();
+      if (bytes.length >= 8 &&
+          bytes[0] == 0x89 &&
+          bytes[1] == 0x50 &&
+          bytes[2] == 0x4E &&
+          bytes[3] == 0x47) {
+        return 'image/png';
+      }
+      if (bytes.length >= 3 &&
+          bytes[0] == 0xFF &&
+          bytes[1] == 0xD8 &&
+          bytes[2] == 0xFF) {
+        return 'image/jpeg';
+      }
+      if (bytes.length >= 12 &&
+          bytes[0] == 0x52 &&
+          bytes[1] == 0x49 &&
+          bytes[2] == 0x46 &&
+          bytes[3] == 0x46 &&
+          bytes[8] == 0x57 &&
+          bytes[9] == 0x45 &&
+          bytes[10] == 0x42 &&
+          bytes[11] == 0x50) {
+        return 'image/webp';
+      }
+    } catch (_) {}
+    // Fallback to extension
     final ext = path.toLowerCase();
     if (ext.endsWith('.png')) return 'image/png';
     if (ext.endsWith('.webp')) return 'image/webp';
@@ -55,8 +118,6 @@ class CloudAiService {
   }
 
   AiAnalysis? _parse(String raw) {
-    // ignore: avoid_print
-    print('[AI] raw response: $raw');
     try {
       final cleaned = raw
           .replaceAll(RegExp(r'```json\s*'), '')
@@ -73,11 +134,18 @@ class CloudAiService {
 
   Future<AiAnalysis?> analyzeImage(
       String imagePath, String languageName, {String? userText}) async {
+    lastError = null;
     final svc = AiSettingsService.instance;
-    if (!await svc.aiEnabled) return null;
+    if (!await svc.aiEnabled) {
+      _emitError('Η AI ανάλυση είναι απενεργοποιημένη. Ενεργοποιήστε την στις Ρυθμίσεις → AI.');
+      return null;
+    }
     final provider = await svc.getSelectedProvider();
     final key = await svc.getApiKey(provider);
-    if (key == null || key.trim().isEmpty) return null;
+    if (key == null || key.trim().isEmpty) {
+      _emitError('Δεν έχετε ορίσει API key. Προσθέστε το στις Ρυθμίσεις → AI.');
+      return null;
+    }
     try {
       final bytes = await File(imagePath).readAsBytes();
       final b64 = base64Encode(bytes);
@@ -95,7 +163,6 @@ class CloudAiService {
   }
 
   Future<AiAnalysis?> analyzeText(String text, String languageName) async {
-    if (!PremiumService.instance.isPremium) return null;
     final svc = AiSettingsService.instance;
     if (!await svc.aiEnabled) return null;
     final provider = await svc.getSelectedProvider();
@@ -113,7 +180,6 @@ class CloudAiService {
 
   Future<AiAnalysis?> analyzeAudio(
       String path, String languageName) async {
-    if (!PremiumService.instance.isPremium) return null;
     final svc = AiSettingsService.instance;
     if (!await svc.aiEnabled) return null;
     final provider = await svc.getSelectedProvider();
@@ -195,7 +261,8 @@ class CloudAiService {
     ).timeout(_timeout);
     if (res.statusCode != 200) {
       // ignore: avoid_print
-      print('[AI] Gemini HTTP ${res.statusCode}: ${res.body.substring(0, res.body.length.clamp(0, 300))}');
+      print('[AI] Gemini error');
+      _emitError(_friendlyError(res.statusCode, res.body));
       return null;
     }
     final json = jsonDecode(res.body) as Map<String, dynamic>;
@@ -235,6 +302,7 @@ class CloudAiService {
     if (res.statusCode != 200) {
       // ignore: avoid_print
       print('[AI] Claude HTTP ${res.statusCode}: ${res.body.substring(0, res.body.length.clamp(0, 300))}');
+      _emitError(_friendlyError(res.statusCode, res.body));
       return null;
     }
     final json = jsonDecode(res.body) as Map<String, dynamic>;
