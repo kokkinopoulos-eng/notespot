@@ -87,7 +87,9 @@ class _SearchTabState extends State<SearchTab> {
                       padding: const EdgeInsets.only(top: 4, bottom: 16),
                       itemCount: _results.length,
                       itemBuilder: (context, i) => Card(
-                        color: const Color(0xFFF3EEF8),
+                        color: _results[i].color != 0
+                            ? Color(_results[i].color)
+                            : const Color(0xFFF3EEF8),
                         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

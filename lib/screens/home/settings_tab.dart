@@ -5,6 +5,7 @@ import '../../models/ai_provider.dart';
 import '../../services/ai_settings_service.dart';
 import '../../services/backup_service.dart';
 import '../../services/premium_service.dart';
+import 'archived_notes_screen.dart';
 
 // --- Dialog result types ---
 enum _ApiKeyAction { save, delete, cancel }
@@ -399,6 +400,19 @@ class _SettingsTabState extends State<SettingsTab> {
             ),
             const Divider(),
 
+            // Archive section
+            const Divider(),
+            _SectionHeader(title: 'Αρχείο'),
+            ListTile(
+              leading: const Icon(Icons.inventory_2_outlined),
+              title: const Text('Αρχειοθετημένες σημειώσεις'),
+              subtitle: const Text('Δείτε και επαναφέρετε αρχειοθετημένες σημειώσεις'),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ArchivedNotesScreen()),
+              ),
+            ),
             // Backup section
             const Divider(),
             _SectionHeader(title: l10n.backupData),

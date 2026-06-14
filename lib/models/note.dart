@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum NoteType { photo, voice, handwriting, text }
+enum NoteType { photo, voice, handwriting, text, checklist }
 
 class Note {
   const Note({

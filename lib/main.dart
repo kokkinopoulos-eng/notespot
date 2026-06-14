@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/app_theme.dart';
+import 'services/db_service.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
@@ -14,6 +15,7 @@ final rootMessengerKey = GlobalKey<ScaffoldMessengerState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await PremiumService.instance.init();
+  await DbService.instance.purgeExpired();
   final prefs = await SharedPreferences.getInstance();
   runApp(NoteSpotApp(initialLocale: prefs.getString('locale')));
 }

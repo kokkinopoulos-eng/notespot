@@ -113,14 +113,32 @@ class DbService {
   Future<List<Note>> getFavorites() async {
     final db = await database;
     final rows = await db.query('notes',
-        where: 'is_favorite = 1', orderBy: 'updated_at DESC');
+        where: 'is_favorite = 1 AND is_archived = 0',
+        orderBy: 'updated_at DESC');
     return rows.map(Note.fromMap).toList();
   }
 
   Future<List<Note>> getAll() async {
     final db = await database;
-    final rows = await db.query('notes', orderBy: 'created_at DESC');
+    final rows = await db.query('notes',
+        where: 'is_archived = 0',
+        orderBy: 'is_pinned DESC, created_at DESC');
     return rows.map(Note.fromMap).toList();
+  }
+
+  Future<List<Note>> getArchived() async {
+    final db = await database;
+    final rows = await db.query('notes',
+        where: 'is_archived = 1', orderBy: 'created_at DESC');
+    return rows.map(Note.fromMap).toList();
+  }
+
+  Future<void> purgeExpired() async {
+    final db = await database;
+    final nowMillis = DateTime.now().millisecondsSinceEpoch;
+    await db.delete('notes',
+        where: 'expires_at IS NOT NULL AND expires_at < ?',
+        whereArgs: [nowMillis]);
   }
 
   Future<List<Note>> getByCategory(String category) async {
@@ -149,7 +167,8 @@ class DbService {
         .where((t) => t.isNotEmpty)
         .toList();
     if (terms.isEmpty) return getAll();
-    final where = terms.map((_) => 'search_text LIKE ?').join(' AND ');
+    final termWhere = terms.map((_) => 'search_text LIKE ?').join(' AND ');
+    final where = 'is_archived = 0 AND $termWhere';
     final args = terms.map((t) => '%$t%').toList();
     final rows = await db.query(
       'notes',

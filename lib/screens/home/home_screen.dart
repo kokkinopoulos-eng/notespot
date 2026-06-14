@@ -57,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadNotes() async {
+    await DbService.instance.purgeExpired();
     final cats = await DbService.instance.getCategories();
     if (_selectedCategory != null && !cats.contains(_selectedCategory)) {
       _selectedCategory = null;
@@ -211,6 +212,25 @@ class _HomeScreenState extends State<HomeScreen> {
     unawaited(_enrichPhoto(noteId, path, langName));
   }
 
+  Future<void> _quickChecklist() async {
+    final now = DateTime.now();
+    final stamp = DateFormat('d/M HH:mm').format(now);
+    final noteId = await DbService.instance.insert(Note(
+      type: NoteType.checklist,
+      title: 'Λίστα $stamp',
+      content: '',
+      createdAt: now,
+      updatedAt: now,
+    ));
+    final note = await DbService.instance.getById(noteId);
+    if (note == null || !mounted) return;
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => NoteDetailScreen(note: note)),
+    );
+    _loadNotes();
+  }
+
   Future<void> _enrichPhoto(int noteId, String path, String lang) async {
     final local = await LocalAnalysisService.instance.analyzeImage(path);
     final note = await DbService.instance.getById(noteId);
@@ -328,8 +348,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _noteItem(Note note) {
     final cs = Theme.of(context).colorScheme;
     final sel = _selected.contains(note.id);
+    final cardColor =
+        note.color != 0 ? Color(note.color) : const Color(0xFFF3EEF8);
     return Card(
-      color: const Color(0xFFF3EEF8),
+      color: cardColor,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -515,6 +537,12 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.white,
               onPressed: _quickGallery,
               tooltip: 'Από συλλογή',
+            ),
+            IconButton(
+              icon: const Icon(Icons.checklist_outlined, size: 24),
+              color: Colors.white,
+              onPressed: _quickChecklist,
+              tooltip: 'Νέα λίστα',
             ),
             const SizedBox(width: 2),
             IconButton.filled(
