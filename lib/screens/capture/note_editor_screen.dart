@@ -74,6 +74,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final List<DrawingCanvasController> _pages = [DrawingCanvasController()];
   int _page = 0;
   double _split = 0.5;
+  int _paneMode = 0; // 0=split, 1=text-only, 2=ink-only
   ui.Image? _ghostImage;
 
   DrawingCanvasController get _ink => _pages[_page];
@@ -425,134 +426,77 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) => Column(
             children: [
-              // ================= Text pane =================
-              Expanded(
-                flex: textFlex,
-                child: Container(
-                  color: Colors.white,
-                  child: Column(
-                    children: [
-                      _paneHeader(
-                        icon: Icons.keyboard_alt_outlined,
-                        label: l10n.textNote.toUpperCase(),
-                        bg: cs.secondaryContainer,
-                        fg: cs.onSecondaryContainer,
-                        actions: [
-                          IconButton(
-                            icon: const Icon(Icons.backspace_outlined,
-                                size: 17),
-                            tooltip: l10n.clearText,
-                            visualDensity: VisualDensity.compact,
-                            onPressed: () => _confirmClearText(l10n),
-                          ),
-                        ],
-                      ),
-                      Expanded(
-                        child: Stack(
-                          children: [
-                            const Positioned.fill(
-                              child: CustomPaint(
-                                painter: _TextNotebookPainter(),
-                              ),
-                            ),
-                            Scrollbar(
-                              controller: _textScroll,
-                              thumbVisibility: true,
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                                child: TextField(
-                                  controller: _contentCtrl,
-                                  focusNode: _contentFocus,
-                                  scrollController: _textScroll,
-                                  maxLines: null,
-                                  expands: true,
-                                  decoration: InputDecoration(
-                                    hintText: l10n.noteHint,
-                                    hintStyle: TextStyle(
-                                        color: Colors.grey.shade400),
-                                    border: InputBorder.none,
-                                  ),
-                                  style: const TextStyle(
-                                    fontFamily: 'monospace',
-                                    fontSize: 20,
-                                    height: 1.5,
-                                    color: Colors.black87,
-                                  ),
-                                  onChanged: (_) => setState(() {}),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // ================= Divider handle =================
-              _divider(context, constraints.maxHeight),
-              // ================= Ink pane =================
-              Expanded(
-                flex: 1000 - textFlex,
-                child: AnimatedBuilder(
-                  animation: Listenable.merge(_pages),
-                  builder: (_, _) => Container(
-                    color: _ink.bgColor,
+              // ── Text pane: visible in split (0) and text-only (1) ──
+              if (_paneMode != 2)
+                Expanded(
+                  flex: _paneMode == 1 ? 1 : textFlex,
+                  child: Container(
+                    color: Colors.white,
                     child: Column(
                       children: [
                         _paneHeader(
-                          icon: Icons.gesture,
-                          label: l10n.drawNote.toUpperCase(),
-                          bg: cs.tertiaryContainer,
-                          fg: cs.onTertiaryContainer,
+                          icon: Icons.keyboard_alt_outlined,
+                          label: l10n.textNote.toUpperCase(),
+                          bg: cs.secondaryContainer,
+                          fg: cs.onSecondaryContainer,
                           actions: [
                             IconButton(
-                              icon: const Icon(Icons.chevron_left, size: 20),
-                              visualDensity: VisualDensity.compact,
-                              onPressed: _page > 0
-                                  ? () => _goToPage(_page - 1)
-                                  : null,
-                            ),
-                            Text('${_page + 1}/${_pages.length}',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: cs.onTertiaryContainer)),
-                            IconButton(
                               icon: Icon(
-                                  atLast ? Icons.add : Icons.chevron_right,
-                                  size: 20),
+                                _paneMode == 1
+                                    ? Icons.fullscreen_exit
+                                    : Icons.fullscreen,
+                                size: 17,
+                              ),
+                              tooltip: _paneMode == 1
+                                  ? 'Restore split'
+                                  : 'Maximize text',
                               visualDensity: VisualDensity.compact,
-                              onPressed: atLast
-                                  ? (canAdd ? _addPage : null)
-                                  : () => _goToPage(_page + 1),
+                              onPressed: () => setState(
+                                  () => _paneMode = _paneMode == 1 ? 0 : 1),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.backspace_outlined,
+                                  size: 17),
+                              tooltip: l10n.clearText,
+                              visualDensity: VisualDensity.compact,
+                              onPressed: () => _confirmClearText(l10n),
                             ),
                           ],
                         ),
                         Expanded(
                           child: Stack(
                             children: [
-                              Positioned.fill(
+                              const Positioned.fill(
                                 child: CustomPaint(
-                                  painter:
-                                      _NotebookPainter(bgColor: _ink.bgColor),
+                                  painter: _TextNotebookPainter(),
                                 ),
                               ),
-                              if (_ghostImage != null)
-                                Positioned.fill(
-                                  child: Opacity(
-                                    opacity: 0.3,
-                                    child: RawImage(
-                                        image: _ghostImage,
-                                        fit: BoxFit.fill),
+                              Scrollbar(
+                                controller: _textScroll,
+                                thumbVisibility: true,
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                      16, 4, 16, 8),
+                                  child: TextField(
+                                    controller: _contentCtrl,
+                                    focusNode: _contentFocus,
+                                    scrollController: _textScroll,
+                                    maxLines: null,
+                                    expands: true,
+                                    decoration: InputDecoration(
+                                      hintText: l10n.noteHint,
+                                      hintStyle: TextStyle(
+                                          color: Colors.grey.shade400),
+                                      border: InputBorder.none,
+                                    ),
+                                    style: const TextStyle(
+                                      fontFamily: 'monospace',
+                                      fontSize: 20,
+                                      height: 1.5,
+                                      color: Colors.black87,
+                                    ),
+                                    onChanged: (_) => setState(() {}),
                                   ),
-                                ),
-                              Positioned.fill(
-                                child: Listener(
-                                  onPointerDown: (_) =>
-                                      _contentFocus.unfocus(),
-                                  child: DrawingSurface(controller: _ink),
                                 ),
                               ),
                             ],
@@ -562,7 +506,96 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                     ),
                   ),
                 ),
-              ),
+              // ── Divider handle: split mode only ────────────────────
+              if (_paneMode == 0) _divider(context, constraints.maxHeight),
+              // ── Ink pane: visible in split (0) and ink-only (2) ───
+              if (_paneMode != 1)
+                Expanded(
+                  flex: _paneMode == 2 ? 1 : 1000 - textFlex,
+                  child: AnimatedBuilder(
+                    animation: Listenable.merge(_pages),
+                    builder: (_, _) => Container(
+                      color: _ink.bgColor,
+                      child: Column(
+                        children: [
+                          _paneHeader(
+                            icon: Icons.gesture,
+                            label: l10n.drawNote.toUpperCase(),
+                            bg: cs.tertiaryContainer,
+                            fg: cs.onTertiaryContainer,
+                            actions: [
+                              IconButton(
+                                icon: Icon(
+                                  _paneMode == 2
+                                      ? Icons.fullscreen_exit
+                                      : Icons.fullscreen,
+                                  size: 20,
+                                ),
+                                tooltip: _paneMode == 2
+                                    ? 'Restore split'
+                                    : 'Maximize ink',
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () => setState(() =>
+                                    _paneMode = _paneMode == 2 ? 0 : 2),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.chevron_left, size: 20),
+                                visualDensity: VisualDensity.compact,
+                                onPressed: _page > 0
+                                    ? () => _goToPage(_page - 1)
+                                    : null,
+                              ),
+                              Text('${_page + 1}/${_pages.length}',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: cs.onTertiaryContainer)),
+                              IconButton(
+                                icon: Icon(
+                                    atLast
+                                        ? Icons.add
+                                        : Icons.chevron_right,
+                                    size: 20),
+                                visualDensity: VisualDensity.compact,
+                                onPressed: atLast
+                                    ? (canAdd ? _addPage : null)
+                                    : () => _goToPage(_page + 1),
+                              ),
+                            ],
+                          ),
+                          Expanded(
+                            child: Stack(
+                              children: [
+                                Positioned.fill(
+                                  child: CustomPaint(
+                                    painter: _NotebookPainter(
+                                        bgColor: _ink.bgColor),
+                                  ),
+                                ),
+                                if (_ghostImage != null)
+                                  Positioned.fill(
+                                    child: Opacity(
+                                      opacity: 0.3,
+                                      child: RawImage(
+                                          image: _ghostImage,
+                                          fit: BoxFit.fill),
+                                    ),
+                                  ),
+                                Positioned.fill(
+                                  child: Listener(
+                                    onPointerDown: (_) =>
+                                        _contentFocus.unfocus(),
+                                    child: DrawingSurface(controller: _ink),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               DrawingToolbar(controller: _ink),
             ],
           ),
