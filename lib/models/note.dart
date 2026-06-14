@@ -14,6 +14,11 @@ class Note {
     this.isFavorite = false,
     this.canvasBg = const Color(0xFF000000),
     this.ocrText = '',
+    this.isPinned = false,
+    this.isArchived = false,
+    this.color = 0,
+    this.reminderAt,
+    this.expiresAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -28,6 +33,11 @@ class Note {
   final bool isFavorite;
   final Color canvasBg;
   final String ocrText;
+  final bool isPinned;
+  final bool isArchived;
+  final int color;
+  final DateTime? reminderAt;
+  final DateTime? expiresAt;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -42,6 +52,11 @@ class Note {
     bool? isFavorite,
     Color? canvasBg,
     String? ocrText,
+    bool? isPinned,
+    bool? isArchived,
+    int? color,
+    DateTime? reminderAt,
+    DateTime? expiresAt,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -56,6 +71,11 @@ class Note {
       isFavorite: isFavorite ?? this.isFavorite,
       canvasBg: canvasBg ?? this.canvasBg,
       ocrText: ocrText ?? this.ocrText,
+      isPinned: isPinned ?? this.isPinned,
+      isArchived: isArchived ?? this.isArchived,
+      color: color ?? this.color,
+      reminderAt: reminderAt ?? this.reminderAt,
+      expiresAt: expiresAt ?? this.expiresAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -72,6 +92,11 @@ class Note {
         'is_favorite': isFavorite ? 1 : 0,
         'canvas_bg': canvasBg.value,
         'ocr_text': ocrText,
+        'is_pinned': isPinned ? 1 : 0,
+        'is_archived': isArchived ? 1 : 0,
+        'color': color,
+        'reminder_at': reminderAt?.millisecondsSinceEpoch,
+        'expires_at': expiresAt?.millisecondsSinceEpoch,
         'created_at': createdAt.millisecondsSinceEpoch,
         'updated_at': updatedAt.millisecondsSinceEpoch,
       };
@@ -90,6 +115,15 @@ class Note {
         isFavorite: (map['is_favorite'] as int? ?? 0) == 1,
         canvasBg: Color(map['canvas_bg'] as int? ?? 0xFFFFFFFF),
         ocrText: (map['ocr_text'] as String?) ?? '',
+        isPinned: (map['is_pinned'] as int? ?? 0) == 1,
+        isArchived: (map['is_archived'] as int? ?? 0) == 1,
+        color: map['color'] as int? ?? 0,
+        reminderAt: map['reminder_at'] == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(map['reminder_at'] as int),
+        expiresAt: map['expires_at'] == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(map['expires_at'] as int),
         createdAt:
             DateTime.fromMillisecondsSinceEpoch(map['created_at'] as int),
         updatedAt:

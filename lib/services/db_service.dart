@@ -9,7 +9,7 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const _dbName = 'notespot.db';
-  static const _dbVersion = 4;
+  static const _dbVersion = 5;
 
   Database? _db;
 
@@ -33,6 +33,18 @@ class DbService {
       await db.execute(
           "ALTER TABLE notes ADD COLUMN ocr_text TEXT NOT NULL DEFAULT ''");
     }
+    if (oldV < 5) {
+      await db.execute(
+          'ALTER TABLE notes ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 0');
+      await db.execute(
+          'ALTER TABLE notes ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0');
+      await db.execute(
+          'ALTER TABLE notes ADD COLUMN color INTEGER NOT NULL DEFAULT 0');
+      await db.execute(
+          'ALTER TABLE notes ADD COLUMN reminder_at INTEGER');
+      await db.execute(
+          'ALTER TABLE notes ADD COLUMN expires_at INTEGER');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -49,6 +61,11 @@ class DbService {
         is_favorite INTEGER NOT NULL DEFAULT 0,
         canvas_bg INTEGER NOT NULL DEFAULT 4294967295,
         ocr_text TEXT NOT NULL DEFAULT '',
+        is_pinned INTEGER NOT NULL DEFAULT 0,
+        is_archived INTEGER NOT NULL DEFAULT 0,
+        color INTEGER NOT NULL DEFAULT 0,
+        reminder_at INTEGER,
+        expires_at INTEGER,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       )
