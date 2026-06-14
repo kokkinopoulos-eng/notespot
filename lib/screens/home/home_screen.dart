@@ -6,6 +6,8 @@ import 'package:record/record.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+
 import '../../core/category_labels.dart';
 import '../../core/timeline_utils.dart';
 import '../../l10n/app_localizations.dart';
@@ -34,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _selectedCategory;
   bool _loading = true;
   final Set<int> _selected = {};
+  StreamSubscription<List<SharedMediaFile>>? _shareSubscription;
 
   bool get _selecting => _selected.isNotEmpty;
 
@@ -41,6 +44,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadNotes();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _handleInitialShare());
+    _shareSubscription = ReceiveSharingIntent.instance
+        .getMediaStream()
+        .listen(_processSharedFiles);
+  }
+
+  @override
+  void dispose() {
+    _shareSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadNotes() async {
@@ -58,6 +71,67 @@ class _HomeScreenState extends State<HomeScreen> {
       _loading = false;
       _selected.removeWhere((id) => !notes.any((n) => n.id == id));
     });
+  }
+
+  Future<void> _handleInitialShare() async {
+    final files = await ReceiveSharingIntent.instance.getInitialMedia();
+    if (files.isEmpty) return;
+    await ReceiveSharingIntent.instance.reset();
+    await _processSharedFiles(files);
+  }
+
+  Future<void> _processSharedFiles(List<SharedMediaFile> files) async {
+    if (!mounted || files.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
+    final langName = Localizations.localeOf(context).languageCode == 'el'
+        ? 'Greek'
+        : 'English';
+    final now = DateTime.now();
+    final stamp = DateFormat('d/M HH:mm').format(now);
+    setState(() => _tab = 0);
+    for (final file in files) {
+      if (file.type == SharedMediaType.text) {
+        final text = file.path.trim();
+        if (text.isEmpty) continue;
+        final firstLine = text.split('\n').first.trim();
+        final autoTitle = firstLine.length > 40
+            ? '${firstLine.substring(0, 40)}…'
+            : firstLine.isNotEmpty
+                ? firstLine
+                : text.substring(0, text.length.clamp(0, 40));
+        final noteId = await DbService.instance.insert(Note(
+          type: NoteType.text,
+          title: autoTitle,
+          content: text,
+          createdAt: now,
+          updatedAt: now,
+        ));
+        unawaited(_enrichSharedText(noteId, text));
+      } else if (file.type == SharedMediaType.image) {
+        final path = await MediaService.instance.copyPathToMedia(file.path);
+        final noteId = await DbService.instance.insert(Note(
+          type: NoteType.photo,
+          title: '${l10n.photoNote} $stamp',
+          mediaPath: path,
+          createdAt: now,
+          updatedAt: now,
+        ));
+        unawaited(_enrichPhoto(noteId, path, langName));
+      }
+    }
+    if (mounted) await _loadNotes();
+  }
+
+  Future<void> _enrichSharedText(int noteId, String text) async {
+    final local = LocalAnalysisService.instance.classifyText(text);
+    final note = await DbService.instance.getById(noteId);
+    if (note == null) return;
+    await DbService.instance.update(note.copyWith(
+      category: local.category,
+      tags: local.tags,
+      updatedAt: DateTime.now(),
+    ));
+    if (mounted) _loadNotes();
   }
 
   Future<void> _openEditor() async {

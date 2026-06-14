@@ -43,6 +43,15 @@ class MediaService {
     return p.join(dir.path, '${DateTime.now().millisecondsSinceEpoch}.m4a');
   }
 
+  Future<String> copyPathToMedia(String srcPath) async {
+    final dir = await _mediaDir();
+    final name =
+        '${DateTime.now().millisecondsSinceEpoch}${p.extension(srcPath)}';
+    final target = p.join(dir.path, name);
+    await File(srcPath).copy(target);
+    return target;
+  }
+
   Future<String> _persist(XFile file) async {
     final dir = await _mediaDir();
     final name =
