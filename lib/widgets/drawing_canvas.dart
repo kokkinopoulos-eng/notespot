@@ -7,6 +7,20 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import '../l10n/app_localizations.dart';
 
+class MathAnnotation {
+  const MathAnnotation({
+    required this.text,
+    required this.position,
+    required this.fontSize,
+    required this.color,
+  });
+
+  final String text;
+  final Offset position;
+  final double fontSize;
+  final Color color;
+}
+
 class DrawingStroke {
   DrawingStroke({required this.color, required this.width});
   final Color color;
@@ -15,9 +29,10 @@ class DrawingStroke {
 }
 
 class DrawPainter extends CustomPainter {
-  const DrawPainter(this.strokes, this.current);
+  DrawPainter(this.strokes, this.current, this.annotations);
   final List<DrawingStroke> strokes;
   final DrawingStroke? current;
+  final List<MathAnnotation> annotations;
 
   static void paintStrokes(Canvas canvas, List<DrawingStroke> strokes) {
     for (final stroke in strokes) {
@@ -36,10 +51,30 @@ class DrawPainter extends CustomPainter {
     }
   }
 
+  static void paintAnnotations(
+      Canvas canvas, List<MathAnnotation> annotations) {
+    for (final ann in annotations) {
+      final tp = TextPainter(
+        text: TextSpan(
+          text: ann.text,
+          style: TextStyle(
+            fontFamily: 'Caveat',
+            fontSize: ann.fontSize,
+            color: ann.color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout(minWidth: 0, maxWidth: double.infinity);
+      tp.paint(canvas, ann.position);
+    }
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final all = [...strokes, ?current];
     paintStrokes(canvas, all);
+    paintAnnotations(canvas, annotations);
   }
 
   @override
@@ -48,6 +83,7 @@ class DrawPainter extends CustomPainter {
 
 class DrawingCanvasController extends ChangeNotifier {
   final List<DrawingStroke> strokes = [];
+  final List<MathAnnotation> mathAnnotations = [];
   DrawingStroke? current;
   Color color = Colors.white;
   double width = 3.0;
@@ -142,7 +178,13 @@ class DrawingCanvasController extends ChangeNotifier {
 
   void clear() {
     strokes.clear();
+    mathAnnotations.clear();
     current = null;
+    notifyListeners();
+  }
+
+  void addMathAnnotation(MathAnnotation a) {
+    mathAnnotations.add(a);
     notifyListeners();
   }
 
@@ -255,6 +297,7 @@ Future<Uint8List?> renderPagesToPng(List<DrawingCanvasController> pages) async {
       Paint()..color = p.bgColor,
     );
     DrawPainter.paintStrokes(canvas, p.strokes);
+    DrawPainter.paintAnnotations(canvas, p.mathAnnotations);
     canvas.restore();
     y += p.renderSize!.height;
     if (i < drawn.length - 1) {
@@ -312,7 +355,8 @@ class DrawingSurface extends StatelessWidget {
               onPointerMove: _move,
               onPointerUp: _up,
               child: CustomPaint(
-                painter: DrawPainter(controller.strokes, controller.current),
+                painter: DrawPainter(controller.strokes, controller.current,
+                    controller.mathAnnotations),
                 child: const SizedBox.expand(),
               ),
             );

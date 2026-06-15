@@ -38,6 +38,8 @@ dependencies:
   receive_sharing_intent: ^1.8.1
   flutter_local_notifications: ^18.0.0
   timezone: ^0.9.4
+  google_mlkit_digital_ink_recognition: ^0.14.2
+  home_widget: ^0.9.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -48,6 +50,10 @@ dev_dependencies:
 flutter:
   generate: true
   uses-material-design: true
+  fonts:
+    - family: Caveat
+      fonts:
+        - asset: assets/fonts/Caveat-Regular.ttf
   assets:
     - assets/icon/
 

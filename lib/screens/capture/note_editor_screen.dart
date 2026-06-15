@@ -10,6 +10,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/cloud_ai_service.dart';
 import '../../services/db_service.dart';
+import '../../services/ink_math_service.dart';
 import '../../services/local_analysis_service.dart';
 import '../../services/media_service.dart';
 import '../../widgets/drawing_canvas.dart';
@@ -75,6 +76,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   int _page = 0;
   double _split = 0.5;
   int _paneMode = 0; // 0=split, 1=text-only, 2=ink-only
+  bool _mathLoading = false;
   ui.Image? _ghostImage;
 
   DrawingCanvasController get _ink => _pages[_page];
@@ -237,11 +239,14 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       canvas.drawRect(
           Rect.fromLTWH(0, 0, w, h), Paint()..color = canvasBg);
       canvas.drawImage(ghost, Offset.zero, Paint());
+      if (drawnPages.any((p) => p.mathAnnotations.isNotEmpty)) {
+      }
       double yOff = 0;
       for (final p in drawnPages) {
         canvas.save();
         canvas.translate(0, yOff);
         DrawPainter.paintStrokes(canvas, p.strokes);
+        DrawPainter.paintAnnotations(canvas, p.mathAnnotations);
         canvas.restore();
         yOff += p.renderSize!.height;
       }
@@ -330,6 +335,131 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       updatedAt: DateTime.now(),
     ));
   }
+
+  // ── Handwriting Math Recognition ─────────────────────────────────────────
+
+  Future<void> _runMathRecognition() async {
+    if (_mathLoading) return;
+    // Capture context-dependent objects before any await.
+    final messenger = ScaffoldMessenger.of(context);
+    final strokes = List<DrawingStroke>.from(_ink.strokes);
+    if (strokes.isEmpty) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Δεν υπάρχουν γραφικά στη σελίδα'),
+        duration: Duration(seconds: 3),
+      ));
+      return;
+    }
+
+    final modelReady = await InkMathService.instance.isModelReady();
+    if (!mounted) return;
+
+    if (!modelReady) {
+      messenger.showSnackBar(const SnackBar(
+        content: Row(children: [
+          SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+          ),
+          SizedBox(width: 12),
+          Expanded(child: Text('Λήψη μοντέλου αναγνώρισης... (μόνο μία φορά)')),
+        ]),
+        duration: Duration(seconds: 90),
+      ));
+    }
+
+    setState(() => _mathLoading = true);
+    final modelError = await InkMathService.instance.ensureModel();
+    if (!modelReady) messenger.hideCurrentSnackBar();
+
+    if (!mounted) return;
+    if (modelError != null) {
+      setState(() => _mathLoading = false);
+      messenger.showSnackBar(SnackBar(content: Text(modelError)));
+      return;
+    }
+
+    final canvasSize = _ink.lastLayoutSize ?? const Size(400, 300);
+    final recognized = await InkMathService.instance.recognize(strokes, canvasSize);
+
+    if (!mounted) return;
+    setState(() => _mathLoading = false);
+
+    if (recognized == null || recognized.trim().isEmpty) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Δεν αναγνωρίστηκε η πράξη — δοκιμάστε πιο καθαρά γράμματα'),
+        duration: Duration(seconds: 4),
+      ));
+      return;
+    }
+
+    final result = await InkMathService.instance.evaluate(recognized);
+    if (!mounted) return;
+
+    if (result == null) {
+      messenger.showSnackBar(SnackBar(
+        content: Text('Αναγνωρίστηκε: "$recognized" — δεν βρέθηκε αριθμητική πράξη'),
+        duration: const Duration(seconds: 4),
+      ));
+      return;
+    }
+
+    final resultStr = (result == result.truncateToDouble() && result.abs() < 1e15)
+        ? result.truncate().toString()
+        : result.toStringAsFixed(6).replaceAll(RegExp(r'\.?0+$'), '');
+
+    // Compute annotation placement from the bounding box of the recognized strokes.
+    double bMinX = 0, bMaxX = 0, bMinY = 0, bMaxY = 0;
+    bool bFirst = true;
+    for (final stroke in strokes) {
+      for (final p in stroke.points) {
+        if (bFirst) {
+          bMinX = bMaxX = p.dx;
+          bMinY = bMaxY = p.dy;
+          bFirst = false;
+        } else {
+          if (p.dx < bMinX) bMinX = p.dx;
+          if (p.dx > bMaxX) bMaxX = p.dx;
+          if (p.dy < bMinY) bMinY = p.dy;
+          if (p.dy > bMaxY) bMaxY = p.dy;
+        }
+      }
+    }
+    if (bFirst) {
+      bMinX = 0; bMaxX = 100; bMinY = 0; bMaxY = 50;
+    }
+    final exprH = (bMaxY - bMinY).clamp(24.0, 80.0);
+    final annX = (bMaxX + 14.0).clamp(0.0, canvasSize.width - 80.0);
+    final annY = (bMinY + (bMaxY - bMinY) * 0.25)
+        .clamp(0.0, canvasSize.height - exprH);
+
+    _ink.addMathAnnotation(MathAnnotation(
+      text: '= $resultStr',
+      position: Offset(annX, annY),
+      fontSize: exprH,
+      color: _ink.color,
+    ));
+
+    messenger.showSnackBar(SnackBar(
+      content: Text('= $resultStr'),
+      duration: const Duration(seconds: 6),
+      action: SnackBarAction(
+        label: 'Εισαγωγή στο κείμενο',
+        onPressed: () => _insertMathResult(recognized, resultStr),
+      ),
+    ));
+  }
+
+  void _insertMathResult(String expression, String result) {
+    final existing = _contentCtrl.text;
+    final line = '$expression = $result';
+    _contentCtrl.text =
+        existing.isEmpty ? line : '${existing.trimRight()}\n$line';
+    setState(() {});
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   Widget _paneHeader({
     required IconData icon,
@@ -524,6 +654,24 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                             bg: cs.tertiaryContainer,
                             fg: cs.onTertiaryContainer,
                             actions: [
+                              if (_mathLoading)
+                                const SizedBox(
+                                  width: 32,
+                                  height: 32,
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  ),
+                                )
+                              else
+                                IconButton(
+                                  icon: const Icon(Icons.functions, size: 18),
+                                  tooltip: 'Αναγνώριση πράξης',
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed:
+                                      _ink.isEmpty ? null : _runMathRecognition,
+                                ),
                               IconButton(
                                 icon: Icon(
                                   _paneMode == 2
