@@ -15,15 +15,31 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    buildFeatures {
+        resValues = true
+    }
+
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.notespot.app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    flavorDimensions += "tier"
+
+    productFlavors {
+        create("free") {
+            dimension = "tier"
+            applicationId = "com.notespot.app"
+            resValue("string", "app_name", "NoteSpot")
+        }
+        create("pro") {
+            dimension = "tier"
+            applicationId = "com.notespot.pro"
+            resValue("string", "app_name", "NoteSpot Pro")
+        }
     }
 
     buildTypes {

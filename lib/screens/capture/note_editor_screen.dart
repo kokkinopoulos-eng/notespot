@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/feature_flags.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/cloud_ai_service.dart';
@@ -305,15 +306,17 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       tags: local.tags,
       updatedAt: DateTime.now(),
     ));
-    final cloud = await CloudAiService.instance.analyzeImage(path, lang);
-    if (cloud == null) return;
-    note = await DbService.instance.getById(noteId);
-    if (note == null) return;
-    await DbService.instance.update(note.copyWith(
-      category: cloud.category.isNotEmpty ? cloud.category : note.category,
-      tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
-      updatedAt: DateTime.now(),
-    ));
+    if (kCloudAiEnabled) {
+      final cloud = await CloudAiService.instance.analyzeImage(path, lang);
+      if (cloud == null) return;
+      note = await DbService.instance.getById(noteId);
+      if (note == null) return;
+      await DbService.instance.update(note.copyWith(
+        category: cloud.category.isNotEmpty ? cloud.category : note.category,
+        tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
+        updatedAt: DateTime.now(),
+      ));
+    }
   }
 
   Future<void> _enrichText(int noteId, String text, String lang) async {
@@ -325,15 +328,17 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       tags: local.tags,
       updatedAt: DateTime.now(),
     ));
-    final cloud = await CloudAiService.instance.analyzeText(text, lang);
-    if (cloud == null) return;
-    note = await DbService.instance.getById(noteId);
-    if (note == null) return;
-    await DbService.instance.update(note.copyWith(
-      category: cloud.category.isNotEmpty ? cloud.category : note.category,
-      tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
-      updatedAt: DateTime.now(),
-    ));
+    if (kCloudAiEnabled) {
+      final cloud = await CloudAiService.instance.analyzeText(text, lang);
+      if (cloud == null) return;
+      note = await DbService.instance.getById(noteId);
+      if (note == null) return;
+      await DbService.instance.update(note.copyWith(
+        category: cloud.category.isNotEmpty ? cloud.category : note.category,
+        tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
+        updatedAt: DateTime.now(),
+      ));
+    }
   }
 
   // ── Handwriting Math Recognition ─────────────────────────────────────────

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../core/feature_flags.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../models/ai_provider.dart';
 import '../../services/ai_settings_service.dart';
 import '../../services/backup_service.dart';
-import '../../services/premium_service.dart';
 import 'archived_notes_screen.dart';
 
 // --- Dialog result types ---
@@ -89,8 +89,7 @@ class _ApiKeyDialogState extends State<_ApiKeyDialog> {
               labelText: l10n.apiKey,
               helperText: widget.hasExistingKey ? l10n.apiKeySet : null,
               suffixIcon: IconButton(
-                icon:
-                    Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
             ),
@@ -245,278 +244,173 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
-  Future<void> _handleBuy(AppLocalizations l10n) async {
-    final ok = await PremiumService.instance.buy();
-    if (!mounted) return;
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(
-            PremiumService.instance.lastError ?? l10n.purchaseError)),
-      );
-    }
-  }
-
-  Future<void> _handleRestore(AppLocalizations l10n) async {
-    await PremiumService.instance.restore();
-    if (!mounted) return;
-    if (PremiumService.instance.lastError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.purchaseError)),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final currentLocale = NoteSpotApp.of(context).locale;
 
-    return ListenableBuilder(
-      listenable: PremiumService.instance,
-      builder: (context, _) {
-        final isPremium = PremiumService.instance.isPremium;
+    return ListView(
+      children: [
+        // Language section
+        _SectionHeader(title: l10n.language),
+        ListTile(
+          leading: const Icon(Icons.language),
+          title: Text(l10n.language),
+          subtitle: Text(
+            currentLocale?.languageCode == 'en'
+                ? l10n.languageEnglish
+                : l10n.languageGreek,
+          ),
+          onTap: _openLanguageDialog,
+        ),
+        const Divider(),
 
-        // Show success snack when premium just unlocked
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (isPremium && PremiumService.instance.lastError == null) {
-            // only show once — handled by stream
-          }
-        });
-
-        return ListView(
-          children: [
-            // Language section
-            _SectionHeader(title: l10n.language),
-            ListTile(
-              leading: const Icon(Icons.language),
-              title: Text(l10n.language),
-              subtitle: Text(
-                currentLocale?.languageCode == 'en'
-                    ? l10n.languageEnglish
-                    : l10n.languageGreek,
-              ),
-              onTap: _openLanguageDialog,
+        // AI section — only visible in pro builds (kCloudAiEnabled = true)
+        if (kCloudAiEnabled) ...[
+          _SectionHeader(title: l10n.aiProvider),
+          SwitchListTile(
+            secondary: const Icon(Icons.cloud_outlined),
+            title: const Text('Χρήση Cloud AI'),
+            subtitle: const Text(
+                'Βελτιώνει την κατηγοριοποίηση χρησιμοποιώντας το API key σας'),
+            value: _aiEnabled,
+            onChanged: (v) async {
+              await AiSettingsService.instance.setAiEnabled(v);
+              await _reload();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.psychology_outlined),
+            title: Text(l10n.aiProvider),
+            subtitle: Text(_selectedProvider.displayName),
+            trailing: Icon(
+              _hasKey ? Icons.check_circle : Icons.key_off,
+              color: _hasKey
+                  ? Colors.green
+                  : Theme.of(context).colorScheme.outline,
             ),
-            const Divider(),
+            onTap: _openProviderDialog,
+          ),
+          ListTile(
+            leading: const Icon(Icons.key_outlined),
+            title: Text(l10n.apiKey),
+            subtitle: Text(_maskedKey ?? l10n.noApiKey),
+            onTap: _openApiKeyDialog,
+          ),
+          const Divider(),
+        ],
 
-            // Premium section
-            if (!isPremium) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-                child: Card(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          Icon(Icons.star,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimaryContainer),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(l10n.premiumTitle,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                    fontWeight: FontWeight.bold,
-                                  ))),
-                        ]),
-                        const SizedBox(height: 8),
-                        Text(l10n.premiumDesc,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onPrimaryContainer,
-                                )),
-                        const SizedBox(height: 12),
-                        Wrap(spacing: 8, children: [
-                          FilledButton(
-                            onPressed: () => _handleBuy(l10n),
-                            child: Text(l10n.buyPremium),
-                          ),
-                          TextButton(
-                            onPressed: () => _handleRestore(l10n),
-                            child: Text(l10n.restorePurchases),
-                          ),
-                        ]),
-                      ],
+        // Archive section
+        const Divider(),
+        _SectionHeader(title: 'Αρχείο'),
+        ListTile(
+          leading: const Icon(Icons.inventory_2_outlined),
+          title: const Text('Αρχειοθετημένες σημειώσεις'),
+          subtitle:
+              const Text('Δείτε και επαναφέρετε αρχειοθετημένες σημειώσεις'),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ArchivedNotesScreen()),
+          ),
+        ),
+
+        // Backup section
+        const Divider(),
+        _SectionHeader(title: l10n.backupData),
+        ListTile(
+          leading: const Icon(Icons.backup_outlined),
+          title: Text(l10n.backupData),
+          subtitle: const Text('Drive, Dropbox, OneDrive...'),
+          onTap: () => BackupService.instance.backup(context),
+        ),
+        ListTile(
+          leading: const Icon(Icons.restore_outlined),
+          title: Text(l10n.restoreData),
+          onTap: () async {
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text(l10n.restoreConfirmTitle),
+                content: Text(l10n.restoreConfirmBody),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: Text(l10n.cancel),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.error,
                     ),
+                    child: Text(l10n.restoreData),
                   ),
-                ),
+                ],
               ),
-              const Divider(),
-            ] else ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Chip(
-                  avatar: const Icon(Icons.star, size: 16),
-                  label: Text('${l10n.premiumTitle} ✓'),
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primaryContainer,
-                ),
-              ),
-              const SizedBox(height: 4),
-            ],
+            );
+            if (confirmed != true || !context.mounted) return;
+            final ok = await BackupService.instance.restore(context);
+            if (ok && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(l10n.restoreSuccess)),
+              );
+            }
+          },
+        ),
 
-            // AI section
-            _SectionHeader(title: l10n.aiProvider),
-            SwitchListTile(
-              secondary: const Icon(Icons.cloud_outlined),
-              title: const Text('Χρήση Cloud AI'),
-              subtitle: const Text(
-                  'Βελτιώνει την κατηγοριοποίηση χρησιμοποιώντας το API key σας'),
-              value: _aiEnabled,
-              onChanged: (v) async {
-                await AiSettingsService.instance.setAiEnabled(v);
-                await _reload();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.psychology_outlined),
-              title: Text(l10n.aiProvider),
-              subtitle: Text(_selectedProvider.displayName),
-              trailing: Icon(
-                _hasKey ? Icons.check_circle : Icons.key_off,
-                color: _hasKey
-                    ? Colors.green
-                    : Theme.of(context).colorScheme.outline,
-              ),
-              onTap: _openProviderDialog,
-            ),
-            ListTile(
-              leading: const Icon(Icons.key_outlined),
-              title: Text(l10n.apiKey),
-              subtitle: Text(_maskedKey ?? l10n.noApiKey),
-              onTap: _openApiKeyDialog,
-            ),
-            const Divider(),
-
-            // Archive section
-            const Divider(),
-            _SectionHeader(title: 'Αρχείο'),
-            ListTile(
-              leading: const Icon(Icons.inventory_2_outlined),
-              title: const Text('Αρχειοθετημένες σημειώσεις'),
-              subtitle: const Text('Δείτε και επαναφέρετε αρχειοθετημένες σημειώσεις'),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const ArchivedNotesScreen()),
-              ),
-            ),
-            // Backup section
-            const Divider(),
-            _SectionHeader(title: l10n.backupData),
-            ListTile(
-              leading: const Icon(Icons.backup_outlined),
-              title: Text(l10n.backupData),
-              subtitle: const Text('Drive, Dropbox, OneDrive...'),
-              onTap: () => BackupService.instance.backup(context),
-            ),
-            ListTile(
-              leading: const Icon(Icons.restore_outlined),
-              title: Text(l10n.restoreData),
-              onTap: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(l10n.restoreConfirmTitle),
-                    content: Text(l10n.restoreConfirmBody),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: Text(l10n.cancel),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        style: FilledButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.error,
-                        ),
-                        child: Text(l10n.restoreData),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirmed != true || !context.mounted) return;
-                final ok =
-                    await BackupService.instance.restore(context);
-                if (ok && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.restoreSuccess)),
-                  );
-                }
-              },
-            ),
-            // About section
-            _SectionHeader(title: l10n.about),
-            ListTile(
-              leading: const Icon(Icons.help_outline),
+        // About section
+        _SectionHeader(title: l10n.about),
+        ListTile(
+          leading: const Icon(Icons.help_outline),
+          title: const Text('Οδηγίες χρήσης'),
+          onTap: () => showDialog<void>(
+            context: context,
+            builder: (ctx) => AlertDialog(
               title: const Text('Οδηγίες χρήσης'),
-              onTap: () => showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Οδηγίες χρήσης'),
-                  content: const SingleChildScrollView(
-                    child: Text(
-                      'Το NoteSpot είναι η εφαρμογή που συλλαμβάνει ό,τι θέλετε — '
-                      'κείμενο, σχέδιο, φωτογραφία ή φωνή — και το οργανώνει αυτόματα. '
-                      'Με AI (Gemini, Claude ή OpenAI) κάθε σημείωση αναλύεται και '
-                      'κατηγοριοποιείται αυτόματα: αποδείξεις, δουλειά, ιδέες, ψώνια, '
-                      'φαγητό, ταξίδια και άλλα. Η αναζήτηση βρίσκει τα πάντα σε δευτερόλεπτα.\n\n'
-                      '✏️ Νέα σημείωση\n'
-                      'Πατήστε το ✏️ κουμπί (ή το +) για να ανοίξετε τον editor. '
-                      'Γράψτε κείμενο πάνω και σχεδιάστε με S Pen ή δάχτυλο κάτω.\n\n'
-                      '🎨 Χρώμα καμβά\n'
-                      'Στον editor, η toolbar έχει κουμπί χρώματος για να αλλάξετε το '
-                      'φόντο του σχεδίου. Σε σκούρο φόντο διαλέξτε λευκό μελάνι από την παλέτα.\n\n'
-                      '🖼️ Φωτογραφία από συλλογή\n'
-                      'Πατήστε το 🖼️ στο navbar για να ανεβάσετε φωτογραφία από τη συλλογή σας. '
-                      'Δημιουργείται αυτόματα σημείωση με AI ανάλυση.\n\n'
-                      '📷 Φωτογραφία με κάμερα\n'
-                      'Πατήστε το 📷 στο navbar για να τραβήξετε φωτογραφία απευθείας.\n\n'
-                      '⭐ Αγαπημένα\n'
-                      'Ανοίξτε μια σημείωση και πατήστε το ⭐ στην κορυφή. '
-                      'Δείτε τα αγαπημένα με το ⭐ στο navbar — πατήστε το ξανά για όλες τις σημειώσεις.\n\n'
-                      '🎤 Φωνητική υπαγόρευση\n'
-                      'Πατήστε το 🎤 στο navbar για γρήγορη υπαγόρευση ή ηχογράφηση.\n\n'
-                      '🔍 Αναζήτηση\n'
-                      'Το 🔍 βρίσκει σε τίτλους, κείμενο, κατηγορίες και ετικέτες.\n\n'
-                      '🤖 AI ταξινόμηση\n'
-                      'Ρυθμίσεις → AI: προσθέστε το δικό σας API key (Gemini, Claude ή OpenAI) '
-                      'για αυτόματη κατηγοριοποίηση.\n\n'
-                      '💾 Αντίγραφο ασφαλείας\n'
-                      'Ρυθμίσεις → Αντίγραφο ασφαλείας για εξαγωγή σε zip. '
-                      'Η επαναφορά συγχωνεύει χωρίς να διαγράφει — η νεότερη έκδοση κερδίζει.',
-                      style: TextStyle(height: 1.6),
-                    ),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('OK'),
-                    ),
-                  ],
+              content: const SingleChildScrollView(
+                child: Text(
+                  'Το NoteSpot συλλαμβάνει ό,τι θέλετε — κείμενο, σχέδιο, φωτογραφία, φωνή ή λίστα — '
+                  'και το οργανώνει αυτόματα στη συσκευή σας, χωρίς διαδίκτυο.\n\n'
+                  '📝 Νέα σημείωση\n'
+                  'Πατήστε το «+» κάτω δεξιά και επιλέξτε τύπο: Κείμενο/Σχέδιο, Φωτογραφία, '
+                  'Από συλλογή, Φωνή ή Λίστα.\n\n'
+                  '✍️ Κείμενο & Σχέδιο\n'
+                  'Ο editor έχει δύο χώρους: κείμενο πάνω, σχέδιο κάτω. Σύρετε το διαχωριστικό '
+                  'για αλλαγή μεγέθους, ή χρησιμοποιήστε τα κουμπιά πλήρους οθόνης. '
+                  'Σχεδιάστε με δάχτυλο ή S Pen.\n\n'
+                  '🧮 Μαθηματικά με το χέρι\n'
+                  'Γράψτε μια πράξη (π.χ. 7 + 5) στον χώρο σχεδίασης και πατήστε το κουμπί ∫. '
+                  'Το αποτέλεσμα γράφεται με χειρόγραφο στυλ. Υποστηρίζονται: + − × ÷\n\n'
+                  '🔍 Αυτόματη οργάνωση\n'
+                  'Οι σημειώσεις κατηγοριοποιούνται αυτόματα στη συσκευή σας. '
+                  'Το κείμενο μέσα σε φωτογραφίες αναγνωρίζεται και γίνεται αναζητήσιμο.\n\n'
+                  '⭐ Οργάνωση\n'
+                  'Καρφίτσωμα, Αγαπημένα, Χρώματα, Αρχειοθέτηση, και Χρόνος ζωής (αυτόματη διαγραφή).\n\n'
+                  '⏰ Υπενθυμίσεις\n'
+                  'Ορίστε υπενθύμιση σε μια σημείωση για ειδοποίηση.\n\n'
+                  '🔗 Κοινή χρήση\n'
+                  'Μοιραστείτε σημειώσεις προς άλλες εφαρμογές, ή στείλτε περιεχόμενο στο NoteSpot.\n\n'
+                  '📱 Widget\n'
+                  'Προσθέστε το widget στην αρχική οθόνη για γρήγορη δημιουργία.\n\n'
+                  '💾 Αντίγραφο ασφαλείας\n'
+                  'Ρυθμίσεις → Αντίγραφο ασφαλείας για εξαγωγή/επαναφορά.',
+                  style: TextStyle(height: 1.6),
                 ),
               ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('OK'),
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: Text(l10n.version),
-              subtitle: const Text('1.0.0'),
-            ),
-          ],
-        );
-      },
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.info_outline),
+          title: Text(l10n.version),
+          subtitle: const Text('1.0.0'),
+        ),
+      ],
     );
   }
 }

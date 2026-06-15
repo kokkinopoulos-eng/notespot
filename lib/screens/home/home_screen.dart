@@ -10,6 +10,7 @@ import 'package:home_widget/home_widget.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 import '../../core/category_labels.dart';
+import '../../core/feature_flags.dart';
 import '../../core/timeline_utils.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
@@ -356,6 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _cloudUpgradeImage(int noteId, String path, String lang) async {
+    if (!kCloudAiEnabled) return;
     final cloud = await CloudAiService.instance.analyzeImage(path, lang);
     if (cloud == null) return;
     final note = await DbService.instance.getById(noteId);
@@ -832,18 +834,21 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
       tags: local.tags,
       updatedAt: DateTime.now(),
     ));
-    final cloud = await CloudAiService.instance.analyzeText(text, lang);
-    if (cloud == null) return;
-    note = await DbService.instance.getById(noteId);
-    if (note == null) return;
-    await DbService.instance.update(note.copyWith(
-      category: cloud.category.isNotEmpty ? cloud.category : note.category,
-      tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
-      updatedAt: DateTime.now(),
-    ));
+    if (kCloudAiEnabled) {
+      final cloud = await CloudAiService.instance.analyzeText(text, lang);
+      if (cloud == null) return;
+      note = await DbService.instance.getById(noteId);
+      if (note == null) return;
+      await DbService.instance.update(note.copyWith(
+        category: cloud.category.isNotEmpty ? cloud.category : note.category,
+        tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
+        updatedAt: DateTime.now(),
+      ));
+    }
   }
 
   Future<void> _enrichAudio(int noteId, String path, String lang) async {
+    if (!kCloudAiEnabled) return;
     final analysis = await CloudAiService.instance.analyzeAudio(path, lang);
     if (analysis == null) return;
     final note = await DbService.instance.getById(noteId);
