@@ -6,6 +6,7 @@ import 'package:record/record.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
+import 'package:home_widget/home_widget.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 import '../../core/category_labels.dart';
@@ -37,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loading = true;
   final Set<int> _selected = {};
   StreamSubscription<List<SharedMediaFile>>? _shareSubscription;
+  StreamSubscription<Uri?>? _widgetSubscription;
 
   bool get _selecting => _selected.isNotEmpty;
 
@@ -45,14 +47,17 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadNotes();
     WidgetsBinding.instance.addPostFrameCallback((_) => _handleInitialShare());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _handleInitialWidgetLaunch());
     _shareSubscription = ReceiveSharingIntent.instance
         .getMediaStream()
         .listen(_processSharedFiles);
+    _widgetSubscription = HomeWidget.widgetClicked.listen(_handleWidgetClick);
   }
 
   @override
   void dispose() {
     _shareSubscription?.cancel();
+    _widgetSubscription?.cancel();
     super.dispose();
   }
 
@@ -79,6 +84,24 @@ class _HomeScreenState extends State<HomeScreen> {
     if (files.isEmpty) return;
     await ReceiveSharingIntent.instance.reset();
     await _processSharedFiles(files);
+  }
+
+  Future<void> _handleInitialWidgetLaunch() async {
+    final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
+    if (!mounted || uri == null) return;
+    _handleWidgetClick(uri);
+  }
+
+  void _handleWidgetClick(Uri? uri) {
+    if (!mounted || uri == null) return;
+    switch (uri.queryParameters['action']) {
+      case 'text':
+        _openEditor();
+      case 'camera':
+        _quickPhoto();
+      case 'voice':
+        _quickDictation();
+    }
   }
 
   Future<void> _processSharedFiles(List<SharedMediaFile> files) async {

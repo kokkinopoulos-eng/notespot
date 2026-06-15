@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:background="#FFFFFF">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="NoteSpot"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="#0F152F"
+        android:gravity="center_horizontal"
+        android:paddingBottom="4dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="&#x1F4DD; &#x03A3;&#x03B7;&#x03BC;&#x03B5;&#x03AF;&#x03C9;&#x03C3;&#x03B7;"
+            android:textSize="11sp"
+            android:textAllCaps="false" />
+
+        <Button
+            android:id="@+id/btn_camera"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="&#x1F4F7; &#x03A6;&#x03C9;&#x03C4;&#x03BF;"
+            android:textSize="11sp"
+            android:textAllCaps="false" />
+
+        <Button
+            android:id="@+id/btn_voice"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="&#x1F3A4; &#x03A6;&#x03C9;&#x03BD;&#x03AE;"
+            android:textSize="11sp"
+            android:textAllCaps="false" />
+
+    </LinearLayout>
+
+</LinearLayout>
