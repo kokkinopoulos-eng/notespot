@@ -47,6 +47,9 @@ class NoteCard extends StatelessWidget {
     if (note.expiresAt != null) {
       icons.add(const Icon(Icons.schedule, size: 14, color: Colors.grey));
     }
+    if (note.reminderAt != null) {
+      icons.add(const Icon(Icons.notifications_active, size: 14, color: Color(0xFF6B4FA0)));
+    }
     if (icons.isEmpty) return null;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,

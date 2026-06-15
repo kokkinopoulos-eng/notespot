@@ -135,12 +135,87 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) _loadNotes();
   }
 
+  void _showCreateMenu() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFF6B4FA0),
+                child: Icon(Icons.edit_note, color: Colors.white),
+              ),
+              title: const Text('Κείμενο/Σχέδιο'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _openEditor();
+              },
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFF2E7D32),
+                child: Icon(Icons.photo_camera, color: Colors.white),
+              ),
+              title: const Text('Φωτογραφία'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _quickPhoto();
+              },
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFE65100),
+                child: Icon(Icons.photo_library, color: Colors.white),
+              ),
+              title: const Text('Από συλλογή'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _quickGallery();
+              },
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFC62828),
+                child: Icon(Icons.mic, color: Colors.white),
+              ),
+              title: const Text('Φωνή'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _quickDictation();
+              },
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFF00838F),
+                child: Icon(Icons.checklist, color: Colors.white),
+              ),
+              title: const Text('Λίστα'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _quickChecklist();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _openEditor() async {
-    final saved = await Navigator.push<bool>(
+    final noteId = await Navigator.push<int>(
       context,
       MaterialPageRoute(builder: (_) => const NoteEditorScreen()),
     );
-    if (saved == true) _loadNotes();
+    if (noteId == null || !mounted) return;
+    final note = await DbService.instance.getById(noteId);
+    if (note == null || !mounted) return;
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => NoteDetailScreen(note: note)),
+    );
+    _loadNotes();
   }
 
   Future<void> _quickPhoto() async {
@@ -159,8 +234,14 @@ class _HomeScreenState extends State<HomeScreen> {
       createdAt: now,
       updatedAt: now,
     ));
-    await _loadNotes();
     unawaited(_enrichPhoto(noteId, path, langName));
+    final note = await DbService.instance.getById(noteId);
+    if (note == null || !mounted) return;
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => NoteDetailScreen(note: note)),
+    );
+    _loadNotes();
   }
 
   Widget _buildFavorites() {
@@ -208,8 +289,14 @@ class _HomeScreenState extends State<HomeScreen> {
       createdAt: now,
       updatedAt: now,
     ));
-    await _loadNotes();
     unawaited(_enrichPhoto(noteId, path, langName));
+    final note = await DbService.instance.getById(noteId);
+    if (note == null || !mounted) return;
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => NoteDetailScreen(note: note)),
+    );
+    _loadNotes();
   }
 
   Future<void> _quickChecklist() async {
@@ -263,11 +350,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _quickDictation() async {
-    await showModalBottomSheet<void>(
+    final noteId = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => _QuickDictationSheet(onSaved: _loadNotes),
+      builder: (_) => const _QuickDictationSheet(),
     );
+    if (noteId == null || !mounted) return;
+    final note = await DbService.instance.getById(noteId);
+    if (note == null || !mounted) return;
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => NoteDetailScreen(note: note)),
+    );
+    _loadNotes();
   }
 
   Future<void> _deleteSelected(AppLocalizations l10n) async {
@@ -456,7 +551,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: _selecting
           ? AppBar(
@@ -486,7 +580,7 @@ class _HomeScreenState extends State<HomeScreen> {
           : AppBar(title: const Text('NoteSpot')),
       floatingActionButton: (!_selecting && _tab == 0)
           ? FloatingActionButton(
-              onPressed: _openEditor,
+              onPressed: _showCreateMenu,
               tooltip: l10n.newNote,
               child: const Icon(Icons.add),
             )
@@ -520,41 +614,6 @@ class _HomeScreenState extends State<HomeScreen> {
               tooltip: l10n.favorites,
               onPressed: () => setState(() => _tab = _tab == 3 ? 0 : 3),
             ),
-            IconButton(
-              icon: const Icon(Icons.mic_outlined),
-              color: Colors.white,
-              onPressed: _quickDictation,
-              tooltip: l10n.voiceNote,
-            ),
-            IconButton(
-              icon: const Icon(Icons.photo_camera_outlined),
-              color: Colors.white,
-              onPressed: _quickPhoto,
-              tooltip: l10n.photoNote,
-            ),
-            IconButton(
-              icon: const Icon(Icons.photo_library_outlined, size: 24),
-              color: Colors.white,
-              onPressed: _quickGallery,
-              tooltip: 'Από συλλογή',
-            ),
-            IconButton(
-              icon: const Icon(Icons.checklist_outlined, size: 24),
-              color: Colors.white,
-              onPressed: _quickChecklist,
-              tooltip: 'Νέα λίστα',
-            ),
-            const SizedBox(width: 2),
-            IconButton.filled(
-              icon: const Icon(Icons.edit),
-              onPressed: _openEditor,
-              tooltip: l10n.newNote,
-              style: IconButton.styleFrom(
-                backgroundColor: cs.primary,
-                foregroundColor: cs.onPrimary,
-                padding: const EdgeInsets.all(10),
-              ),
-            ),
           ],
         ),
       ),
@@ -567,8 +626,7 @@ class _HomeScreenState extends State<HomeScreen> {
 enum _SheetMode { dictation, record }
 
 class _QuickDictationSheet extends StatefulWidget {
-  const _QuickDictationSheet({required this.onSaved});
-  final VoidCallback onSaved;
+  const _QuickDictationSheet();
 
   @override
   State<_QuickDictationSheet> createState() => _QuickDictationSheetState();
@@ -708,8 +766,7 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
     ));
     unawaited(_enrichText(noteId, text, langName));
     if (!mounted) return;
-    Navigator.pop(context);
-    widget.onSaved();
+    Navigator.pop(context, noteId);
   }
 
   Future<void> _saveRecording() async {
@@ -730,8 +787,7 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
     ));
     unawaited(_enrichAudio(noteId, path, langName));
     if (!mounted) return;
-    Navigator.pop(context);
-    widget.onSaved();
+    Navigator.pop(context, noteId);
   }
 
   Future<void> _cancelRecording() async {

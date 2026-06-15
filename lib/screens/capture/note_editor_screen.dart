@@ -287,7 +287,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     }
 
     if (!mounted) return;
-    Navigator.pop(context, true);
+    Navigator.pop(context, noteId);
   }
 
   Future<void> _enrichImage(int noteId, String path, String lang) async {

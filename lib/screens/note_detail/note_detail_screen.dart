@@ -10,6 +10,7 @@ import '../../core/category_labels.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/db_service.dart';
+import '../../services/notification_service.dart';
 import '../capture/note_editor_screen.dart';
 import '../../services/media_service.dart';
 
@@ -272,11 +273,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         File(_note.mediaPath!).existsSync() &&
         !_note.mediaPath!.endsWith('.m4a');
     if (hasInk) {
-      final saved = await Navigator.push<bool>(
+      final savedId = await Navigator.push<int>(
         context,
         MaterialPageRoute(builder: (_) => NoteEditorScreen(editNote: _note)),
       );
-      if (saved == true && mounted) {
+      if (savedId != null && mounted) {
         final refreshed = await DbService.instance.getById(_note.id!);
         if (refreshed != null && mounted) setState(() => _note = refreshed);
       }
@@ -441,6 +442,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                 final time = await showTimePicker(
                   context: context,
                   initialTime: const TimeOfDay(hour: 8, minute: 0),
+                  initialEntryMode: TimePickerEntryMode.input,
                 );
                 if (time == null || !mounted) return;
                 _applyExpiry(DateTime(
@@ -451,6 +453,151 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _showReminderPicker() async {
+    final now = DateTime.now();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: Text('Υπενθύμιση',
+                  style: Theme.of(ctx).textTheme.titleMedium),
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_off_outlined),
+              title: const Text('Καμία υπενθύμιση'),
+              selected: _note.reminderAt == null,
+              onTap: () {
+                Navigator.pop(ctx);
+                _applyReminder(null);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_active_outlined),
+              title: const Text('Σε 1 ώρα'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _applyReminder(now.add(const Duration(hours: 1)));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_active_outlined),
+              title: const Text('Σε 3 ώρες'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _applyReminder(now.add(const Duration(hours: 3)));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.bedtime_outlined),
+              title: const Text('Απόψε στις 20:00'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _applyReminder(DateTime(now.year, now.month, now.day, 20, 0));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.wb_sunny_outlined),
+              title: const Text('Αύριο στις 9:00'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _applyReminder(
+                    DateTime(now.year, now.month, now.day + 1, 9, 0));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.schedule),
+              title: const Text('Επιλογή ώρας (σήμερα)...'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.fromDateTime(
+                      now.add(const Duration(hours: 1))),
+                  initialEntryMode: TimePickerEntryMode.input,
+                );
+                if (time == null || !mounted) return;
+                var dt = DateTime(
+                    now.year, now.month, now.day, time.hour, time.minute);
+                if (dt.isBefore(now)) {
+                  dt = dt.add(const Duration(days: 1));
+                }
+                _applyReminder(dt);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('Επιλογή ημερομηνίας & ώρας...'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: now.add(const Duration(days: 1)),
+                  firstDate: now,
+                  lastDate: now.add(const Duration(days: 365 * 5)),
+                );
+                if (date == null || !mounted) return;
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: const TimeOfDay(hour: 9, minute: 0),
+                  initialEntryMode: TimePickerEntryMode.input,
+                );
+                if (time == null || !mounted) return;
+                _applyReminder(DateTime(
+                    date.year, date.month, date.day, time.hour, time.minute));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _applyReminder(DateTime? reminderAt) async {
+    if (_note.id != null) {
+      if (reminderAt != null) {
+        final ok = await NotificationService.instance
+            .trySchedule(_note.id!, _note.title, reminderAt);
+        if (!ok && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Η υπενθύμιση αποθηκεύτηκε αλλά ίσως χρειάζεται άδεια ειδοποιήσεων στις ρυθμίσεις.'),
+            ),
+          );
+        }
+      } else {
+        await NotificationService.instance.cancelReminder(_note.id!);
+      }
+    }
+    final updated = Note(
+      id: _note.id,
+      type: _note.type,
+      title: _note.title,
+      content: _note.content,
+      category: _note.category,
+      tags: _note.tags,
+      mediaPath: _note.mediaPath,
+      isFavorite: _note.isFavorite,
+      canvasBg: _note.canvasBg,
+      ocrText: _note.ocrText,
+      isPinned: _note.isPinned,
+      isArchived: _note.isArchived,
+      color: _note.color,
+      reminderAt: reminderAt,
+      expiresAt: _note.expiresAt,
+      createdAt: _note.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    await DbService.instance.update(updated);
+    if (mounted) setState(() => _note = updated);
   }
 
   Future<void> _applyExpiry(DateTime? expiry) async {
@@ -628,6 +775,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     final expiryLabel = _note.expiresAt == null
         ? 'Για πάντα'
         : 'Λήγει: ${DateFormat('d/M/yy HH:mm').format(_note.expiresAt!)}';
+    final reminderLabel = _note.reminderAt == null
+        ? 'Καμία υπενθύμιση'
+        : 'Υπενθύμιση: ${DateFormat('d/M/yy HH:mm').format(_note.reminderAt!)}';
 
     return Scaffold(
       appBar: AppBar(
@@ -792,6 +942,38 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                             color: _note.expiresAt == null
                                 ? null
                                 : Theme.of(context).colorScheme.error,
+                          ),
+                    ),
+                    const Icon(Icons.arrow_drop_down, size: 16),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            // Reminder row
+            InkWell(
+              onTap: _showReminderPicker,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      _note.reminderAt == null
+                          ? Icons.notifications_none
+                          : Icons.notifications_active,
+                      size: 18,
+                      color: _note.reminderAt == null
+                          ? Colors.grey
+                          : Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      reminderLabel,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: _note.reminderAt == null
+                                ? null
+                                : Theme.of(context).colorScheme.primary,
                           ),
                     ),
                     const Icon(Icons.arrow_drop_down, size: 16),
