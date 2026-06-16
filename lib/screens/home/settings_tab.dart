@@ -3,6 +3,7 @@ import '../../core/feature_flags.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../models/ai_provider.dart';
+import '../../services/eva_service.dart';
 import '../../services/ai_settings_service.dart';
 import '../../services/backup_service.dart';
 import '../../services/db_service.dart';
@@ -205,6 +206,39 @@ class _SettingsTabState extends State<SettingsTab> {
     }
   }
 
+  Future<void> _resetEva() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded,
+            color: Color(0xFFC62828), size: 36),
+        title: const Text('Επαναφορά Eva;'),
+        content: const Text(
+            'Η Eva θα ξεχάσει όλα όσα έχει μάθει και θα ξεκινήσει από '
+            'την αρχή. Οι σημειώσεις σας ΔΕΝ θα επηρεαστούν. '
+            'Η ενέργεια αυτή δεν αναιρείται.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Ακύρωση'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFC62828)),
+            child: const Text('Επαναφορά'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await EvaService.instance.reset();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Η Eva ξεκίνησε από την αρχή.')),
+    );
+  }
+  
   Future<void> _rescanAll() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -410,6 +444,13 @@ class _SettingsTabState extends State<SettingsTab> {
           subtitle: const Text(
               'Εφαρμογή μάθησης της Eva σε σημειώσεις χωρίς χειροκίνητη κατηγορία'),
           onTap: _rescanAll,
+        ),
+        ListTile(
+          leading: const Icon(Icons.restart_alt, color: Color(0xFFC62828)),
+          title: const Text('Επαναφορά Eva'),
+          subtitle: const Text(
+              'Διαγραφή όσων έχει μάθει η Eva. Οι σημειώσεις σας δεν επηρεάζονται.'),
+          onTap: _resetEva,
         ),
 
         // Backup section

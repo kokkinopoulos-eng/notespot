@@ -188,4 +188,14 @@ class EvaService {
       return false;
     }
   }
+
+  /// Wipes everything Eva has learned (both vocabulary and category totals).
+  /// Does NOT touch the user's notes — only the learned model.
+  Future<void> reset() async {
+    try {
+      final db = await DbService.instance.database;
+      await db.delete('eva_vocab');
+      await db.delete('eva_cat_totals');
+    } catch (_) {}
+  }
 }
