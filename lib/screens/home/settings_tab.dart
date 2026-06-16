@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/feature_flags.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
 import '../../models/ai_provider.dart';
@@ -545,9 +546,45 @@ class _SettingsTabState extends State<SettingsTab> {
           ),
         ),
         ListTile(
+          leading: const Icon(Icons.description_outlined),
+          title: const Text('Όροι χρήσης'),
+          onTap: () => showDialog<void>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Όροι χρήσης'),
+              content: SingleChildScrollView(
+                child: Text(
+                  'Οι σημειώσεις σας αποθηκεύονται τοπικά στη συσκευή σας. Είστε υπεύθυνοι για τα αντίγραφα ασφαλείας. Η εφαρμογή παρέχεται «ως έχει». Πλήρεις όροι: kokkinopoulos-eng.github.io/notespot-legal',
+                  style: const TextStyle(height: 1.6),
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
+              ],
+            ),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.privacy_tip_outlined),
+          title: const Text('Πολιτική Απορρήτου'),
+          subtitle: Text(kCloudAiEnabled ? 'Τοπικά + Cloud AI' : '100% offline'),
+          onTap: () async {
+            final page = kCloudAiEnabled ? 'privacy-pro-el.html' : 'privacy-free-el.html';
+            final uri = Uri.parse('https://kokkinopoulos-eng.github.io/notespot-legal/' + page);
+            try {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            } catch (_) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('kokkinopoulos-eng.github.io/notespot-legal')));
+              }
+            }
+          },
+        ),
+        ListTile(
           leading: const Icon(Icons.info_outline),
           title: Text(l10n.version),
-          subtitle: const Text('1.0.0'),
+          subtitle: Text('NoteSpot ' + kEditionName + ' · 1.0.0'),
         ),
       ],
     );
