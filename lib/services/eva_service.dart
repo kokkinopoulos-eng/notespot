@@ -1,14 +1,19 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'db_service.dart';
+
+/// Set to true temporarily to emit training/prediction diagnostics.
+const bool kEvaDebug = false;
 
 /// On-device Naive Bayes learner that improves category predictions as the
 /// user corrects Eva's suggestions. Stored in eva_vocab / eva_cat_totals tables.
 ///
 /// Blending logic:
-///   - If total training docs < 5: rules win unconditionally (Eva is untrained).
-///   - Otherwise: compute NB log-score per category. Eva wins only when its
-///     top pick leads the runner-up by >= 1.0 in log-space (≈ e^1 ≈ 2.7× more
-///     probable). Below that margin the rules are trusted (baseCategory returned).
+///   - If total training docs < 2: rules win unconditionally (Eva is untrained).
+///   - Otherwise: compute NB log-score per category. If base rules found a
+///     clear keyword hit (baseScore >= 1) Eva needs >= 8 docs and >= 2.0
+///     log-margin to override. If base is "other" (score 0) Eva wins when its
+///     top category leads by >= 0.5 log-margin (≈ e^0.5 ≈ 1.65× more probable).
 class EvaService {
   EvaService._();
   static final instance = EvaService._();
@@ -63,7 +68,8 @@ class EvaService {
 
       final int totalDocs =
           totalsRows.fold(0, (sum, r) => sum + (r['doc_count'] as int));
-      if (totalDocs < 2) return baseCategory; // not enough training data yet
+      if (kEvaDebug) debugPrint('[Eva] predict: totalDocs=$totalDocs base=$baseCategory(score=$baseScore)');
+      if (totalDocs < 2) return baseCategory;
 
       final catTotals = <String, int>{};
       for (final r in totalsRows) {
@@ -91,6 +97,7 @@ class EvaService {
 
       final vocabSize = vocab.length;
       final tokens = _tokenize(text);
+      if (kEvaDebug) debugPrint('[Eva] predict tokens=$tokens vocabSize=$vocabSize catWordTotals=$catWordTotals');
       if (tokens.isEmpty) return baseCategory;
 
       // Multinomial Naive Bayes log-score per category.
@@ -130,18 +137,22 @@ class EvaService {
 
       if (bestScore == double.negativeInfinity) return baseCategory;
 
-      // Eva overrides base rules only when confident: log-margin >= 1.0.
       final margin = bestScore - secondScore;
+      if (kEvaDebug) debugPrint('[Eva] predict best=$best margin=$margin bestScore=$bestScore secondScore=$secondScore');
+
       // If base rules already found a clear keyword match, trust base
       // unless Eva is very well-trained AND very confident.
       if (baseScore >= 1) {
         if (totalDocs < 8 || margin < 2.0) return baseCategory;
+        if (kEvaDebug) debugPrint('[Eva] predict overrides base keyword match → $best');
         return best;
       }
       if (margin < 0.5) return baseCategory;
 
+      if (kEvaDebug) debugPrint('[Eva] predict → $best (base was $baseCategory)');
       return best;
-    } catch (_) {
+    } catch (e, st) {
+      if (kEvaDebug) debugPrint('[Eva] predict exception: $e\n$st');
       return baseCategory;
     }
   }
@@ -153,6 +164,8 @@ class EvaService {
       final db = await DbService.instance.database;
       final tokens = _tokenize(text);
       if (tokens.isEmpty) return;
+
+      if (kEvaDebug) debugPrint('[Eva] train category=$category tokens=$tokens');
 
       // Use INSERT OR IGNORE + UPDATE pairs for SQLite <3.24 compatibility.
       final batch = db.batch();
@@ -175,7 +188,14 @@ class EvaService {
         [category],
       );
       await batch.commit(noResult: true);
-    } catch (_) {}
+
+      if (kEvaDebug) {
+        final rows = await db.query('eva_cat_totals');
+        debugPrint('[Eva] train complete — cat_totals: $rows');
+      }
+    } catch (e, st) {
+      if (kEvaDebug) debugPrint('[Eva] train exception: $e\n$st');
+    }
   }
 
   /// True once at least one training example has been recorded.

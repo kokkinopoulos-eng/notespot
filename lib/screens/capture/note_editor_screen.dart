@@ -11,6 +11,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/cloud_ai_service.dart';
 import '../../services/db_service.dart';
+import '../../services/eva_service.dart';
 import '../../services/ink_math_service.dart';
 import '../../services/ink_text_service.dart';
 import '../../services/local_analysis_service.dart';
@@ -318,6 +319,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
         updatedAt: DateTime.now(),
       ));
+      if (cloud.category.isNotEmpty && cloud.category != 'other' && !note.categoryLocked) {
+        final learnText = '${note.content} ${note.ocrText}'.trim();
+        if (learnText.isNotEmpty) {
+          await EvaService.instance.train(learnText, cloud.category);
+        }
+      }
     }
   }
 
@@ -340,6 +347,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
         updatedAt: DateTime.now(),
       ));
+      if (cloud.category.isNotEmpty && cloud.category != 'other' && !note.categoryLocked) {
+        await EvaService.instance.train(text, cloud.category);
+      }
     }
   }
 
