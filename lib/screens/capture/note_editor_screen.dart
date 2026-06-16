@@ -12,6 +12,7 @@ import '../../models/note.dart';
 import '../../services/cloud_ai_service.dart';
 import '../../services/db_service.dart';
 import '../../services/ink_math_service.dart';
+import '../../services/ink_text_service.dart';
 import '../../services/local_analysis_service.dart';
 import '../../services/media_service.dart';
 import '../../widgets/drawing_canvas.dart';
@@ -78,6 +79,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   double _split = 0.5;
   int _paneMode = 0; // 0=split, 1=text-only, 2=ink-only
   bool _mathLoading = false;
+  bool _textLoading = false;
   ui.Image? _ghostImage;
 
   DrawingCanvasController get _ink => _pages[_page];
@@ -342,6 +344,90 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   }
 
   // ── Handwriting Math Recognition ─────────────────────────────────────────
+
+  Future<void> _runTextRecognition() async {
+    if (_textLoading) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final strokes = List<DrawingStroke>.from(_ink.strokes);
+    if (strokes.isEmpty) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Δεν υπάρχουν γραφικά στη σελίδα'),
+        duration: Duration(seconds: 3),
+      ));
+      return;
+    }
+    const lang = 'el';
+    final ready = await InkTextService.instance.isModelReady(lang);
+    if (!mounted) return;
+    if (!ready) {
+      messenger.showSnackBar(const SnackBar(
+        content: Row(children: [
+          SizedBox(
+            width: 18, height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+          ),
+          SizedBox(width: 12),
+          Expanded(child: Text('Λήψη μοντέλου ελληνικών... (μία φορά)')),
+        ]),
+        duration: Duration(seconds: 60),
+      ));
+    }
+    setState(() => _textLoading = true);
+    final modelError = await InkTextService.instance.ensureModel(lang);
+    if (!mounted) return;
+    if (!ready) messenger.hideCurrentSnackBar();
+    if (modelError != null) {
+      setState(() => _textLoading = false);
+      messenger.showSnackBar(SnackBar(content: Text(modelError)));
+      return;
+    }
+    final canvasSize = _ink.lastLayoutSize ?? const Size(400, 300);
+    final candidates = await InkTextService.instance
+        .recognizeCandidates(strokes, canvasSize, lang: lang);
+    if (!mounted) return;
+    setState(() => _textLoading = false);
+    if (candidates.isEmpty) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Δεν αναγνωρίστηκε κείμενο — δοκιμάστε πιο καθαρά γράμματα'),
+        duration: Duration(seconds: 3),
+      ));
+      return;
+    }
+    if (!mounted) return;
+    final chosen = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: Text('Διάλεξε το κείμενο',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+            for (final cand in candidates)
+              ListTile(
+                leading: const Icon(Icons.text_fields),
+                title: Text(cand),
+                onTap: () => Navigator.pop(ctx, cand),
+              ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.close),
+              title: const Text('Ακύρωση'),
+              onTap: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (chosen == null || !mounted) return;
+    final existing = _contentCtrl.text;
+    _contentCtrl.text =
+        existing.isEmpty ? chosen : '$existing\n$chosen';
+    setState(() {});
+  }
 
   Future<void> _runMathRecognition() async {
     if (_mathLoading) return;
@@ -676,6 +762,14 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                                   visualDensity: VisualDensity.compact,
                                   onPressed:
                                       _ink.isEmpty ? null : _runMathRecognition,
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.text_fields, size: 18),
+                                  tooltip: 'Μετατροπή σε κείμενο',
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: _ink.isEmpty
+                                      ? null
+                                      : _runTextRecognition,
                                 ),
                               IconButton(
                                 icon: Icon(
