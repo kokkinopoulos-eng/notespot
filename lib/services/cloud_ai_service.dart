@@ -54,7 +54,7 @@ class CloudAiService {
       'unless a document IS the main subject filling most of the frame. '
       'Respond ONLY with valid JSON, no markdown fences, no extra text: '
       '{"title": "short title describing the MAIN subject, max 6 words, in <LANG>", '
-      '"category": "one of [receipts, work, personal, shopping, ideas, food, travel, other] matching the MAIN subject", '
+      '"category": "one of [passwords, contacts, shopping, receipts, finance, work, health, travel, ideas, addresses, pets, food, education, tech, vehicle, home, appointments, bills, personal, other] matching the MAIN subject", '
       '"tags": ["3-6 keywords about the MAIN subject in <LANG>"], '
       '"extracted_text": "text readable on the MAIN subject verbatim (brand, label, amounts), empty string if none"}';
 
@@ -62,7 +62,7 @@ class CloudAiService {
       'Analyze this text for a note-taking app. '
       'Respond ONLY with valid JSON, no markdown fences, no extra text: '
       '{"title": "short title max 6 words in <LANG>", '
-      '"category": "one of [receipts, work, personal, shopping, ideas, food, travel, other]", '
+      '"category": "one of [passwords, contacts, shopping, receipts, finance, work, health, travel, ideas, addresses, pets, food, education, tech, vehicle, home, appointments, bills, personal, other]", '
       '"tags": ["3-6 keywords in <LANG>"], '
       '"extracted_text": ""}';
 
@@ -76,7 +76,7 @@ class CloudAiService {
       'Transcribe and analyze this audio recording for a note-taking app. '
       'Respond ONLY with valid JSON, no markdown fences, no extra text: '
       '{"title": "short title max 6 words in $lang", '
-      '"category": "one of [receipts, work, personal, shopping, ideas, food, travel, other]", '
+      '"category": "one of [passwords, contacts, shopping, receipts, finance, work, health, travel, ideas, addresses, pets, food, education, tech, vehicle, home, appointments, bills, personal, other]", '
       '"tags": ["3-6 keywords in $lang"], '
       '"extracted_text": "verbatim transcription of the audio in $lang"}';
 

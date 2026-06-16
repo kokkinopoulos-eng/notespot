@@ -1,3 +1,4 @@
+import '../../services/eva_service.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -371,6 +372,13 @@ class _HomeScreenState extends State<HomeScreen> {
       tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
       updatedAt: DateTime.now(),
     ));
+    // Eva learns from the cloud AI (unless the user locked the category).
+    if (cloud.category.isNotEmpty && cloud.category != 'other' && !note.categoryLocked) {
+      final learnText = '${note.content} ${note.ocrText}'.trim();
+      if (learnText.isNotEmpty) {
+        await EvaService.instance.train(learnText, cloud.category);
+      }
+    }
     if (mounted) _loadNotes();
   }
 
@@ -870,6 +878,9 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
         tags: cloud.tags.isNotEmpty ? cloud.tags : note.tags,
         updatedAt: DateTime.now(),
       ));
+      if (cloud.category.isNotEmpty && cloud.category != 'other' && !note.categoryLocked) {
+        await EvaService.instance.train(text, cloud.category);
+      }
     }
   }
 
@@ -887,6 +898,14 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
       tags: analysis.tags,
       updatedAt: DateTime.now(),
     ));
+    if (analysis.category.isNotEmpty && analysis.category != 'other' && !note.categoryLocked) {
+      final learnText = analysis.extractedText.isNotEmpty
+          ? analysis.extractedText
+          : note.content;
+      if (learnText.trim().isNotEmpty) {
+        await EvaService.instance.train(learnText, analysis.category);
+      }
+    }
   }
 
   String _fmtSecs(int s) {
