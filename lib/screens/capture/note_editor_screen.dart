@@ -745,7 +745,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                             bg: cs.tertiaryContainer,
                             fg: cs.onTertiaryContainer,
                             actions: [
-                              if (_mathLoading)
+                              if (_mathLoading || _textLoading)
                                 const SizedBox(
                                   width: 32,
                                   height: 32,
@@ -756,20 +756,33 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                                   ),
                                 )
                               else
-                                IconButton(
-                                  icon: const Icon(Icons.functions, size: 18),
-                                  tooltip: 'Αναγνώριση πράξης',
-                                  visualDensity: VisualDensity.compact,
-                                  onPressed:
-                                      _ink.isEmpty ? null : _runMathRecognition,
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.text_fields, size: 18),
-                                  tooltip: 'Μετατροπή σε κείμενο',
-                                  visualDensity: VisualDensity.compact,
-                                  onPressed: _ink.isEmpty
-                                      ? null
-                                      : _runTextRecognition,
+                                PopupMenuButton<String>(
+                                  icon: const Icon(Icons.auto_fix_high,
+                                      size: 18),
+                                  tooltip: 'Αναγνώριση',
+                                  enabled: !_ink.isEmpty,
+                                  onSelected: (v) {
+                                    if (v == 'math') _runMathRecognition();
+                                    if (v == 'text') _runTextRecognition();
+                                  },
+                                  itemBuilder: (ctx) => const [
+                                    PopupMenuItem(
+                                      value: 'math',
+                                      child: Row(children: [
+                                        Icon(Icons.functions, size: 18),
+                                        SizedBox(width: 10),
+                                        Text('Αναγνώριση πράξης'),
+                                      ]),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'text',
+                                      child: Row(children: [
+                                        Icon(Icons.text_fields, size: 18),
+                                        SizedBox(width: 10),
+                                        Text('Μετατροπή σε κείμενο'),
+                                      ]),
+                                    ),
+                                  ],
                                 ),
                               IconButton(
                                 icon: Icon(

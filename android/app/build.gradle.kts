@@ -33,7 +33,7 @@ android {
         create("free") {
             dimension = "tier"
             applicationId = "com.notespot.app"
-            resValue("string", "app_name", "NoteSpot")
+            resValue("string", "app_name", "NoteSpot Free")
         }
         create("pro") {
             dimension = "tier"

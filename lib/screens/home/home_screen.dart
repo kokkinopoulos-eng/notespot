@@ -602,7 +602,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             )
-          : AppBar(title: const Text('NoteSpot')),
+          : AppBar(
+              title: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('NoteSpot'),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: kCloudAiEnabled
+                          ? const Color(0xFF7C4DFF)
+                          : const Color(0xFF2E7D32),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      kEditionName,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
       floatingActionButton: (!_selecting && _tab == 0)
           ? FloatingActionButton(
               onPressed: _showCreateMenu,
