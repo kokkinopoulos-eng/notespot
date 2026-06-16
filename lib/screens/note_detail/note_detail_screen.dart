@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../widgets/eva_avatar.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -879,7 +880,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1045,6 +1048,30 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               ),
           ],
         ),
+          ),
+          // Floating Eva helper (bottom-left), tappable for a tip.
+          Positioned(
+            right: 8,
+            top: 70,
+            child: EvaAvatar(
+              size: 110,
+              floating: true,
+              mood: EvaMood.idle,
+              onTap: () {
+                final isEl =
+                    Localizations.localeOf(context).languageCode == 'el';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    duration: const Duration(seconds: 3),
+                    content: Text(isEl
+                        ? 'Με λένε Eva! Μαθαίνω να ταξινομώ τις σημειώσεις σου όταν διορθώνεις την κατηγορία.'
+                        : "I'm Eva! I learn to sort your notes when you fix the category."),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1084,8 +1111,8 @@ class _EvaSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome, size: 14, color: secondary),
-              const SizedBox(width: 5),
+              Icon(Icons.auto_awesome, size: 16, color: secondary),
+              const SizedBox(width: 8),
               Flexible(
                 child: Text(
                   isLocked
