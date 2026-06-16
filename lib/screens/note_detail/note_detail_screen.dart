@@ -10,6 +10,8 @@ import '../../core/category_labels.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/db_service.dart';
+import '../../services/eva_service.dart';
+import '../../services/local_analysis_service.dart';
 import '../../services/notification_service.dart';
 import '../capture/note_editor_screen.dart';
 import '../../services/media_service.dart';
@@ -227,6 +229,7 @@ class NoteDetailScreen extends StatefulWidget {
 
 class _NoteDetailScreenState extends State<NoteDetailScreen> {
   late Note _note;
+  bool _evaLearnChecked = true;
 
   // Preset colors for picker (0 = none/default)
   static const _presetColors = [
@@ -244,6 +247,27 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   void initState() {
     super.initState();
     _note = widget.note;
+    _reloadAfterEnrichment();
+  }
+
+  /// When a note is freshly created, background analysis (base rules + Eva)
+  /// may set its category a moment after this screen opens. Re-read the note
+  /// from the DB a few times so the Eva dropdown reflects the final category.
+  Future<void> _reloadAfterEnrichment() async {
+    if (_note.id == null) return;
+    for (var i = 0; i < 5; i++) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+      final fresh = await DbService.instance.getById(_note.id!);
+      if (fresh == null) return;
+      // Update if category/tags/ocr changed (enrichment finished).
+      if (fresh.category != _note.category ||
+          fresh.tags.length != _note.tags.length ||
+          fresh.ocrText != _note.ocrText) {
+        if (mounted) setState(() => _note = fresh);
+        return;
+      }
+    }
   }
 
   String _typeLabel(AppLocalizations l10n) => switch (_note.type) {
@@ -256,6 +280,20 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
   static bool _isAudio(String? path) =>
       path != null && path.toLowerCase().endsWith('.m4a');
+
+  Future<void> _onEvaCategoryPicked(String cat) async {
+    final noteText = '${_note.content} ${_note.ocrText}'.trim();
+    final updated = _note.copyWith(
+      category: cat,
+      categoryLocked: true,
+      updatedAt: DateTime.now(),
+    );
+    await DbService.instance.update(updated);
+    if (_evaLearnChecked && noteText.isNotEmpty) {
+      await EvaService.instance.train(noteText, cat);
+    }
+    if (mounted) setState(() => _note = updated);
+  }
 
   Future<void> _share() async {
     final text = '${_note.title}\n${_note.content}';
@@ -593,6 +631,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       color: _note.color,
       reminderAt: reminderAt,
       expiresAt: _note.expiresAt,
+      categoryLocked: _note.categoryLocked,
       createdAt: _note.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -619,6 +658,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       color: _note.color,
       reminderAt: _note.reminderAt,
       expiresAt: expiry,
+      categoryLocked: _note.categoryLocked,
       createdAt: _note.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -768,6 +808,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
+    final isEl = Localizations.localeOf(context).languageCode == 'el';
     final date = DateFormat.yMMMd(locale).add_jm().format(_note.createdAt);
     final path = _note.mediaPath;
     final hasAudio = _isAudio(path) && path != null && File(path).existsSync();
@@ -982,6 +1023,18 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               ),
             ),
             const SizedBox(height: 8),
+            // Eva section
+            _EvaSection(
+              currentCategory:
+                  _note.category.isNotEmpty ? _note.category : 'other',
+              learnChecked: _evaLearnChecked,
+              isEl: isEl,
+              isLocked: _note.categoryLocked,
+              onCategoryPicked: _onEvaCategoryPicked,
+              onLearnChanged: (v) =>
+                  setState(() => _evaLearnChecked = v ?? true),
+            ),
+            const SizedBox(height: 8),
             // Content area
             if (_note.type == NoteType.checklist)
               _buildChecklist()
@@ -992,6 +1045,97 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// --- Eva category section ---
+class _EvaSection extends StatelessWidget {
+  const _EvaSection({
+    required this.currentCategory,
+    required this.learnChecked,
+    required this.isEl,
+    required this.isLocked,
+    required this.onCategoryPicked,
+    required this.onLearnChanged,
+  });
+
+  final String currentCategory;
+  final bool learnChecked;
+  final bool isEl;
+  final bool isLocked;
+  final ValueChanged<String> onCategoryPicked;
+  final ValueChanged<bool?> onLearnChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final secondary = Theme.of(context).colorScheme.secondary;
+    final bodySmall = Theme.of(context).textTheme.bodySmall;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 6, 4, 2),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(color: secondary.withValues(alpha: 0.5), width: 2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.auto_awesome, size: 14, color: secondary),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  isLocked
+                      ? (isEl ? 'Κατηγορία (χειροκίνητη)' : 'Category (manual)')
+                      : (isEl
+                          ? 'Η Eva πρότεινε αυτή την κατηγορία'
+                          : 'Eva suggested this category'),
+                  style: bodySmall?.copyWith(
+                    color: secondary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          DropdownButtonFormField<String>(
+            initialValue: currentCategory,
+            isDense: true,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+            ),
+            style: bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            items: LocalAnalysisService.kCategories
+                .map((cat) => DropdownMenuItem(
+                      value: cat,
+                      child: Text(categoryLabel(cat, greek: isEl)),
+                    ))
+                .toList(),
+            onChanged: (v) {
+              if (v != null) onCategoryPicked(v);
+            },
+          ),
+          CheckboxListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            value: learnChecked,
+            visualDensity: VisualDensity.compact,
+            title: Text(
+              isEl ? 'Βοήθησε την Eva να μάθει' : 'Help Eva learn',
+              style: bodySmall,
+            ),
+            onChanged: onLearnChanged,
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+        ],
       ),
     );
   }

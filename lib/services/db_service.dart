@@ -9,7 +9,7 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const _dbName = 'notespot.db';
-  static const _dbVersion = 5;
+  static const _dbVersion = 6;
 
   Database? _db;
 
@@ -45,6 +45,24 @@ class DbService {
       await db.execute(
           'ALTER TABLE notes ADD COLUMN expires_at INTEGER');
     }
+    if (oldV < 6) {
+      await db.execute(
+          'ALTER TABLE notes ADD COLUMN category_locked INTEGER NOT NULL DEFAULT 0');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS eva_vocab(
+          word TEXT NOT NULL,
+          category TEXT NOT NULL,
+          count INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY(word, category)
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS eva_cat_totals(
+          category TEXT PRIMARY KEY,
+          doc_count INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -66,12 +84,27 @@ class DbService {
         color INTEGER NOT NULL DEFAULT 0,
         reminder_at INTEGER,
         expires_at INTEGER,
+        category_locked INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       )
     ''');
     await db.execute('CREATE INDEX idx_notes_category ON notes(category)');
     await db.execute('CREATE INDEX idx_notes_created ON notes(created_at)');
+    await db.execute('''
+      CREATE TABLE eva_vocab(
+        word TEXT NOT NULL,
+        category TEXT NOT NULL,
+        count INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY(word, category)
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE eva_cat_totals(
+        category TEXT PRIMARY KEY,
+        doc_count INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
   }
 
   Map<String, dynamic> _withSearchText(Note note) {
@@ -158,6 +191,17 @@ class DbService {
       "SELECT DISTINCT category FROM notes WHERE category != '' ORDER BY category",
     );
     return rows.map((r) => r['category'] as String).toList();
+  }
+
+  /// Returns non-archived notes the user has NOT manually locked — rescan-eligible.
+  Future<List<Note>> getRescannable() async {
+    final db = await database;
+    final rows = await db.query(
+      'notes',
+      where: 'is_archived = 0 AND category_locked = 0',
+      orderBy: 'created_at DESC',
+    );
+    return rows.map(Note.fromMap).toList();
   }
 
   Future<List<Note>> search(String query) async {

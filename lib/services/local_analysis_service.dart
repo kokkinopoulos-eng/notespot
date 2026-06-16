@@ -1,5 +1,6 @@
 import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'eva_service.dart';
 
 class LocalAnalysisResult {
   const LocalAnalysisResult(
@@ -66,8 +67,10 @@ class LocalAnalysisService {
     ]),
     _Rule('shopping', [
       'λιστα', 'αγορες', 'αγορα', 'ψωνια', 'σουπερ μαρκετ', 'supermarket',
-      'grocery', 'ψωμι', 'γαλα', 'αυγα', 'καφες', 'list', 'buy', 'shopping',
-      'market', 'φρουτα', 'λαχανικα', 'κρεας', 'απορρυπαντικο',
+      'grocery', 'ψωμι', 'γαλα', 'καφες', 'list', 'buy', 'shopping',
+      'market', 'φρουτα', 'λαχανικα', 'απορρυπαντικο', 'χαρτι υγειας',
+      'σαμπουαν', 'οδοντοκρεμα', 'σαπουνι', 'ζαχαρη', 'αλευρι', 'λαδι',
+      'να παρω', 'να αγορασω', 'χρειαζομαι',
     ]),
     _Rule('receipts', [
       'αποδειξη', 'αποδειξεις', 'τιμολογιο', 'receipt', 'invoice', 'αφμ',
@@ -112,6 +115,10 @@ class LocalAnalysisService {
       'φαγητο', 'food', 'συνταγη', 'recipe', 'εστιατοριο', 'restaurant',
       'πιτσα', 'pizza', 'μενου', 'menu', 'υλικα', 'μαγειρικη', 'cooking',
       'ταβερνα', 'delivery', 'σουβλακι', 'burger', 'κουζινα',
+      'αυγο', 'αυγα', 'ψαρι', 'κρεας', 'κοτοπουλο', 'ρυζι', 'μακαρονια',
+      'σαλατα', 'τυρι', 'ντοματα', 'πατατες', 'φρουτο', 'μηλο', 'πορτοκαλι',
+      'φαω', 'φαμε', 'γευμα', 'πρωινο', 'μεσημεριανο', 'βραδινο', 'σνακ',
+      'γλυκο', 'γλυκα', 'ζυμαρικα', 'σουπα', 'ομελετα',
     ]),
     _Rule('education', [
       'μαθημα', 'lesson', 'σχολειο', 'school', 'πανεπιστημιο', 'university',
@@ -164,7 +171,7 @@ class LocalAnalysisService {
     return _classify(searchable);
   }
 
-  LocalAnalysisResult classifyText(String text) => _classify(text);
+  Future<LocalAnalysisResult> classifyText(String text) => _classify(text);
 
   /// Computes the base rule prediction (category + score + tags) WITHOUT Eva.
   /// Eva calls this, then blends with its learned model.
@@ -198,11 +205,16 @@ class LocalAnalysisService {
     }
   }
 
-  LocalAnalysisResult _classify(String text) {
+  Future<LocalAnalysisResult> _classify(String text) async {
     final norm = _normalize(text);
     final base = _matchCategory(norm);
+    final finalCat = await EvaService.instance.predict(
+      text,
+      baseCategory: base.category,
+      baseScore: base.score,
+    );
     return LocalAnalysisResult(
-        ocrText: text.trim(), category: base.category, tags: base.tags);
+        ocrText: text.trim(), category: finalCat, tags: base.tags);
   }
 
   /// Returns the best base category, a score (higher = more confident),

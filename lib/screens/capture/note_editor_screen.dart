@@ -320,7 +320,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   }
 
   Future<void> _enrichText(int noteId, String text, String lang) async {
-    final local = LocalAnalysisService.instance.classifyText(text);
+    final local = await LocalAnalysisService.instance.classifyText(text);
     var note = await DbService.instance.getById(noteId);
     if (note == null) return;
     await DbService.instance.update(note.copyWith(

@@ -5,6 +5,8 @@ import '../../main.dart';
 import '../../models/ai_provider.dart';
 import '../../services/ai_settings_service.dart';
 import '../../services/backup_service.dart';
+import '../../services/db_service.dart';
+import '../../services/local_analysis_service.dart';
 import 'archived_notes_screen.dart';
 
 // --- Dialog result types ---
@@ -203,6 +205,91 @@ class _SettingsTabState extends State<SettingsTab> {
     }
   }
 
+  Future<void> _rescanAll() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Επανεξέταση με Eva'),
+        content: const Text(
+          'Η Eva θα αναλύσει ξανά όλες τις σημειώσεις που δεν έχετε κλειδώσει '
+          'χειροκίνητα. Εφαρμόζει τη μάθησή της στις παλιές σημειώσεις.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Άκυρο'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Επανεξέταση'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final notes = await DbService.instance.getRescannable();
+    final total = notes.length;
+
+    if (total == 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Δεν υπάρχουν σημειώσεις για επανεξέταση.')),
+      );
+      return;
+    }
+
+    final progressNotifier = ValueNotifier<int>(0);
+    if (!mounted) return;
+
+    // Non-dismissable progress dialog.
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Επανεξέταση...'),
+        content: ValueListenableBuilder<int>(
+          valueListenable: progressNotifier,
+          builder: (_, done, child) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              LinearProgressIndicator(
+                  value: total > 0 ? done / total : 0),
+              const SizedBox(height: 12),
+              Text('$done / $total'),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    int updated = 0;
+    for (final note in notes) {
+      final searchText = '${note.content} ${note.ocrText}'.trim();
+      final result =
+          await LocalAnalysisService.instance.classifyText(searchText);
+      if (result.category.isNotEmpty &&
+          result.category != note.category) {
+        await DbService.instance.update(note.copyWith(
+          category: result.category,
+          tags: result.tags,
+          updatedAt: DateTime.now(),
+        ));
+        updated++;
+      }
+      progressNotifier.value++;
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pop(); // close progress dialog
+    progressNotifier.dispose();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Ενημερώθηκαν $updated σημειώσεις')),
+    );
+  }
+
   void _openLanguageDialog() {
     final currentLocale = NoteSpotApp.of(context).locale;
     final l10n = AppLocalizations.of(context);
@@ -312,6 +399,17 @@ class _SettingsTabState extends State<SettingsTab> {
             context,
             MaterialPageRoute(builder: (_) => const ArchivedNotesScreen()),
           ),
+        ),
+
+        // Eva section
+        const Divider(),
+        _SectionHeader(title: 'Eva'),
+        ListTile(
+          leading: const Icon(Icons.auto_awesome),
+          title: const Text('Επανεξέταση όλων με Eva'),
+          subtitle: const Text(
+              'Εφαρμογή μάθησης της Eva σε σημειώσεις χωρίς χειροκίνητη κατηγορία'),
+          onTap: _rescanAll,
         ),
 
         // Backup section

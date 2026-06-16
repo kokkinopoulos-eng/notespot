@@ -148,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _enrichSharedText(int noteId, String text) async {
-    final local = LocalAnalysisService.instance.classifyText(text);
+    final local = await LocalAnalysisService.instance.classifyText(text);
     final note = await DbService.instance.getById(noteId);
     if (note == null) return;
     await DbService.instance.update(note.copyWith(
@@ -826,7 +826,7 @@ class _QuickDictationSheetState extends State<_QuickDictationSheet> {
   }
 
   Future<void> _enrichText(int noteId, String text, String lang) async {
-    final local = LocalAnalysisService.instance.classifyText(text);
+    final local = await LocalAnalysisService.instance.classifyText(text);
     var note = await DbService.instance.getById(noteId);
     if (note == null) return;
     await DbService.instance.update(note.copyWith(

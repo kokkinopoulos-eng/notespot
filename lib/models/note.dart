@@ -19,6 +19,7 @@ class Note {
     this.color = 0,
     this.reminderAt,
     this.expiresAt,
+    this.categoryLocked = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -38,6 +39,7 @@ class Note {
   final int color;
   final DateTime? reminderAt;
   final DateTime? expiresAt;
+  final bool categoryLocked;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -57,6 +59,7 @@ class Note {
     int? color,
     DateTime? reminderAt,
     DateTime? expiresAt,
+    bool? categoryLocked,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -76,6 +79,7 @@ class Note {
       color: color ?? this.color,
       reminderAt: reminderAt ?? this.reminderAt,
       expiresAt: expiresAt ?? this.expiresAt,
+      categoryLocked: categoryLocked ?? this.categoryLocked,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -97,6 +101,7 @@ class Note {
         'color': color,
         'reminder_at': reminderAt?.millisecondsSinceEpoch,
         'expires_at': expiresAt?.millisecondsSinceEpoch,
+        'category_locked': categoryLocked ? 1 : 0,
         'created_at': createdAt.millisecondsSinceEpoch,
         'updated_at': updatedAt.millisecondsSinceEpoch,
       };
@@ -118,6 +123,7 @@ class Note {
         isPinned: (map['is_pinned'] as int? ?? 0) == 1,
         isArchived: (map['is_archived'] as int? ?? 0) == 1,
         color: map['color'] as int? ?? 0,
+        categoryLocked: (map['category_locked'] as int? ?? 0) == 1,
         reminderAt: map['reminder_at'] == null
             ? null
             : DateTime.fromMillisecondsSinceEpoch(map['reminder_at'] as int),
