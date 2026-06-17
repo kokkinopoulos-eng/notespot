@@ -37,8 +37,14 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Note> _notes = [];
   List<String> _categories = [];
   String? _selectedCategory;
+  final Set<int> _selectedColors = {};
   bool _loading = true;
   final Set<int> _selected = {};
+
+  static const _noteColors = [
+    0xFFFFCDD2, 0xFFFFE0B2, 0xFFFFF9C4, 0xFFC8E6C9,
+    0xFFBBDEFB, 0xFFE1BEE7, 0xFFF8BBD0,
+  ];
   StreamSubscription<List<SharedMediaFile>>? _shareSubscription;
   StreamSubscription<Uri?>? _widgetSubscription;
 
@@ -69,9 +75,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_selectedCategory != null && !cats.contains(_selectedCategory)) {
       _selectedCategory = null;
     }
-    final notes = _selectedCategory != null
+    var notes = _selectedCategory != null
         ? await DbService.instance.getByCategory(_selectedCategory!)
         : await DbService.instance.getAll();
+    if (_selectedColors.isNotEmpty) {
+      notes = notes.where((n) => _selectedColors.contains(n.color)).toList();
+    }
     if (!mounted) return;
     setState(() {
       _categories = cats;
@@ -276,7 +285,9 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
-        final notes = snap.data!;
+        final notes = _selectedColors.isEmpty
+            ? snap.data!
+            : snap.data!.where((n) => _selectedColors.contains(n.color)).toList();
         if (notes.isEmpty) {
           return const Center(
             child: Column(
@@ -473,6 +484,35 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _colorDot(int color) {
+    final active = _selectedColors.contains(color);
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (active) {
+            _selectedColors.remove(color);
+          } else {
+            _selectedColors.add(color);
+          }
+        });
+        _loadNotes();
+      },
+      child: Container(
+        width: 18,
+        height: 18,
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        decoration: BoxDecoration(
+          color: Color(color),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: active ? Colors.white : Colors.transparent,
+            width: 2,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _noteItem(Note note) {
     final cs = Theme.of(context).colorScheme;
     final sel = _selected.contains(note.id);
@@ -664,6 +704,8 @@ class _HomeScreenState extends State<HomeScreen> {
             _tabBtn(1, Icons.search, l10n.searchTab),
             _tabBtn(2, Icons.settings, l10n.settingsTab),
             const Spacer(),
+            ..._noteColors.map(_colorDot),
+            const SizedBox(width: 4),
             IconButton(
               icon: Icon(
                 _tab == 3 ? Icons.star : Icons.star_border,

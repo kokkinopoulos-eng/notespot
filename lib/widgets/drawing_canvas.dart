@@ -7,6 +7,9 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import '../l10n/app_localizations.dart';
 
+bool _isStylusKind(PointerDeviceKind k) =>
+    k == PointerDeviceKind.stylus || k == PointerDeviceKind.invertedStylus;
+
 class MathAnnotation {
   const MathAnnotation({
     required this.text,
@@ -91,6 +94,8 @@ class DrawingCanvasController extends ChangeNotifier {
   double width = 3.0;
   bool stylusOnly = false;
   bool stylusDetected = false;
+  // Called when stylusDetected or stylusOnly changes — used by the editor to persist prefs.
+  void Function(bool detected, bool only)? onStylusStateChanged;
   bool eraserMode = false;
   Color bgColor = Colors.black;
   Color strokeColor = Colors.white;
@@ -143,6 +148,7 @@ class DrawingCanvasController extends ChangeNotifier {
   void setStylusOnly(bool v) {
     stylusOnly = v;
     notifyListeners();
+    onStylusStateChanged?.call(stylusDetected, stylusOnly);
   }
 
   Color _lastColor = Colors.white;
@@ -150,6 +156,7 @@ class DrawingCanvasController extends ChangeNotifier {
     if (!stylusDetected) {
       stylusDetected = true;
       notifyListeners();
+      onStylusStateChanged?.call(stylusDetected, stylusOnly);
     }
   }
 
@@ -366,16 +373,16 @@ class DrawingSurface extends StatelessWidget {
   final VoidCallback? onDrawStart;
 
   void _down(PointerDownEvent e) {
-    if (e.kind == PointerDeviceKind.stylus) {
+    if (_isStylusKind(e.kind)) {
       controller.markStylusDetected();
     }
-    if (controller.stylusOnly && e.kind != PointerDeviceKind.stylus) return;
+    if (controller.stylusOnly && !_isStylusKind(e.kind)) return;
     onDrawStart?.call();
     controller.beginStroke(e.localPosition);
   }
 
   void _move(PointerMoveEvent e) {
-    if (controller.stylusOnly && e.kind != PointerDeviceKind.stylus) return;
+    if (controller.stylusOnly && !_isStylusKind(e.kind)) return;
     if (!controller.eraserMode && controller.current == null) return;
     controller.addPoint(e.localPosition);
   }

@@ -90,6 +90,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     super.initState();
     _loadEditNote();
     _loadSplit();
+    _loadStylusPrefs();
   }
 
   Future<void> _loadSplit() async {
@@ -103,6 +104,26 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   Future<void> _saveSplit() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('editor_split', _split);
+  }
+
+  Future<void> _loadStylusPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final detected = prefs.getBool('stylus_detected') ?? false;
+    final only = prefs.getBool('stylus_only') ?? false;
+    if (!mounted) return;
+    for (final p in _pages) {
+      if (detected) p.stylusDetected = detected;
+      if (only) p.stylusOnly = only;
+      p.onStylusStateChanged = _saveStylusPrefs;
+    }
+    if (detected || only) setState(() {});
+  }
+
+  void _saveStylusPrefs(bool detected, bool only) {
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool('stylus_detected', detected);
+      prefs.setBool('stylus_only', only);
+    });
   }
 
   Future<void> _loadEditNote() async {
@@ -151,6 +172,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         ..color = from.color
         ..width = from.width
         ..stylusOnly = from.stylusOnly
+        ..stylusDetected = from.stylusDetected
         ..bgColor = from.bgColor;
     });
   }
@@ -159,11 +181,14 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     if (_pages.length >= kMaxInkPages) return;
     final from = _ink;
     setState(() {
-      _pages.add(DrawingCanvasController()
+      final page = DrawingCanvasController()
         ..color = from.color
         ..width = from.width
         ..stylusOnly = from.stylusOnly
-        ..bgColor = from.bgColor);
+        ..stylusDetected = from.stylusDetected
+        ..bgColor = from.bgColor
+        ..onStylusStateChanged = _saveStylusPrefs;
+      _pages.add(page);
       _page = _pages.length - 1;
     });
   }
