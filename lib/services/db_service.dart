@@ -178,9 +178,9 @@ class DbService {
     final db = await database;
     final rows = await db.query(
       'notes',
-      where: 'category = ?',
+      where: 'is_archived = 0 AND category = ?',
       whereArgs: [category],
-      orderBy: 'created_at DESC',
+      orderBy: 'is_pinned DESC, created_at DESC',
     );
     return rows.map(Note.fromMap).toList();
   }

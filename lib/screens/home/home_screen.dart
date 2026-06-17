@@ -462,8 +462,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: FilterChip(
                   label: Text(localizedCategory(l10n, c)),
                   selected: _selectedCategory == c,
-                  onSelected: (_) {
-                    setState(() => _selectedCategory = c);
+                  onSelected: (selected) {
+                    setState(() => _selectedCategory = selected ? c : null);
                     _loadNotes();
                   },
                 ),

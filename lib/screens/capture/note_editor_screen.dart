@@ -866,7 +866,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                     ),
                   ),
                 ),
-              DrawingToolbar(controller: _ink),
+              if (_paneMode != 1) DrawingToolbar(controller: _ink),
             ],
           ),
         ),

@@ -84,6 +84,8 @@ class DrawPainter extends CustomPainter {
 class DrawingCanvasController extends ChangeNotifier {
   final List<DrawingStroke> strokes = [];
   final List<MathAnnotation> mathAnnotations = [];
+  // Tracks insertion order for undo: true = stroke, false = annotation.
+  final List<bool> _undoStack = [];
   DrawingStroke? current;
   Color color = Colors.white;
   double width = 3.0;
@@ -112,7 +114,10 @@ class DrawingCanvasController extends ChangeNotifier {
     }
   }
 
-  bool get isEmpty => strokes.isEmpty;
+  bool get isEmpty => strokes.isEmpty && mathAnnotations.isEmpty;
+
+  /// True when there is at least one stroke or annotation that can be undone.
+  bool get canUndo => strokes.isNotEmpty || mathAnnotations.isNotEmpty;
 
   Offset _clamp(Offset p) {
     final s = lastLayoutSize;
@@ -169,8 +174,27 @@ class DrawingCanvasController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Undoes the last drawn stroke or added math annotation, in insertion order.
   void undo() {
-    if (strokes.isNotEmpty) {
+    // Walk the stack from the end, skipping entries for items already erased.
+    while (_undoStack.isNotEmpty) {
+      final isStroke = _undoStack.removeLast();
+      if (isStroke && strokes.isNotEmpty) {
+        strokes.removeLast();
+        notifyListeners();
+        return;
+      } else if (!isStroke && mathAnnotations.isNotEmpty) {
+        mathAnnotations.removeLast();
+        notifyListeners();
+        return;
+      }
+      // Entry is orphaned (item was erased); consume it and try the next one.
+    }
+    // Stack exhausted — fall back to direct removal so the button stays useful.
+    if (mathAnnotations.isNotEmpty) {
+      mathAnnotations.removeLast();
+      notifyListeners();
+    } else if (strokes.isNotEmpty) {
       strokes.removeLast();
       notifyListeners();
     }
@@ -179,22 +203,38 @@ class DrawingCanvasController extends ChangeNotifier {
   void clear() {
     strokes.clear();
     mathAnnotations.clear();
+    _undoStack.clear();
     current = null;
     notifyListeners();
   }
 
   void addMathAnnotation(MathAnnotation a) {
     mathAnnotations.add(a);
+    _undoStack.add(false);
     notifyListeners();
   }
 
-  /// Removes every stroke passing near [p].
+  /// Removes every stroke passing near [p], and any math annotation whose
+  /// rendered bounding box overlaps the eraser circle.
   void eraseAt(Offset p) {
     const r = 18.0;
-    final before = strokes.length;
+    final strokesBefore = strokes.length;
     strokes.removeWhere(
         (s) => s.points.any((q) => (q - p).distance <= r + s.width / 2));
-    if (strokes.length != before) notifyListeners();
+
+    final annBefore = mathAnnotations.length;
+    mathAnnotations.removeWhere((a) {
+      // Estimate text width from character count (Caveat is ~0.55× em wide).
+      final estW = a.text.length * a.fontSize * 0.55;
+      return p.dx >= a.position.dx - r &&
+          p.dx <= a.position.dx + estW + r &&
+          p.dy >= a.position.dy - r &&
+          p.dy <= a.position.dy + a.fontSize + r;
+    });
+
+    if (strokes.length != strokesBefore || mathAnnotations.length != annBefore) {
+      notifyListeners();
+    }
   }
 
   void beginStroke(Offset pos) {
@@ -258,6 +298,7 @@ class DrawingCanvasController extends ChangeNotifier {
       return;
     }
     strokes.add(c);
+    _undoStack.add(true);
     notifyListeners();
   }
 
@@ -549,7 +590,7 @@ class DrawingToolbar extends StatelessWidget {
                   icon: Icons.undo,
                   tooltip: l10n.undo,
                   cs: cs,
-                  onPressed: controller.isEmpty ? null : controller.undo,
+                  onPressed: controller.canUndo ? controller.undo : null,
                 ),
                 _toolBtn(
                   icon: Icons.delete_sweep,
