@@ -1,10 +1,11 @@
 // lib/widgets/ai_action_menu.dart
 //
-// Bottom-sheet menu για AI Assistant actions (Pro v1.1).
-// Orchestrates: action menu → (tone submenu αν χρειάζεται) → AI call
-// με loading dialog → preview dialog. Επιστρέφει το τελικό AiPreviewResult.
+// Bottom-sheet menu for AI Assistant actions (Pro v1.1).
+// Orchestrates: action menu → (tone submenu if needed) → AI call
+// with loading dialog → preview dialog. Returns the final AiPreviewResult.
 
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/ai_assistant_prompts.dart';
 import '../services/ai_assistant_service.dart';
 import 'ai_result_preview.dart';
@@ -21,84 +22,48 @@ enum AiActionType {
 class _ActionOption {
   final AiActionType type;
   final IconData icon;
-  final String label;
-  final String? description;
-  const _ActionOption({
-    required this.type,
-    required this.icon,
-    required this.label,
-    this.description,
-  });
+  const _ActionOption({required this.type, required this.icon});
 }
 
 const List<_ActionOption> _options = [
-  _ActionOption(
-    type: AiActionType.grammarFix,
-    icon: Icons.spellcheck,
-    label: 'Διόρθωσε ορθογραφία/γραμματική',
-    description: 'Διορθώνει λάθη χωρίς να αλλάζει το νόημα',
-  ),
-  _ActionOption(
-    type: AiActionType.summarize,
-    icon: Icons.short_text,
-    label: 'Σύνοψε',
-    description: '1-2 προτάσεις',
-  ),
-  _ActionOption(
-    type: AiActionType.expand,
-    icon: Icons.unfold_more,
-    label: 'Επέκτεινε',
-    description: 'Πρόσθεσε σχετικές λεπτομέρειες',
-  ),
-  _ActionOption(
-    type: AiActionType.shorten,
-    icon: Icons.unfold_less,
-    label: 'Συντόμευσε',
-    description: 'Στο μισό περίπου μήκος',
-  ),
-  _ActionOption(
-    type: AiActionType.changeTone,
-    icon: Icons.theater_comedy,
-    label: 'Άλλαξε τόνο',
-    description: 'Επίσημο, φιλικό, επαγγελματικό, χιουμοριστικό',
-  ),
-  _ActionOption(
-    type: AiActionType.paraphrase,
-    icon: Icons.autorenew,
-    label: 'Ξαναγράψε',
-    description: 'Με διαφορετικά λόγια',
-  ),
+  _ActionOption(type: AiActionType.grammarFix, icon: Icons.spellcheck),
+  _ActionOption(type: AiActionType.summarize, icon: Icons.short_text),
+  _ActionOption(type: AiActionType.expand, icon: Icons.unfold_more),
+  _ActionOption(type: AiActionType.shorten, icon: Icons.unfold_less),
+  _ActionOption(type: AiActionType.changeTone, icon: Icons.theater_comedy),
+  _ActionOption(type: AiActionType.paraphrase, icon: Icons.autorenew),
 ];
 
 class AiActionMenu {
-  /// Εμφανίζει το menu, παίρνει την επιλογή του χρήστη, καλεί AI, δείχνει
-  /// preview. Επιστρέφει [AiPreviewResult] με την τελική απόφαση ή null.
+  /// Shows the menu, gets the user's choice, calls AI, shows preview.
+  /// Returns [AiPreviewResult] with the final decision or null.
   static Future<AiPreviewResult?> show({
     required BuildContext context,
     required String text,
-    String menuTitle = '✨ AI Assistant',
   }) async {
+    final l10n = AppLocalizations.of(context);
     if (text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Δεν υπάρχει κείμενο για επεξεργασία.')),
+        SnackBar(content: Text(l10n.aiNoText)),
       );
       return null;
     }
 
     // Step 1: Action menu
-    final action = await _showActionSheet(context, menuTitle);
+    final action = await _showActionSheet(context, l10n);
     if (action == null || !context.mounted) return null;
 
-    // Step 2: Tone submenu αν χρειάζεται
+    // Step 2: Tone submenu if needed
     ToneStyle? tone;
     if (action == AiActionType.changeTone) {
-      tone = await _showToneSheet(context);
+      tone = await _showToneSheet(context, l10n);
       if (tone == null || !context.mounted) return null;
     }
 
-    // Step 3: AI call με loading dialog
+    // Step 3: AI call with loading dialog
     final firstResult = await _runWithLoading(
       context: context,
+      l10n: l10n,
       operation: () => _callAi(text, action, tone),
     );
     if (firstResult == null || !context.mounted) return null;
@@ -112,12 +77,44 @@ class AiActionMenu {
   }
 
   // ───────────────────────────────────────────────────────────────
+  // Label resolvers
+  // ───────────────────────────────────────────────────────────────
+
+  static String _actionLabel(AppLocalizations l10n, AiActionType type) =>
+      switch (type) {
+        AiActionType.grammarFix => l10n.aiActionGrammarFix,
+        AiActionType.summarize => l10n.aiActionSummarize,
+        AiActionType.expand => l10n.aiActionExpand,
+        AiActionType.shorten => l10n.aiActionShorten,
+        AiActionType.changeTone => l10n.aiActionChangeTone,
+        AiActionType.paraphrase => l10n.aiActionParaphrase,
+      };
+
+  static String _actionDesc(AppLocalizations l10n, AiActionType type) =>
+      switch (type) {
+        AiActionType.grammarFix => l10n.aiActionGrammarFixDesc,
+        AiActionType.summarize => l10n.aiActionSummarizeDesc,
+        AiActionType.expand => l10n.aiActionExpandDesc,
+        AiActionType.shorten => l10n.aiActionShortenDesc,
+        AiActionType.changeTone => l10n.aiActionChangeToneDesc,
+        AiActionType.paraphrase => l10n.aiActionParaphraseDesc,
+      };
+
+  static String _toneLabel(AppLocalizations l10n, ToneStyle tone) =>
+      switch (tone) {
+        ToneStyle.formal => l10n.toneFormal,
+        ToneStyle.friendly => l10n.toneFriendly,
+        ToneStyle.professional => l10n.toneProfessional,
+        ToneStyle.humorous => l10n.toneHumorous,
+      };
+
+  // ───────────────────────────────────────────────────────────────
   // Internal helpers
   // ───────────────────────────────────────────────────────────────
 
   static Future<AiActionType?> _showActionSheet(
     BuildContext context,
-    String title,
+    AppLocalizations l10n,
   ) {
     return showModalBottomSheet<AiActionType>(
       context: context,
@@ -128,27 +125,27 @@ class AiActionMenu {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  title,
-                  style: Theme.of(ctx).textTheme.titleLarge,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    l10n.aiAssistantTitle,
+                    style: Theme.of(ctx).textTheme.titleLarge,
+                  ),
                 ),
               ),
-            ),
-            const Divider(height: 1),
-            for (final o in _options)
-              ListTile(
-                leading: Icon(o.icon),
-                title: Text(o.label),
-                subtitle: o.description != null ? Text(o.description!) : null,
-                trailing: o.type == AiActionType.changeTone
-                    ? const Icon(Icons.chevron_right)
-                    : null,
-                onTap: () => Navigator.of(ctx).pop(o.type),
-              ),
+              const Divider(height: 1),
+              for (final o in _options)
+                ListTile(
+                  leading: Icon(o.icon),
+                  title: Text(_actionLabel(l10n, o.type)),
+                  subtitle: Text(_actionDesc(l10n, o.type)),
+                  trailing: o.type == AiActionType.changeTone
+                      ? const Icon(Icons.chevron_right)
+                      : null,
+                  onTap: () => Navigator.of(ctx).pop(o.type),
+                ),
               const SizedBox(height: 8),
             ],
           ),
@@ -157,9 +154,10 @@ class AiActionMenu {
     );
   }
 
-  static Future<ToneStyle?> _showToneSheet(BuildContext context) {
-    String cap(String s) =>
-        s.isEmpty ? s : s.substring(0, 1).toUpperCase() + s.substring(1);
+  static Future<ToneStyle?> _showToneSheet(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) {
     return showModalBottomSheet<ToneStyle>(
       context: context,
       showDragHandle: true,
@@ -169,23 +167,23 @@ class AiActionMenu {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Διάλεξε τόνο',
-                  style: Theme.of(ctx).textTheme.titleLarge,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    l10n.aiChooseTone,
+                    style: Theme.of(ctx).textTheme.titleLarge,
+                  ),
                 ),
               ),
-            ),
-            const Divider(height: 1),
-            for (final t in ToneStyle.values)
-              ListTile(
-                leading: const Icon(Icons.theater_comedy_outlined),
-                title: Text(cap(t.label)),
-                onTap: () => Navigator.of(ctx).pop(t),
-              ),
+              const Divider(height: 1),
+              for (final t in ToneStyle.values)
+                ListTile(
+                  leading: const Icon(Icons.theater_comedy_outlined),
+                  title: Text(_toneLabel(l10n, t)),
+                  onTap: () => Navigator.of(ctx).pop(t),
+                ),
               const SizedBox(height: 8),
             ],
           ),
@@ -196,25 +194,25 @@ class AiActionMenu {
 
   static Future<T?> _runWithLoading<T>({
     required BuildContext context,
+    required AppLocalizations l10n,
     required Future<T?> Function() operation,
   }) async {
-    // Show loading dialog
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const Dialog(
+      builder: (ctx) => Dialog(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(
+              const SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(strokeWidth: 2.5),
               ),
-              SizedBox(width: 20),
-              Text('Επεξεργασία...'),
+              const SizedBox(width: 20),
+              Text(l10n.aiProcessing),
             ],
           ),
         ),
@@ -231,9 +229,9 @@ class AiActionMenu {
     if (context.mounted) Navigator.of(context).pop();
 
     if (result == null && context.mounted) {
-      final err = AiAssistantService.instance.lastError ?? 'Άγνωστο σφάλμα.';
+      final err = AiAssistantService.instance.lastError ?? l10n.aiUnknownError;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Αποτυχία AI: $err')),
+        SnackBar(content: Text(l10n.aiFailure(err))),
       );
     }
     return result;

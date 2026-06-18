@@ -743,7 +743,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ? FloatingActionButton.extended(
               icon: const Icon(Icons.auto_awesome),
               label: const Text('AI'),
-              tooltip: '✨ AI Assistant',
+              tooltip: AppLocalizations.of(context).aiAssistantTitle,
               onPressed: _onAiButtonPressed,
             )
           : null,

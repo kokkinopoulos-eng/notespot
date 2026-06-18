@@ -1,15 +1,16 @@
 // lib/widgets/ai_result_preview.dart
 //
-// Preview dialog για AI Assistant results (Pro v1.1).
-// Δείχνει το αποτέλεσμα με 4 actions: Αντικατάσταση / Προσθήκη / Ξανά / Άκυρο.
-// Το retry γίνεται internally χωρίς να κλείνει το dialog.
+// Preview dialog for AI Assistant results (Pro v1.1).
+// Shows the result with 4 actions: Replace / Append / Retry / Cancel.
+// Retry is handled internally without closing the dialog.
 
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
-/// Πιθανές ενέργειες αποτελέσματος.
+/// Possible result actions.
 enum AiPreviewAction { replace, append }
 
-/// Result wrapper που επιστρέφει το dialog στον caller.
+/// Result wrapper returned by the dialog to the caller.
 class AiPreviewResult {
   final AiPreviewAction action;
   final String text;
@@ -17,18 +18,14 @@ class AiPreviewResult {
 }
 
 class AiResultPreview {
-  /// Εμφανίζει το preview dialog. Επιστρέφει [AiPreviewResult] ή null
-  /// αν ο χρήστης ακύρωσε.
+  /// Shows the preview dialog. Returns [AiPreviewResult] or null if cancelled.
   ///
-  /// - [initialResult]: το αρχικό αποτέλεσμα που έφερε η AI
-  /// - [onRetry]: callback που τρέχει ξανά την AI κλήση (επιστρέφει
-  ///   νέο text ή null σε αποτυχία)
-  /// - [title]: header του dialog
+  /// - [initialResult]: the initial text returned by the AI
+  /// - [onRetry]: callback that re-runs the AI call (returns new text or null)
   static Future<AiPreviewResult?> show({
     required BuildContext context,
     required String initialResult,
     required Future<String?> Function() onRetry,
-    String title = '✨ Αποτέλεσμα',
   }) {
     return showDialog<AiPreviewResult>(
       context: context,
@@ -36,7 +33,6 @@ class AiResultPreview {
       builder: (ctx) => _AiPreviewDialog(
         initialResult: initialResult,
         onRetry: onRetry,
-        title: title,
       ),
     );
   }
@@ -45,12 +41,10 @@ class AiResultPreview {
 class _AiPreviewDialog extends StatefulWidget {
   final String initialResult;
   final Future<String?> Function() onRetry;
-  final String title;
 
   const _AiPreviewDialog({
     required this.initialResult,
     required this.onRetry,
-    required this.title,
   });
 
   @override
@@ -73,6 +67,7 @@ class _AiPreviewDialogState extends State<_AiPreviewDialog> {
       _isRetrying = true;
       _error = null;
     });
+    final l10n = AppLocalizations.of(context);
     try {
       final result = await widget.onRetry();
       if (!mounted) return;
@@ -81,14 +76,14 @@ class _AiPreviewDialogState extends State<_AiPreviewDialog> {
         if (result != null && result.isNotEmpty) {
           _currentResult = result;
         } else {
-          _error = 'Δεν λάβαμε αποτέλεσμα. Δοκίμασε ξανά.';
+          _error = l10n.aiNoResult;
         }
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _isRetrying = false;
-        _error = 'Σφάλμα: $e';
+        _error = l10n.aiErrorDetail(e.toString());
       });
     }
   }
@@ -99,6 +94,7 @@ class _AiPreviewDialogState extends State<_AiPreviewDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
@@ -114,13 +110,13 @@ class _AiPreviewDialogState extends State<_AiPreviewDialog> {
                 children: [
                   Expanded(
                     child: Text(
-                      widget.title,
+                      l10n.aiPreviewTitle,
                       style: theme.textTheme.titleLarge,
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
-                    tooltip: 'Άκυρο',
+                    tooltip: l10n.cancel,
                     onPressed: _isRetrying ? null : () => _close(),
                   ),
                 ],
@@ -141,7 +137,7 @@ class _AiPreviewDialogState extends State<_AiPreviewDialog> {
                     if (_isRetrying)
                       Positioned.fill(
                         child: Container(
-                          color: theme.colorScheme.surface.withOpacity(0.75),
+                          color: theme.colorScheme.surface.withValues(alpha: 0.75),
                           child: const Center(
                             child: CircularProgressIndicator(),
                           ),
@@ -178,16 +174,16 @@ class _AiPreviewDialogState extends State<_AiPreviewDialog> {
                 children: [
                   TextButton.icon(
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Ξανά'),
+                    label: Text(l10n.aiRetry),
                     onPressed: _isRetrying ? null : _retry,
                   ),
                   TextButton(
                     onPressed: _isRetrying ? null : () => _close(),
-                    child: const Text('Άκυρο'),
+                    child: Text(l10n.cancel),
                   ),
                   OutlinedButton.icon(
                     icon: const Icon(Icons.add),
-                    label: const Text('Προσθήκη'),
+                    label: Text(l10n.aiAppend),
                     onPressed: _isRetrying
                         ? null
                         : () => _close(AiPreviewResult(
@@ -197,7 +193,7 @@ class _AiPreviewDialogState extends State<_AiPreviewDialog> {
                   ),
                   FilledButton.icon(
                     icon: const Icon(Icons.check),
-                    label: const Text('Αντικατάσταση'),
+                    label: Text(l10n.aiReplace),
                     onPressed: _isRetrying
                         ? null
                         : () => _close(AiPreviewResult(

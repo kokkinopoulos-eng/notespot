@@ -73,5 +73,44 @@
   "restoreSuccess": "Restore complete!",
   "favorites": "Favorites",
   "noFavorites": "No favorites yet",
-  "uploadPhoto": "Upload photo from gallery"
+  "uploadPhoto": "Upload photo from gallery",
+
+  "aiAssistantTitle": "✨ AI Assistant",
+  "aiActionGrammarFix": "Fix spelling/grammar",
+  "aiActionGrammarFixDesc": "Fixes errors without changing the meaning",
+  "aiActionSummarize": "Summarize",
+  "aiActionSummarizeDesc": "1-2 sentences",
+  "aiActionExpand": "Expand",
+  "aiActionExpandDesc": "Add relevant details",
+  "aiActionShorten": "Shorten",
+  "aiActionShortenDesc": "About half the length",
+  "aiActionChangeTone": "Change tone",
+  "aiActionChangeToneDesc": "Formal, friendly, professional, humorous",
+  "aiActionParaphrase": "Paraphrase",
+  "aiActionParaphraseDesc": "In different words",
+  "aiChooseTone": "Choose tone",
+  "aiProcessing": "Processing...",
+  "aiFailure": "AI error: {error}",
+  "@aiFailure": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "aiUnknownError": "Unknown error.",
+  "aiNoText": "No text to edit.",
+  "toneFormal": "Formal",
+  "toneFriendly": "Friendly",
+  "toneProfessional": "Professional",
+  "toneHumorous": "Humorous",
+  "aiPreviewTitle": "✨ Result",
+  "aiRetry": "Retry",
+  "aiAppend": "Append",
+  "aiReplace": "Replace",
+  "aiNoResult": "Got no result. Try again.",
+  "aiErrorDetail": "Error: {error}",
+  "@aiErrorDetail": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  }
 }

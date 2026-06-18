@@ -73,5 +73,44 @@
   "restoreSuccess": "Η επαναφορά ολοκληρώθηκε!",
   "favorites": "Αγαπημένα",
   "noFavorites": "Δεν υπάρχουν αγαπημένα",
-  "uploadPhoto": "Εικόνα από τη συλλογή"
+  "uploadPhoto": "Εικόνα από τη συλλογή",
+
+  "aiAssistantTitle": "✨ AI Assistant",
+  "aiActionGrammarFix": "Διόρθωσε ορθογραφία/γραμματική",
+  "aiActionGrammarFixDesc": "Διορθώνει λάθη χωρίς να αλλάζει το νόημα",
+  "aiActionSummarize": "Σύνοψε",
+  "aiActionSummarizeDesc": "1-2 προτάσεις",
+  "aiActionExpand": "Επέκτεινε",
+  "aiActionExpandDesc": "Πρόσθεσε σχετικές λεπτομέρειες",
+  "aiActionShorten": "Συντόμευσε",
+  "aiActionShortenDesc": "Στο μισό περίπου μήκος",
+  "aiActionChangeTone": "Άλλαξε τόνο",
+  "aiActionChangeToneDesc": "Επίσημο, φιλικό, επαγγελματικό, χιουμοριστικό",
+  "aiActionParaphrase": "Ξαναγράψε",
+  "aiActionParaphraseDesc": "Με διαφορετικά λόγια",
+  "aiChooseTone": "Διάλεξε τόνο",
+  "aiProcessing": "Επεξεργασία...",
+  "aiFailure": "Αποτυχία AI: {error}",
+  "@aiFailure": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "aiUnknownError": "Άγνωστο σφάλμα.",
+  "aiNoText": "Δεν υπάρχει κείμενο για επεξεργασία.",
+  "toneFormal": "Επίσημο",
+  "toneFriendly": "Φιλικό",
+  "toneProfessional": "Επαγγελματικό",
+  "toneHumorous": "Χιουμοριστικό",
+  "aiPreviewTitle": "✨ Αποτέλεσμα",
+  "aiRetry": "Ξανά",
+  "aiAppend": "Προσθήκη",
+  "aiReplace": "Αντικατάσταση",
+  "aiNoResult": "Δεν λάβαμε αποτέλεσμα. Δοκίμασε ξανά.",
+  "aiErrorDetail": "Σφάλμα: {error}",
+  "@aiErrorDetail": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  }
 }
