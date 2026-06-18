@@ -17,6 +17,8 @@ import '../../services/ink_text_service.dart';
 import '../../services/local_analysis_service.dart';
 import '../../services/media_service.dart';
 import '../../widgets/drawing_canvas.dart';
+import '../../widgets/ai_action_menu.dart';
+import '../../widgets/ai_result_preview.dart';
 
 const int kMaxInkPages = 5;
 
@@ -648,6 +650,65 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
+  Future<void> _onAiButtonPressed() async {
+    final selection = _contentCtrl.selection;
+    final hasSelection = selection.isValid && !selection.isCollapsed;
+    final sourceText = hasSelection
+        ? selection.textInside(_contentCtrl.text)
+        : _contentCtrl.text;
+
+    final result = await AiActionMenu.show(
+      context: context,
+      text: sourceText,
+    );
+    if (result == null || !mounted) return;
+
+    setState(() {
+      if (hasSelection) {
+        final selStart = selection.start;
+        final selEnd = selection.end;
+        final original = _contentCtrl.text;
+        switch (result.action) {
+          case AiPreviewAction.replace:
+            final newText = original.substring(0, selStart) +
+                result.text +
+                original.substring(selEnd);
+            _contentCtrl.text = newText;
+            _contentCtrl.selection = TextSelection.collapsed(
+              offset: selStart + result.text.length,
+            );
+            break;
+          case AiPreviewAction.append:
+            final newText = original.substring(0, selEnd) +
+                '\n\n' +
+                result.text +
+                original.substring(selEnd);
+            _contentCtrl.text = newText;
+            _contentCtrl.selection = TextSelection.collapsed(
+              offset: selEnd + 2 + result.text.length,
+            );
+            break;
+        }
+      } else {
+        switch (result.action) {
+          case AiPreviewAction.replace:
+            _contentCtrl.text = result.text;
+            _contentCtrl.selection = TextSelection.collapsed(
+              offset: result.text.length,
+            );
+            break;
+          case AiPreviewAction.append:
+            final separator = _contentCtrl.text.isEmpty ? '' : '\n\n';
+            _contentCtrl.text =
+                _contentCtrl.text + separator + result.text;
+            _contentCtrl.selection = TextSelection.collapsed(
+              offset: _contentCtrl.text.length,
+            );
+            break;
+        }
+      }
+    });
+  }
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -678,6 +739,14 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ),
         ],
       ),
+      floatingActionButton: kCloudAiEnabled
+          ? FloatingActionButton.extended(
+              icon: const Icon(Icons.auto_awesome),
+              label: const Text('AI'),
+              tooltip: '✨ AI Assistant',
+              onPressed: _onAiButtonPressed,
+            )
+          : null,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) => Column(

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../main.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -336,5 +336,126 @@ class CloudAiService {
     final json = jsonDecode(res.body) as Map<String, dynamic>;
     final text = json['choices'][0]['message']['content'] as String;
     return _parse(text);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // AI Assistant — generic text completion (Pro v1.1)
+  // Χρησιμοποιείται από το AiAssistantService για editing operations
+  // (grammar fix, summarize, expand, tone change) και voice structuring.
+  // Επιστρέφει raw text αντί για AiAnalysis. Default model: Haiku 4.5.
+  // ─────────────────────────────────────────────────────────────
+
+  /// Generic text completion. Επιστρέφει raw text ή null σε αποτυχία.
+  /// Routes στον επιλεγμένο provider μέσω AiSettingsService.
+  Future<String?> complete(String prompt, {int maxTokens = 1500}) async {
+    lastError = null;
+    final svc = AiSettingsService.instance;
+    final provider = await svc.getSelectedProvider();
+    final key = await svc.getApiKey(provider);
+    if (key == null || key.trim().isEmpty) {
+      _emitError('Δεν έχει οριστεί API key για ${provider.name}.');
+      return null;
+    }
+    try {
+      switch (provider) {
+        case AiProvider.gemini:
+          return await _completeGemini(key.trim(), prompt, maxTokens);
+        case AiProvider.claude:
+          return await _completeClaude(key.trim(), prompt, maxTokens);
+        case AiProvider.openai:
+          return await _completeOpenAi(key.trim(), prompt, maxTokens);
+      }
+    } catch (e) {
+      _emitError('Αποτυχία AI: $e');
+      return null;
+    }
+  }
+
+  Future<String?> _completeClaude(
+      String key, String prompt, int maxTokens) async {
+    final res = await http.post(
+      Uri.parse('https://api.anthropic.com/v1/messages'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+      },
+      body: jsonEncode({
+        'model': 'claude-haiku-4-5',
+        'max_tokens': maxTokens,
+        'messages': [
+          {'role': 'user', 'content': prompt}
+        ],
+      }),
+    );
+    if (res.statusCode != 200) {
+      _emitError(_friendlyError(res.statusCode, res.body));
+      return null;
+    }
+    final json = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    final content = json['content'] as List?;
+    if (content == null || content.isEmpty) return null;
+    final first = content.first as Map<String, dynamic>;
+    return (first['text'] as String?)?.trim();
+  }
+
+  Future<String?> _completeOpenAi(
+      String key, String prompt, int maxTokens) async {
+    final res = await http.post(
+      Uri.parse('https://api.openai.com/v1/chat/completions'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $key',
+      },
+      body: jsonEncode({
+        'model': 'gpt-4o-mini',
+        'max_tokens': maxTokens,
+        'messages': [
+          {'role': 'user', 'content': prompt}
+        ],
+      }),
+    );
+    if (res.statusCode != 200) {
+      _emitError(_friendlyError(res.statusCode, res.body));
+      return null;
+    }
+    final json = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    final choices = json['choices'] as List?;
+    if (choices == null || choices.isEmpty) return null;
+    final msg = (choices.first as Map<String, dynamic>)['message']
+        as Map<String, dynamic>?;
+    return (msg?['content'] as String?)?.trim();
+  }
+
+  Future<String?> _completeGemini(
+      String key, String prompt, int maxTokens) async {
+    final res = await http.post(
+      Uri.parse(
+        'https://generativelanguage.googleapis.com/v1beta/models/$kGeminiModel:generateContent?key=$key',
+      ),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'contents': [
+          {
+            'parts': [
+              {'text': prompt}
+            ]
+          }
+        ],
+        'generationConfig': {'maxOutputTokens': maxTokens},
+      }),
+    );
+    if (res.statusCode != 200) {
+      _emitError(_friendlyError(res.statusCode, res.body));
+      return null;
+    }
+    final json = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    final candidates = json['candidates'] as List?;
+    if (candidates == null || candidates.isEmpty) return null;
+    final first = candidates.first as Map<String, dynamic>;
+    final cont = first['content'] as Map<String, dynamic>?;
+    final parts = cont?['parts'] as List?;
+    if (parts == null || parts.isEmpty) return null;
+    return ((parts.first as Map<String, dynamic>)['text'] as String?)?.trim();
   }
 }
