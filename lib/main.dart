@@ -44,6 +44,8 @@ class NoteSpotAppState extends State<NoteSpotApp> {
     if (widget.initialLocale != null) {
       _locale = Locale(widget.initialLocale!);
       _onboardingDone = true;
+    } else {
+      _locale = const Locale('en');
     }
   }
 
