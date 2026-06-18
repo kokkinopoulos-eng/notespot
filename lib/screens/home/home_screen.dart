@@ -172,68 +172,71 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showCreateMenu() {
     showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFF6B4FA0),
-                child: Icon(Icons.edit_note, color: Colors.white),
+      builder: (ctx) {
+        final l = AppLocalizations.of(ctx);
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFF6B4FA0),
+                  child: Icon(Icons.edit_note, color: Colors.white),
+                ),
+                title: Text(l.noteTypeTextDraw),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _openEditor();
+                },
               ),
-              title: const Text('Κείμενο/Σχέδιο'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _openEditor();
-              },
-            ),
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFF2E7D32),
-                child: Icon(Icons.photo_camera, color: Colors.white),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFF2E7D32),
+                  child: Icon(Icons.photo_camera, color: Colors.white),
+                ),
+                title: Text(l.photoNote),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _quickPhoto();
+                },
               ),
-              title: const Text('Φωτογραφία'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _quickPhoto();
-              },
-            ),
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFFE65100),
-                child: Icon(Icons.photo_library, color: Colors.white),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFE65100),
+                  child: Icon(Icons.photo_library, color: Colors.white),
+                ),
+                title: Text(l.noteTypeFromGallery),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _quickGallery();
+                },
               ),
-              title: const Text('Από συλλογή'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _quickGallery();
-              },
-            ),
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFFC62828),
-                child: Icon(Icons.mic, color: Colors.white),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFC62828),
+                  child: Icon(Icons.mic, color: Colors.white),
+                ),
+                title: Text(l.noteTypeVoice),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _quickDictation();
+                },
               ),
-              title: const Text('Φωνή'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _quickDictation();
-              },
-            ),
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFF00838F),
-                child: Icon(Icons.checklist, color: Colors.white),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFF00838F),
+                  child: Icon(Icons.checklist, color: Colors.white),
+                ),
+                title: Text(l.noteTypeChecklist),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _quickChecklist();
+                },
               ),
-              title: const Text('Λίστα'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _quickChecklist();
-              },
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -289,13 +292,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ? snap.data!
             : snap.data!.where((n) => _selectedColors.contains(n.color)).toList();
         if (notes.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.star_border, size: 64, color: Colors.amber),
-                SizedBox(height: 12),
-                Text('Δεν υπάρχουν αγαπημένα'),
+                const Icon(Icons.star_border, size: 64, color: Colors.amber),
+                const SizedBox(height: 12),
+                Text(AppLocalizations.of(context).noFavorites),
               ],
             ),
           );
@@ -338,9 +341,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _quickChecklist() async {
     final now = DateTime.now();
     final stamp = DateFormat('d/M HH:mm').format(now);
+    final l10n = AppLocalizations.of(context);
     final noteId = await DbService.instance.insert(Note(
       type: NoteType.checklist,
-      title: 'Λίστα $stamp',
+      title: '${l10n.noteTypeChecklist} $stamp',
       content: '',
       createdAt: now,
       updatedAt: now,

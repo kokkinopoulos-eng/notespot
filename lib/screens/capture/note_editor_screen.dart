@@ -385,11 +385,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   Future<void> _runTextRecognition() async {
     if (_textLoading) return;
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     final strokes = List<DrawingStroke>.from(_ink.strokes);
     if (strokes.isEmpty) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Δεν υπάρχουν γραφικά στη σελίδα'),
-        duration: Duration(seconds: 3),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l10n.inkNoStrokes),
+        duration: const Duration(seconds: 3),
       ));
       return;
     }
@@ -397,16 +398,16 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     final ready = await InkTextService.instance.isModelReady(lang);
     if (!mounted) return;
     if (!ready) {
-      messenger.showSnackBar(const SnackBar(
+      messenger.showSnackBar(SnackBar(
         content: Row(children: [
-          SizedBox(
+          const SizedBox(
             width: 18, height: 18,
             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
           ),
-          SizedBox(width: 12),
-          Expanded(child: Text('Λήψη μοντέλου ελληνικών... (μία φορά)')),
+          const SizedBox(width: 12),
+          Expanded(child: Text(l10n.inkModelGreekDownloading)),
         ]),
-        duration: Duration(seconds: 60),
+        duration: const Duration(seconds: 60),
       ));
     }
     setState(() => _textLoading = true);
@@ -424,40 +425,43 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     if (!mounted) return;
     setState(() => _textLoading = false);
     if (candidates.isEmpty) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Δεν αναγνωρίστηκε κείμενο — δοκιμάστε πιο καθαρά γράμματα'),
-        duration: Duration(seconds: 3),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l10n.inkTextNotRecognized),
+        duration: const Duration(seconds: 3),
       ));
       return;
     }
     if (!mounted) return;
     final chosen = await showModalBottomSheet<String>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
-              child: Text('Διάλεξε το κείμενο',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            ),
-            for (final cand in candidates)
-              ListTile(
-                leading: const Icon(Icons.text_fields),
-                title: Text(cand),
-                onTap: () => Navigator.pop(ctx, cand),
+      builder: (ctx) {
+        final sl = AppLocalizations.of(ctx);
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                child: Text(sl.inkChooseText,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.close),
-              title: const Text('Ακύρωση'),
-              onTap: () => Navigator.pop(ctx),
-            ),
-          ],
-        ),
-      ),
+              for (final cand in candidates)
+                ListTile(
+                  leading: const Icon(Icons.text_fields),
+                  title: Text(cand),
+                  onTap: () => Navigator.pop(ctx, cand),
+                ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.close),
+                title: Text(sl.cancel),
+                onTap: () => Navigator.pop(ctx),
+              ),
+            ],
+          ),
+        );
+      },
     );
     if (chosen == null || !mounted) return;
     final existing = _contentCtrl.text;
@@ -470,11 +474,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     if (_mathLoading) return;
     // Capture context-dependent objects before any await.
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     final strokes = List<DrawingStroke>.from(_ink.strokes);
     if (strokes.isEmpty) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Δεν υπάρχουν γραφικά στη σελίδα'),
-        duration: Duration(seconds: 3),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l10n.inkNoStrokes),
+        duration: const Duration(seconds: 3),
       ));
       return;
     }
@@ -483,17 +488,17 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     if (!mounted) return;
 
     if (!modelReady) {
-      messenger.showSnackBar(const SnackBar(
+      messenger.showSnackBar(SnackBar(
         content: Row(children: [
-          SizedBox(
+          const SizedBox(
             width: 18,
             height: 18,
             child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
           ),
-          SizedBox(width: 12),
-          Expanded(child: Text('Λήψη μοντέλου αναγνώρισης... (μόνο μία φορά)')),
+          const SizedBox(width: 12),
+          Expanded(child: Text(l10n.inkMathModelDownloading)),
         ]),
-        duration: Duration(seconds: 90),
+        duration: const Duration(seconds: 90),
       ));
     }
 
@@ -515,9 +520,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     setState(() => _mathLoading = false);
 
     if (recognized == null || recognized.trim().isEmpty) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Δεν αναγνωρίστηκε η πράξη — δοκιμάστε πιο καθαρά γράμματα'),
-        duration: Duration(seconds: 4),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l10n.inkMathNotRecognized),
+        duration: const Duration(seconds: 4),
       ));
       return;
     }
@@ -527,7 +532,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
     if (result == null) {
       messenger.showSnackBar(SnackBar(
-        content: Text('Αναγνωρίστηκε: "$recognized" — δεν βρέθηκε αριθμητική πράξη'),
+        content: Text(l10n.inkMathNoExpression(recognized)),
         duration: const Duration(seconds: 4),
       ));
       return;
@@ -573,7 +578,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       content: Text('= $resultStr'),
       duration: const Duration(seconds: 6),
       action: SnackBarAction(
-        label: 'Εισαγωγή στο κείμενο',
+        label: l10n.inkInsertInText,
         onPressed: () => _insertMathResult(recognized, resultStr),
       ),
     ));
@@ -743,7 +748,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ? FloatingActionButton.extended(
               icon: const Icon(Icons.auto_awesome),
               label: const Text('AI'),
-              tooltip: AppLocalizations.of(context).aiAssistantTitle,
+              tooltip: l10n.aiAssistantTitle,
               onPressed: _onAiButtonPressed,
             )
           : null,
@@ -773,8 +778,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                                 size: 17,
                               ),
                               tooltip: _paneMode == 1
-                                  ? 'Restore split'
-                                  : 'Maximize text',
+                                  ? l10n.restoreSplit
+                                  : l10n.maximizeText,
                               visualDensity: VisualDensity.compact,
                               onPressed: () => setState(
                                   () => _paneMode = _paneMode == 1 ? 0 : 1),
@@ -863,27 +868,27 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                                 PopupMenuButton<String>(
                                   icon: const Icon(Icons.auto_fix_high,
                                       size: 18),
-                                  tooltip: 'Αναγνώριση',
+                                  tooltip: l10n.inkRecognize,
                                   enabled: !_ink.isEmpty,
                                   onSelected: (v) {
                                     if (v == 'math') _runMathRecognition();
                                     if (v == 'text') _runTextRecognition();
                                   },
-                                  itemBuilder: (ctx) => const [
+                                  itemBuilder: (ctx) => [
                                     PopupMenuItem(
                                       value: 'math',
                                       child: Row(children: [
-                                        Icon(Icons.functions, size: 18),
-                                        SizedBox(width: 10),
-                                        Text('Αναγνώριση πράξης'),
+                                        const Icon(Icons.functions, size: 18),
+                                        const SizedBox(width: 10),
+                                        Text(l10n.inkMathAction),
                                       ]),
                                     ),
                                     PopupMenuItem(
                                       value: 'text',
                                       child: Row(children: [
-                                        Icon(Icons.text_fields, size: 18),
-                                        SizedBox(width: 10),
-                                        Text('Μετατροπή σε κείμενο'),
+                                        const Icon(Icons.text_fields, size: 18),
+                                        const SizedBox(width: 10),
+                                        Text(l10n.inkTextAction),
                                       ]),
                                     ),
                                   ],
@@ -896,8 +901,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                                   size: 20,
                                 ),
                                 tooltip: _paneMode == 2
-                                    ? 'Restore split'
-                                    : 'Maximize ink',
+                                    ? l10n.restoreSplit
+                                    : l10n.maximizeInk,
                                 visualDensity: VisualDensity.compact,
                                 onPressed: () => setState(() =>
                                     _paneMode = _paneMode == 2 ? 0 : 2),

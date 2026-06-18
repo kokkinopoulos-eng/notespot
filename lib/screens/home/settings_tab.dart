@@ -208,26 +208,24 @@ class _SettingsTabState extends State<SettingsTab> {
   }
 
   Future<void> _resetEva() async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         icon: const Icon(Icons.warning_amber_rounded,
             color: Color(0xFFC62828), size: 36),
-        title: const Text('Επαναφορά Eva;'),
-        content: const Text(
-            'Η Eva θα ξεχάσει όλα όσα έχει μάθει και θα ξεκινήσει από '
-            'την αρχή. Οι σημειώσεις σας ΔΕΝ θα επηρεαστούν. '
-            'Η ενέργεια αυτή δεν αναιρείται.'),
+        title: Text(l10n.evaResetTitle),
+        content: Text(l10n.evaResetBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Ακύρωση'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFC62828)),
-            child: const Text('Επαναφορά'),
+            child: Text(l10n.evaResetButton),
           ),
         ],
       ),
@@ -236,27 +234,25 @@ class _SettingsTabState extends State<SettingsTab> {
     await EvaService.instance.reset();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Η Eva ξεκίνησε από την αρχή.')),
+      SnackBar(content: Text(l10n.evaResetDone)),
     );
   }
   
   Future<void> _rescanAll() async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Επανεξέταση με Eva'),
-        content: const Text(
-          'Η Eva θα αναλύσει ξανά όλες τις σημειώσεις που δεν έχετε κλειδώσει '
-          'χειροκίνητα. Εφαρμόζει τη μάθησή της στις παλιές σημειώσεις.',
-        ),
+        title: Text(l10n.evaRescanTitle),
+        content: Text(l10n.evaRescanBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Άκυρο'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Επανεξέταση'),
+            child: Text(l10n.evaRescanButton),
           ),
         ],
       ),
@@ -269,8 +265,7 @@ class _SettingsTabState extends State<SettingsTab> {
     if (total == 0) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Δεν υπάρχουν σημειώσεις για επανεξέταση.')),
+        SnackBar(content: Text(l10n.evaRescanNone)),
       );
       return;
     }
@@ -283,7 +278,7 @@ class _SettingsTabState extends State<SettingsTab> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Επανεξέταση...'),
+        title: Text(l10n.evaRescanProgress),
         content: ValueListenableBuilder<int>(
           valueListenable: progressNotifier,
           builder: (_, done, child) => Column(
@@ -321,7 +316,7 @@ class _SettingsTabState extends State<SettingsTab> {
     progressNotifier.dispose();
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Ενημερώθηκαν $updated σημειώσεις')),
+      SnackBar(content: Text(l10n.evaRescanDone(updated))),
     );
   }
 
@@ -392,9 +387,8 @@ class _SettingsTabState extends State<SettingsTab> {
           _SectionHeader(title: l10n.aiProvider),
           SwitchListTile(
             secondary: const Icon(Icons.cloud_outlined),
-            title: const Text('Χρήση Cloud AI'),
-            subtitle: const Text(
-                'Βελτιώνει την κατηγοριοποίηση χρησιμοποιώντας το API key σας'),
+            title: Text(l10n.cloudAiToggleTitle),
+            subtitle: Text(l10n.cloudAiToggleSubtitle),
             value: _aiEnabled,
             onChanged: (v) async {
               await AiSettingsService.instance.setAiEnabled(v);
@@ -424,12 +418,11 @@ class _SettingsTabState extends State<SettingsTab> {
 
         // Archive section
         const Divider(),
-        _SectionHeader(title: 'Αρχείο'),
+        _SectionHeader(title: l10n.archiveSection),
         ListTile(
           leading: const Icon(Icons.inventory_2_outlined),
-          title: const Text('Αρχειοθετημένες σημειώσεις'),
-          subtitle:
-              const Text('Δείτε και επαναφέρετε αρχειοθετημένες σημειώσεις'),
+          title: Text(l10n.archivedNotes),
+          subtitle: Text(l10n.archivedNotesSubtitle),
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const ArchivedNotesScreen()),
@@ -438,19 +431,17 @@ class _SettingsTabState extends State<SettingsTab> {
 
         // Eva section
         const Divider(),
-        _SectionHeader(title: 'Eva'),
+        const _SectionHeader(title: 'Eva'),
         ListTile(
           leading: const Icon(Icons.auto_awesome),
-          title: const Text('Επανεξέταση όλων με Eva'),
-          subtitle: const Text(
-              'Εφαρμογή μάθησης της Eva σε σημειώσεις χωρίς χειροκίνητη κατηγορία'),
+          title: Text(l10n.evaRescanAllTitle),
+          subtitle: Text(l10n.evaRescanAllSubtitle),
           onTap: _rescanAll,
         ),
         ListTile(
           leading: const Icon(Icons.restart_alt, color: Color(0xFFC62828)),
-          title: const Text('Επαναφορά Eva'),
-          subtitle: const Text(
-              'Διαγραφή όσων έχει μάθει η Eva. Οι σημειώσεις σας δεν επηρεάζονται.'),
+          title: Text(l10n.evaResetListTitle),
+          subtitle: Text(l10n.evaResetListSubtitle),
           onTap: _resetEva,
         ),
 
@@ -501,73 +492,59 @@ class _SettingsTabState extends State<SettingsTab> {
         _SectionHeader(title: l10n.about),
         ListTile(
           leading: const Icon(Icons.help_outline),
-          title: const Text('Οδηγίες χρήσης'),
+          title: Text(l10n.helpTitle),
           onTap: () => showDialog<void>(
             context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Οδηγίες χρήσης'),
-              content: const SingleChildScrollView(
-                child: Text(
-                  'Το NoteSpot συλλαμβάνει ό,τι θέλετε — κείμενο, σχέδιο, φωτογραφία, φωνή ή λίστα — '
-                  'και το οργανώνει αυτόματα στη συσκευή σας, χωρίς διαδίκτυο.\n\n'
-                  '📝 Νέα σημείωση\n'
-                  'Πατήστε το «+» κάτω δεξιά και επιλέξτε τύπο: Κείμενο/Σχέδιο, Φωτογραφία, '
-                  'Από συλλογή, Φωνή ή Λίστα.\n\n'
-                  '✍️ Κείμενο & Σχέδιο\n'
-                  'Ο editor έχει δύο χώρους: κείμενο πάνω, σχέδιο κάτω. Σύρετε το διαχωριστικό '
-                  'για αλλαγή μεγέθους, ή χρησιμοποιήστε τα κουμπιά πλήρους οθόνης. '
-                  'Σχεδιάστε με δάχτυλο ή S Pen.\n\n'
-                  '🧮 Μαθηματικά με το χέρι\n'
-                  'Γράψτε μια πράξη (π.χ. 7 + 5) στον χώρο σχεδίασης και πατήστε το κουμπί ∫. '
-                  'Το αποτέλεσμα γράφεται με χειρόγραφο στυλ. Υποστηρίζονται: + − × ÷\n\n'
-                  '🔍 Αυτόματη οργάνωση\n'
-                  'Οι σημειώσεις κατηγοριοποιούνται αυτόματα στη συσκευή σας. '
-                  'Το κείμενο μέσα σε φωτογραφίες αναγνωρίζεται και γίνεται αναζητήσιμο.\n\n'
-                  '⭐ Οργάνωση\n'
-                  'Καρφίτσωμα, Αγαπημένα, Χρώματα, Αρχειοθέτηση, και Χρόνος ζωής (αυτόματη διαγραφή).\n\n'
-                  '⏰ Υπενθυμίσεις\n'
-                  'Ορίστε υπενθύμιση σε μια σημείωση για ειδοποίηση.\n\n'
-                  '🔗 Κοινή χρήση\n'
-                  'Μοιραστείτε σημειώσεις προς άλλες εφαρμογές, ή στείλτε περιεχόμενο στο NoteSpot.\n\n'
-                  '📱 Widget\n'
-                  'Προσθέστε το widget στην αρχική οθόνη για γρήγορη δημιουργία.\n\n'
-                  '💾 Αντίγραφο ασφαλείας\n'
-                  'Ρυθμίσεις → Αντίγραφο ασφαλείας για εξαγωγή/επαναφορά.',
-                  style: TextStyle(height: 1.6),
+            builder: (ctx) {
+              final dl = AppLocalizations.of(ctx);
+              return AlertDialog(
+                title: Text(dl.helpTitle),
+                content: SingleChildScrollView(
+                  child: Text(
+                    dl.helpBody,
+                    style: const TextStyle(height: 1.6),
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
           ),
         ),
         ListTile(
           leading: const Icon(Icons.description_outlined),
-          title: const Text('Όροι χρήσης'),
+          title: Text(l10n.termsTitle),
           onTap: () => showDialog<void>(
             context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Όροι χρήσης'),
-              content: SingleChildScrollView(
-                child: Text(
-                  'Οι σημειώσεις σας αποθηκεύονται τοπικά στη συσκευή σας. Είστε υπεύθυνοι για τα αντίγραφα ασφαλείας. Η εφαρμογή παρέχεται «ως έχει». Πλήρεις όροι: kokkinopoulos-eng.github.io/notespot-legal',
-                  style: const TextStyle(height: 1.6),
+            builder: (ctx) {
+              final dl = AppLocalizations.of(ctx);
+              return AlertDialog(
+                title: Text(dl.termsTitle),
+                content: SingleChildScrollView(
+                  child: Text(
+                    dl.termsBody,
+                    style: const TextStyle(height: 1.6),
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
-              ],
-            ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
           ),
         ),
         ListTile(
           leading: const Icon(Icons.privacy_tip_outlined),
-          title: const Text('Πολιτική Απορρήτου'),
-          subtitle: Text(kCloudAiEnabled ? 'Τοπικά + Cloud AI' : '100% offline'),
+          title: Text(l10n.privacyTitle),
+          subtitle: Text(
+              kCloudAiEnabled ? l10n.privacySubtitlePro : l10n.privacySubtitleFree),
           onTap: () async {
             final page = kCloudAiEnabled ? 'privacy-pro-el.html' : 'privacy-free-el.html';
             final uri = Uri.parse('https://kokkinopoulos-eng.github.io/notespot-legal/' + page);

@@ -112,5 +112,63 @@
     "placeholders": {
       "error": { "type": "String" }
     }
-  }
+  },
+
+  "evaResetTitle": "Reset Eva?",
+  "evaResetBody": "Eva will forget everything it has learned and start over. Your notes will NOT be affected. This action cannot be undone.",
+  "evaResetButton": "Reset",
+  "evaResetDone": "Eva has been reset.",
+  "evaRescanTitle": "Rescan with Eva",
+  "evaRescanBody": "Eva will re-analyse all notes you haven't manually locked. It applies its learning to older notes.",
+  "evaRescanButton": "Rescan",
+  "evaRescanNone": "No notes available to rescan.",
+  "evaRescanProgress": "Rescanning...",
+  "evaRescanDone": "Updated {count} notes",
+  "@evaRescanDone": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "cloudAiToggleTitle": "Use Cloud AI",
+  "cloudAiToggleSubtitle": "Improves categorisation using your API key",
+  "archiveSection": "Archive",
+  "archivedNotes": "Archived notes",
+  "archivedNotesSubtitle": "View and restore archived notes",
+  "evaRescanAllTitle": "Rescan all with Eva",
+  "evaRescanAllSubtitle": "Apply Eva's learning to notes without a manual category",
+  "evaResetListTitle": "Reset Eva",
+  "evaResetListSubtitle": "Delete what Eva has learned. Your notes are unaffected.",
+  "helpTitle": "User guide",
+  "helpBody": "NoteSpot captures anything you want — text, drawing, photo, voice or checklist — and organises it automatically on your device, offline.\n\n📝 New note\nTap «+» at the bottom right and choose a type: Text/Draw, Photo, From gallery, Voice or Checklist.\n\n✍️ Text & Draw\nThe editor has two areas: text at the top, drawing at the bottom. Drag the divider to resize, or use the full-screen buttons. Draw with a finger or S Pen.\n\n🧮 Handwritten maths\nWrite an expression (e.g. 7 + 5) in the drawing area and tap the ∫ button. The result is shown in handwriting style. Supported: + − × ÷\n\n🔍 Auto-organisation\nNotes are categorised automatically on your device. Text inside photos is recognised and becomes searchable.\n\n⭐ Organisation\nPinning, Favourites, Colours, Archiving, and Lifetime (auto-delete).\n\n⏰ Reminders\nSet a reminder on a note to get a notification.\n\n🔗 Sharing\nShare notes to other apps, or send content to NoteSpot.\n\n📱 Widget\nAdd the widget to your home screen for quick creation.\n\n💾 Backup\nSettings → Backup to export/restore.",
+  "termsTitle": "Terms of use",
+  "termsBody": "Your notes are stored locally on your device. You are responsible for backups. The app is provided \"as is\". Full terms: kokkinopoulos-eng.github.io/notespot-legal",
+  "privacyTitle": "Privacy Policy",
+  "privacySubtitlePro": "Local + Cloud AI",
+  "privacySubtitleFree": "100% offline",
+
+  "inkNoStrokes": "No ink on this page",
+  "inkModelGreekDownloading": "Downloading Greek model... (one time only)",
+  "inkTextNotRecognized": "Text not recognized — try clearer handwriting",
+  "inkChooseText": "Choose text",
+  "inkMathModelDownloading": "Downloading recognition model... (one time only)",
+  "inkMathNotRecognized": "Math not recognized — try clearer writing",
+  "inkMathNoExpression": "Recognized: \"{expr}\" — no math found",
+  "@inkMathNoExpression": {
+    "placeholders": {
+      "expr": { "type": "String" }
+    }
+  },
+  "inkInsertInText": "Insert in text",
+  "inkRecognize": "Recognize",
+  "inkMathAction": "Recognize math",
+  "inkTextAction": "Convert to text",
+  "restoreSplit": "Restore split",
+  "maximizeText": "Maximize text",
+  "maximizeInk": "Maximize ink",
+
+  "noteTypeTextDraw": "Text / Draw",
+  "noteTypeFromGallery": "From gallery",
+  "noteTypeVoice": "Voice",
+  "noteTypeChecklist": "Checklist",
+  "archivedNotesEmpty": "No archived notes"
 }

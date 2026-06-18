@@ -541,6 +541,444 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Upload photo from gallery'**
   String get uploadPhoto;
+
+  /// No description provided for @aiAssistantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'✨ AI Assistant'**
+  String get aiAssistantTitle;
+
+  /// No description provided for @aiActionGrammarFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix spelling/grammar'**
+  String get aiActionGrammarFix;
+
+  /// No description provided for @aiActionGrammarFixDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixes errors without changing the meaning'**
+  String get aiActionGrammarFixDesc;
+
+  /// No description provided for @aiActionSummarize.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarize'**
+  String get aiActionSummarize;
+
+  /// No description provided for @aiActionSummarizeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'1-2 sentences'**
+  String get aiActionSummarizeDesc;
+
+  /// No description provided for @aiActionExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand'**
+  String get aiActionExpand;
+
+  /// No description provided for @aiActionExpandDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Add relevant details'**
+  String get aiActionExpandDesc;
+
+  /// No description provided for @aiActionShorten.
+  ///
+  /// In en, this message translates to:
+  /// **'Shorten'**
+  String get aiActionShorten;
+
+  /// No description provided for @aiActionShortenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'About half the length'**
+  String get aiActionShortenDesc;
+
+  /// No description provided for @aiActionChangeTone.
+  ///
+  /// In en, this message translates to:
+  /// **'Change tone'**
+  String get aiActionChangeTone;
+
+  /// No description provided for @aiActionChangeToneDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Formal, friendly, professional, humorous'**
+  String get aiActionChangeToneDesc;
+
+  /// No description provided for @aiActionParaphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Paraphrase'**
+  String get aiActionParaphrase;
+
+  /// No description provided for @aiActionParaphraseDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'In different words'**
+  String get aiActionParaphraseDesc;
+
+  /// No description provided for @aiChooseTone.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose tone'**
+  String get aiChooseTone;
+
+  /// No description provided for @aiProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing...'**
+  String get aiProcessing;
+
+  /// No description provided for @aiFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'AI error: {error}'**
+  String aiFailure(String error);
+
+  /// No description provided for @aiUnknownError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown error.'**
+  String get aiUnknownError;
+
+  /// No description provided for @aiNoText.
+  ///
+  /// In en, this message translates to:
+  /// **'No text to edit.'**
+  String get aiNoText;
+
+  /// No description provided for @toneFormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Formal'**
+  String get toneFormal;
+
+  /// No description provided for @toneFriendly.
+  ///
+  /// In en, this message translates to:
+  /// **'Friendly'**
+  String get toneFriendly;
+
+  /// No description provided for @toneProfessional.
+  ///
+  /// In en, this message translates to:
+  /// **'Professional'**
+  String get toneProfessional;
+
+  /// No description provided for @toneHumorous.
+  ///
+  /// In en, this message translates to:
+  /// **'Humorous'**
+  String get toneHumorous;
+
+  /// No description provided for @aiPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'✨ Result'**
+  String get aiPreviewTitle;
+
+  /// No description provided for @aiRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get aiRetry;
+
+  /// No description provided for @aiAppend.
+  ///
+  /// In en, this message translates to:
+  /// **'Append'**
+  String get aiAppend;
+
+  /// No description provided for @aiReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get aiReplace;
+
+  /// No description provided for @aiNoResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Got no result. Try again.'**
+  String get aiNoResult;
+
+  /// No description provided for @aiErrorDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String aiErrorDetail(String error);
+
+  /// No description provided for @evaResetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Eva?'**
+  String get evaResetTitle;
+
+  /// No description provided for @evaResetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Eva will forget everything it has learned and start over. Your notes will NOT be affected. This action cannot be undone.'**
+  String get evaResetBody;
+
+  /// No description provided for @evaResetButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get evaResetButton;
+
+  /// No description provided for @evaResetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Eva has been reset.'**
+  String get evaResetDone;
+
+  /// No description provided for @evaRescanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescan with Eva'**
+  String get evaRescanTitle;
+
+  /// No description provided for @evaRescanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Eva will re-analyse all notes you haven\'t manually locked. It applies its learning to older notes.'**
+  String get evaRescanBody;
+
+  /// No description provided for @evaRescanButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescan'**
+  String get evaRescanButton;
+
+  /// No description provided for @evaRescanNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No notes available to rescan.'**
+  String get evaRescanNone;
+
+  /// No description provided for @evaRescanProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescanning...'**
+  String get evaRescanProgress;
+
+  /// No description provided for @evaRescanDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {count} notes'**
+  String evaRescanDone(int count);
+
+  /// No description provided for @cloudAiToggleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Cloud AI'**
+  String get cloudAiToggleTitle;
+
+  /// No description provided for @cloudAiToggleSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Improves categorisation using your API key'**
+  String get cloudAiToggleSubtitle;
+
+  /// No description provided for @archiveSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get archiveSection;
+
+  /// No description provided for @archivedNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived notes'**
+  String get archivedNotes;
+
+  /// No description provided for @archivedNotesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'View and restore archived notes'**
+  String get archivedNotesSubtitle;
+
+  /// No description provided for @evaRescanAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescan all with Eva'**
+  String get evaRescanAllTitle;
+
+  /// No description provided for @evaRescanAllSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Eva\'s learning to notes without a manual category'**
+  String get evaRescanAllSubtitle;
+
+  /// No description provided for @evaResetListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Eva'**
+  String get evaResetListTitle;
+
+  /// No description provided for @evaResetListSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete what Eva has learned. Your notes are unaffected.'**
+  String get evaResetListSubtitle;
+
+  /// No description provided for @helpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'User guide'**
+  String get helpTitle;
+
+  /// No description provided for @helpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'NoteSpot captures anything you want — text, drawing, photo, voice or checklist — and organises it automatically on your device, offline.\n\n📝 New note\nTap «+» at the bottom right and choose a type: Text/Draw, Photo, From gallery, Voice or Checklist.\n\n✍️ Text & Draw\nThe editor has two areas: text at the top, drawing at the bottom. Drag the divider to resize, or use the full-screen buttons. Draw with a finger or S Pen.\n\n🧮 Handwritten maths\nWrite an expression (e.g. 7 + 5) in the drawing area and tap the ∫ button. The result is shown in handwriting style. Supported: + − × ÷\n\n🔍 Auto-organisation\nNotes are categorised automatically on your device. Text inside photos is recognised and becomes searchable.\n\n⭐ Organisation\nPinning, Favourites, Colours, Archiving, and Lifetime (auto-delete).\n\n⏰ Reminders\nSet a reminder on a note to get a notification.\n\n🔗 Sharing\nShare notes to other apps, or send content to NoteSpot.\n\n📱 Widget\nAdd the widget to your home screen for quick creation.\n\n💾 Backup\nSettings → Backup to export/restore.'**
+  String get helpBody;
+
+  /// No description provided for @termsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of use'**
+  String get termsTitle;
+
+  /// No description provided for @termsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your notes are stored locally on your device. You are responsible for backups. The app is provided \"as is\". Full terms: kokkinopoulos-eng.github.io/notespot-legal'**
+  String get termsBody;
+
+  /// No description provided for @privacyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyTitle;
+
+  /// No description provided for @privacySubtitlePro.
+  ///
+  /// In en, this message translates to:
+  /// **'Local + Cloud AI'**
+  String get privacySubtitlePro;
+
+  /// No description provided for @privacySubtitleFree.
+  ///
+  /// In en, this message translates to:
+  /// **'100% offline'**
+  String get privacySubtitleFree;
+
+  /// No description provided for @inkNoStrokes.
+  ///
+  /// In en, this message translates to:
+  /// **'No ink on this page'**
+  String get inkNoStrokes;
+
+  /// No description provided for @inkModelGreekDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading Greek model... (one time only)'**
+  String get inkModelGreekDownloading;
+
+  /// No description provided for @inkTextNotRecognized.
+  ///
+  /// In en, this message translates to:
+  /// **'Text not recognized — try clearer handwriting'**
+  String get inkTextNotRecognized;
+
+  /// No description provided for @inkChooseText.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose text'**
+  String get inkChooseText;
+
+  /// No description provided for @inkMathModelDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading recognition model... (one time only)'**
+  String get inkMathModelDownloading;
+
+  /// No description provided for @inkMathNotRecognized.
+  ///
+  /// In en, this message translates to:
+  /// **'Math not recognized — try clearer writing'**
+  String get inkMathNotRecognized;
+
+  /// No description provided for @inkMathNoExpression.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognized: \"{expr}\" — no math found'**
+  String inkMathNoExpression(String expr);
+
+  /// No description provided for @inkInsertInText.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert in text'**
+  String get inkInsertInText;
+
+  /// No description provided for @inkRecognize.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognize'**
+  String get inkRecognize;
+
+  /// No description provided for @inkMathAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognize math'**
+  String get inkMathAction;
+
+  /// No description provided for @inkTextAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert to text'**
+  String get inkTextAction;
+
+  /// No description provided for @restoreSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore split'**
+  String get restoreSplit;
+
+  /// No description provided for @maximizeText.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximize text'**
+  String get maximizeText;
+
+  /// No description provided for @maximizeInk.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximize ink'**
+  String get maximizeInk;
+
+  /// No description provided for @noteTypeTextDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Text / Draw'**
+  String get noteTypeTextDraw;
+
+  /// No description provided for @noteTypeFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'From gallery'**
+  String get noteTypeFromGallery;
+
+  /// No description provided for @noteTypeVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get noteTypeVoice;
+
+  /// No description provided for @noteTypeChecklist.
+  ///
+  /// In en, this message translates to:
+  /// **'Checklist'**
+  String get noteTypeChecklist;
+
+  /// No description provided for @archivedNotesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No archived notes'**
+  String get archivedNotesEmpty;
 }
 
 class _AppLocalizationsDelegate

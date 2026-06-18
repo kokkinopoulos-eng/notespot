@@ -231,4 +231,244 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uploadPhoto => 'Upload photo from gallery';
+
+  @override
+  String get aiAssistantTitle => '✨ AI Assistant';
+
+  @override
+  String get aiActionGrammarFix => 'Fix spelling/grammar';
+
+  @override
+  String get aiActionGrammarFixDesc =>
+      'Fixes errors without changing the meaning';
+
+  @override
+  String get aiActionSummarize => 'Summarize';
+
+  @override
+  String get aiActionSummarizeDesc => '1-2 sentences';
+
+  @override
+  String get aiActionExpand => 'Expand';
+
+  @override
+  String get aiActionExpandDesc => 'Add relevant details';
+
+  @override
+  String get aiActionShorten => 'Shorten';
+
+  @override
+  String get aiActionShortenDesc => 'About half the length';
+
+  @override
+  String get aiActionChangeTone => 'Change tone';
+
+  @override
+  String get aiActionChangeToneDesc =>
+      'Formal, friendly, professional, humorous';
+
+  @override
+  String get aiActionParaphrase => 'Paraphrase';
+
+  @override
+  String get aiActionParaphraseDesc => 'In different words';
+
+  @override
+  String get aiChooseTone => 'Choose tone';
+
+  @override
+  String get aiProcessing => 'Processing...';
+
+  @override
+  String aiFailure(String error) {
+    return 'AI error: $error';
+  }
+
+  @override
+  String get aiUnknownError => 'Unknown error.';
+
+  @override
+  String get aiNoText => 'No text to edit.';
+
+  @override
+  String get toneFormal => 'Formal';
+
+  @override
+  String get toneFriendly => 'Friendly';
+
+  @override
+  String get toneProfessional => 'Professional';
+
+  @override
+  String get toneHumorous => 'Humorous';
+
+  @override
+  String get aiPreviewTitle => '✨ Result';
+
+  @override
+  String get aiRetry => 'Retry';
+
+  @override
+  String get aiAppend => 'Append';
+
+  @override
+  String get aiReplace => 'Replace';
+
+  @override
+  String get aiNoResult => 'Got no result. Try again.';
+
+  @override
+  String aiErrorDetail(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get evaResetTitle => 'Reset Eva?';
+
+  @override
+  String get evaResetBody =>
+      'Eva will forget everything it has learned and start over. Your notes will NOT be affected. This action cannot be undone.';
+
+  @override
+  String get evaResetButton => 'Reset';
+
+  @override
+  String get evaResetDone => 'Eva has been reset.';
+
+  @override
+  String get evaRescanTitle => 'Rescan with Eva';
+
+  @override
+  String get evaRescanBody =>
+      'Eva will re-analyse all notes you haven\'t manually locked. It applies its learning to older notes.';
+
+  @override
+  String get evaRescanButton => 'Rescan';
+
+  @override
+  String get evaRescanNone => 'No notes available to rescan.';
+
+  @override
+  String get evaRescanProgress => 'Rescanning...';
+
+  @override
+  String evaRescanDone(int count) {
+    return 'Updated $count notes';
+  }
+
+  @override
+  String get cloudAiToggleTitle => 'Use Cloud AI';
+
+  @override
+  String get cloudAiToggleSubtitle =>
+      'Improves categorisation using your API key';
+
+  @override
+  String get archiveSection => 'Archive';
+
+  @override
+  String get archivedNotes => 'Archived notes';
+
+  @override
+  String get archivedNotesSubtitle => 'View and restore archived notes';
+
+  @override
+  String get evaRescanAllTitle => 'Rescan all with Eva';
+
+  @override
+  String get evaRescanAllSubtitle =>
+      'Apply Eva\'s learning to notes without a manual category';
+
+  @override
+  String get evaResetListTitle => 'Reset Eva';
+
+  @override
+  String get evaResetListSubtitle =>
+      'Delete what Eva has learned. Your notes are unaffected.';
+
+  @override
+  String get helpTitle => 'User guide';
+
+  @override
+  String get helpBody =>
+      'NoteSpot captures anything you want — text, drawing, photo, voice or checklist — and organises it automatically on your device, offline.\n\n📝 New note\nTap «+» at the bottom right and choose a type: Text/Draw, Photo, From gallery, Voice or Checklist.\n\n✍️ Text & Draw\nThe editor has two areas: text at the top, drawing at the bottom. Drag the divider to resize, or use the full-screen buttons. Draw with a finger or S Pen.\n\n🧮 Handwritten maths\nWrite an expression (e.g. 7 + 5) in the drawing area and tap the ∫ button. The result is shown in handwriting style. Supported: + − × ÷\n\n🔍 Auto-organisation\nNotes are categorised automatically on your device. Text inside photos is recognised and becomes searchable.\n\n⭐ Organisation\nPinning, Favourites, Colours, Archiving, and Lifetime (auto-delete).\n\n⏰ Reminders\nSet a reminder on a note to get a notification.\n\n🔗 Sharing\nShare notes to other apps, or send content to NoteSpot.\n\n📱 Widget\nAdd the widget to your home screen for quick creation.\n\n💾 Backup\nSettings → Backup to export/restore.';
+
+  @override
+  String get termsTitle => 'Terms of use';
+
+  @override
+  String get termsBody =>
+      'Your notes are stored locally on your device. You are responsible for backups. The app is provided \"as is\". Full terms: kokkinopoulos-eng.github.io/notespot-legal';
+
+  @override
+  String get privacyTitle => 'Privacy Policy';
+
+  @override
+  String get privacySubtitlePro => 'Local + Cloud AI';
+
+  @override
+  String get privacySubtitleFree => '100% offline';
+
+  @override
+  String get inkNoStrokes => 'No ink on this page';
+
+  @override
+  String get inkModelGreekDownloading =>
+      'Downloading Greek model... (one time only)';
+
+  @override
+  String get inkTextNotRecognized =>
+      'Text not recognized — try clearer handwriting';
+
+  @override
+  String get inkChooseText => 'Choose text';
+
+  @override
+  String get inkMathModelDownloading =>
+      'Downloading recognition model... (one time only)';
+
+  @override
+  String get inkMathNotRecognized =>
+      'Math not recognized — try clearer writing';
+
+  @override
+  String inkMathNoExpression(String expr) {
+    return 'Recognized: \"$expr\" — no math found';
+  }
+
+  @override
+  String get inkInsertInText => 'Insert in text';
+
+  @override
+  String get inkRecognize => 'Recognize';
+
+  @override
+  String get inkMathAction => 'Recognize math';
+
+  @override
+  String get inkTextAction => 'Convert to text';
+
+  @override
+  String get restoreSplit => 'Restore split';
+
+  @override
+  String get maximizeText => 'Maximize text';
+
+  @override
+  String get maximizeInk => 'Maximize ink';
+
+  @override
+  String get noteTypeTextDraw => 'Text / Draw';
+
+  @override
+  String get noteTypeFromGallery => 'From gallery';
+
+  @override
+  String get noteTypeVoice => 'Voice';
+
+  @override
+  String get noteTypeChecklist => 'Checklist';
+
+  @override
+  String get archivedNotesEmpty => 'No archived notes';
 }

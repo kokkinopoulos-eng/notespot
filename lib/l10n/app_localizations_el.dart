@@ -231,4 +231,245 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get uploadPhoto => 'Εικόνα από τη συλλογή';
+
+  @override
+  String get aiAssistantTitle => '✨ AI Assistant';
+
+  @override
+  String get aiActionGrammarFix => 'Διόρθωσε ορθογραφία/γραμματική';
+
+  @override
+  String get aiActionGrammarFixDesc =>
+      'Διορθώνει λάθη χωρίς να αλλάζει το νόημα';
+
+  @override
+  String get aiActionSummarize => 'Σύνοψε';
+
+  @override
+  String get aiActionSummarizeDesc => '1-2 προτάσεις';
+
+  @override
+  String get aiActionExpand => 'Επέκτεινε';
+
+  @override
+  String get aiActionExpandDesc => 'Πρόσθεσε σχετικές λεπτομέρειες';
+
+  @override
+  String get aiActionShorten => 'Συντόμευσε';
+
+  @override
+  String get aiActionShortenDesc => 'Στο μισό περίπου μήκος';
+
+  @override
+  String get aiActionChangeTone => 'Άλλαξε τόνο';
+
+  @override
+  String get aiActionChangeToneDesc =>
+      'Επίσημο, φιλικό, επαγγελματικό, χιουμοριστικό';
+
+  @override
+  String get aiActionParaphrase => 'Ξαναγράψε';
+
+  @override
+  String get aiActionParaphraseDesc => 'Με διαφορετικά λόγια';
+
+  @override
+  String get aiChooseTone => 'Διάλεξε τόνο';
+
+  @override
+  String get aiProcessing => 'Επεξεργασία...';
+
+  @override
+  String aiFailure(String error) {
+    return 'Αποτυχία AI: $error';
+  }
+
+  @override
+  String get aiUnknownError => 'Άγνωστο σφάλμα.';
+
+  @override
+  String get aiNoText => 'Δεν υπάρχει κείμενο για επεξεργασία.';
+
+  @override
+  String get toneFormal => 'Επίσημο';
+
+  @override
+  String get toneFriendly => 'Φιλικό';
+
+  @override
+  String get toneProfessional => 'Επαγγελματικό';
+
+  @override
+  String get toneHumorous => 'Χιουμοριστικό';
+
+  @override
+  String get aiPreviewTitle => '✨ Αποτέλεσμα';
+
+  @override
+  String get aiRetry => 'Ξανά';
+
+  @override
+  String get aiAppend => 'Προσθήκη';
+
+  @override
+  String get aiReplace => 'Αντικατάσταση';
+
+  @override
+  String get aiNoResult => 'Δεν λάβαμε αποτέλεσμα. Δοκίμασε ξανά.';
+
+  @override
+  String aiErrorDetail(String error) {
+    return 'Σφάλμα: $error';
+  }
+
+  @override
+  String get evaResetTitle => 'Επαναφορά Eva;';
+
+  @override
+  String get evaResetBody =>
+      'Η Eva θα ξεχάσει όλα όσα έχει μάθει και θα ξεκινήσει από την αρχή. Οι σημειώσεις σας ΔΕΝ θα επηρεαστούν. Η ενέργεια αυτή δεν αναιρείται.';
+
+  @override
+  String get evaResetButton => 'Επαναφορά';
+
+  @override
+  String get evaResetDone => 'Η Eva ξεκίνησε από την αρχή.';
+
+  @override
+  String get evaRescanTitle => 'Επανεξέταση με Eva';
+
+  @override
+  String get evaRescanBody =>
+      'Η Eva θα αναλύσει ξανά όλες τις σημειώσεις που δεν έχετε κλειδώσει χειροκίνητα. Εφαρμόζει τη μάθησή της στις παλιές σημειώσεις.';
+
+  @override
+  String get evaRescanButton => 'Επανεξέταση';
+
+  @override
+  String get evaRescanNone => 'Δεν υπάρχουν σημειώσεις για επανεξέταση.';
+
+  @override
+  String get evaRescanProgress => 'Επανεξέταση...';
+
+  @override
+  String evaRescanDone(int count) {
+    return 'Ενημερώθηκαν $count σημειώσεις';
+  }
+
+  @override
+  String get cloudAiToggleTitle => 'Χρήση Cloud AI';
+
+  @override
+  String get cloudAiToggleSubtitle =>
+      'Βελτιώνει την κατηγοριοποίηση χρησιμοποιώντας το API key σας';
+
+  @override
+  String get archiveSection => 'Αρχείο';
+
+  @override
+  String get archivedNotes => 'Αρχειοθετημένες σημειώσεις';
+
+  @override
+  String get archivedNotesSubtitle =>
+      'Δείτε και επαναφέρετε αρχειοθετημένες σημειώσεις';
+
+  @override
+  String get evaRescanAllTitle => 'Επανεξέταση όλων με Eva';
+
+  @override
+  String get evaRescanAllSubtitle =>
+      'Εφαρμογή μάθησης της Eva σε σημειώσεις χωρίς χειροκίνητη κατηγορία';
+
+  @override
+  String get evaResetListTitle => 'Επαναφορά Eva';
+
+  @override
+  String get evaResetListSubtitle =>
+      'Διαγραφή όσων έχει μάθει η Eva. Οι σημειώσεις σας δεν επηρεάζονται.';
+
+  @override
+  String get helpTitle => 'Οδηγίες χρήσης';
+
+  @override
+  String get helpBody =>
+      'Το NoteSpot συλλαμβάνει ό,τι θέλετε — κείμενο, σχέδιο, φωτογραφία, φωνή ή λίστα — και το οργανώνει αυτόματα στη συσκευή σας, χωρίς διαδίκτυο.\n\n📝 Νέα σημείωση\nΠατήστε το «+» κάτω δεξιά και επιλέξτε τύπο: Κείμενο/Σχέδιο, Φωτογραφία, Από συλλογή, Φωνή ή Λίστα.\n\n✍️ Κείμενο & Σχέδιο\nΟ editor έχει δύο χώρους: κείμενο πάνω, σχέδιο κάτω. Σύρετε το διαχωριστικό για αλλαγή μεγέθους, ή χρησιμοποιήστε τα κουμπιά πλήρους οθόνης. Σχεδιάστε με δάχτυλο ή S Pen.\n\n🧮 Μαθηματικά με το χέρι\nΓράψτε μια πράξη (π.χ. 7 + 5) στον χώρο σχεδίασης και πατήστε το κουμπί ∫. Το αποτέλεσμα γράφεται με χειρόγραφο στυλ. Υποστηρίζονται: + − × ÷\n\n🔍 Αυτόματη οργάνωση\nΟι σημειώσεις κατηγοριοποιούνται αυτόματα στη συσκευή σας. Το κείμενο μέσα σε φωτογραφίες αναγνωρίζεται και γίνεται αναζητήσιμο.\n\n⭐ Οργάνωση\nΚαρφίτσωμα, Αγαπημένα, Χρώματα, Αρχειοθέτηση, και Χρόνος ζωής (αυτόματη διαγραφή).\n\n⏰ Υπενθυμίσεις\nΟρίστε υπενθύμιση σε μια σημείωση για ειδοποίηση.\n\n🔗 Κοινή χρήση\nΜοιραστείτε σημειώσεις προς άλλες εφαρμογές, ή στείλτε περιεχόμενο στο NoteSpot.\n\n📱 Widget\nΠροσθέστε το widget στην αρχική οθόνη για γρήγορη δημιουργία.\n\n💾 Αντίγραφο ασφαλείας\nΡυθμίσεις → Αντίγραφο ασφαλείας για εξαγωγή/επαναφορά.';
+
+  @override
+  String get termsTitle => 'Όροι χρήσης';
+
+  @override
+  String get termsBody =>
+      'Οι σημειώσεις σας αποθηκεύονται τοπικά στη συσκευή σας. Είστε υπεύθυνοι για τα αντίγραφα ασφαλείας. Η εφαρμογή παρέχεται «ως έχει». Πλήρεις όροι: kokkinopoulos-eng.github.io/notespot-legal';
+
+  @override
+  String get privacyTitle => 'Πολιτική Απορρήτου';
+
+  @override
+  String get privacySubtitlePro => 'Τοπικά + Cloud AI';
+
+  @override
+  String get privacySubtitleFree => '100% offline';
+
+  @override
+  String get inkNoStrokes => 'Δεν υπάρχουν γραφικά στη σελίδα';
+
+  @override
+  String get inkModelGreekDownloading =>
+      'Λήψη μοντέλου ελληνικών... (μία φορά)';
+
+  @override
+  String get inkTextNotRecognized =>
+      'Δεν αναγνωρίστηκε κείμενο — δοκιμάστε πιο καθαρά γράμματα';
+
+  @override
+  String get inkChooseText => 'Διάλεξε το κείμενο';
+
+  @override
+  String get inkMathModelDownloading =>
+      'Λήψη μοντέλου αναγνώρισης... (μόνο μία φορά)';
+
+  @override
+  String get inkMathNotRecognized =>
+      'Δεν αναγνωρίστηκε η πράξη — δοκιμάστε πιο καθαρά γράμματα';
+
+  @override
+  String inkMathNoExpression(String expr) {
+    return 'Αναγνωρίστηκε: \"$expr\" — δεν βρέθηκε αριθμητική πράξη';
+  }
+
+  @override
+  String get inkInsertInText => 'Εισαγωγή στο κείμενο';
+
+  @override
+  String get inkRecognize => 'Αναγνώριση';
+
+  @override
+  String get inkMathAction => 'Αναγνώριση πράξης';
+
+  @override
+  String get inkTextAction => 'Μετατροπή σε κείμενο';
+
+  @override
+  String get restoreSplit => 'Επαναφορά διαχωρισμού';
+
+  @override
+  String get maximizeText => 'Μεγιστοποίηση κειμένου';
+
+  @override
+  String get maximizeInk => 'Μεγιστοποίηση σχεδίου';
+
+  @override
+  String get noteTypeTextDraw => 'Κείμενο/Σχέδιο';
+
+  @override
+  String get noteTypeFromGallery => 'Από συλλογή';
+
+  @override
+  String get noteTypeVoice => 'Φωνή';
+
+  @override
+  String get noteTypeChecklist => 'Λίστα';
+
+  @override
+  String get archivedNotesEmpty => 'Δεν υπάρχουν αρχειοθετημένες σημειώσεις';
 }

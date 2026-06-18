@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
 import '../../services/db_service.dart';
 import '../../widgets/note_card.dart';
@@ -33,17 +34,17 @@ class _ArchivedNotesScreenState extends State<ArchivedNotesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Αρχείο')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).archiveSection)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _notes.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
-                      SizedBox(height: 12),
-                      Text('Δεν υπάρχουν αρχειοθετημένες σημειώσεις'),
+                      const Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
+                      const SizedBox(height: 12),
+                      Text(AppLocalizations.of(context).archivedNotesEmpty),
                     ],
                   ),
                 )
