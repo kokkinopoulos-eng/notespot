@@ -69,6 +69,22 @@ class NoteSpotAppState extends State<NoteSpotApp> {
       locale: _locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
+      builder: (context, child) {
+        return Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/app_bg.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              scaffoldBackgroundColor: Colors.transparent,
+            ),
+            child: child!,
+          ),
+        );
+      },
       home: SplashScreen(
         next: TermsGate(
           next: _onboardingDone
