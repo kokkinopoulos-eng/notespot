@@ -903,6 +903,17 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               ),
               const SizedBox(height: 16),
             ],
+            // Content shown first for immediate readability
+            if (_note.type == NoteType.checklist)
+              _buildChecklist()
+            else if (_note.content.isNotEmpty)
+              SelectableText(
+                _note.content,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            const SizedBox(height: 12),
+            const Divider(height: 1, thickness: 0.5),
+            const SizedBox(height: 8),
             Text(
               date,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -1037,15 +1048,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               onLearnChanged: (v) =>
                   setState(() => _evaLearnChecked = v ?? true),
             ),
-            const SizedBox(height: 8),
-            // Content area
-            if (_note.type == NoteType.checklist)
-              _buildChecklist()
-            else if (_note.content.isNotEmpty)
-              SelectableText(
-                _note.content,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
           ],
         ),
           ),
