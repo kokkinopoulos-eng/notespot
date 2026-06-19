@@ -1028,6 +1028,12 @@ abstract class AppLocalizations {
   /// **'Maximize ink'**
   String get maximizeInk;
 
+  /// No description provided for @smartVoiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Voice'**
+  String get smartVoiceTitle;
+
   /// No description provided for @noteTypeTextDraw.
   ///
   /// In en, this message translates to:

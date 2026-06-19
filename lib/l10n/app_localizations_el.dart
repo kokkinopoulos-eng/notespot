@@ -504,6 +504,9 @@ class AppLocalizationsEl extends AppLocalizations {
   String get maximizeInk => 'Μεγιστοποίηση σχεδίου';
 
   @override
+  String get smartVoiceTitle => 'Έξυπνη φωνητική';
+
+  @override
   String get noteTypeTextDraw => 'Κείμενο/Σχέδιο';
 
   @override

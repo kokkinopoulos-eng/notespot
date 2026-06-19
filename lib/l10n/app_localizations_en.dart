@@ -503,6 +503,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get maximizeInk => 'Maximize ink';
 
   @override
+  String get smartVoiceTitle => 'Smart Voice';
+
+  @override
   String get noteTypeTextDraw => 'Text / Draw';
 
   @override
