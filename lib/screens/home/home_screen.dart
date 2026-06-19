@@ -538,12 +538,67 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // TODO l10n: swipe action strings
+  Future<bool> _confirmSwipe(Note note, DismissDirection dir) async {
+    if (dir == DismissDirection.startToEnd) {
+      // Swipe δεξιά = Delete (with confirm)
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Διαγραφή σημείωσης;'),
+          content: const Text('Δεν μπορεί να αναιρεθεί.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Άκυρο'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Διαγραφή',
+                  style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true) {
+        await DbService.instance.delete(note.id!);
+        if (!mounted) return true;
+        setState(() => _notes.removeWhere((n) => n.id == note.id));
+        return true;
+      }
+      return false;
+    } else {
+      // Swipe αριστερά = Archive (with snackbar + undo)
+      final updated = note.copyWith(
+        isArchived: true,
+        updatedAt: DateTime.now(),
+      );
+      await DbService.instance.update(updated);
+      if (!mounted) return true;
+      setState(() => _notes.removeWhere((n) => n.id == note.id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Αρχειοθετήθηκε'),
+          action: SnackBarAction(
+            label: 'Αναίρεση',
+            onPressed: () async {
+              await DbService.instance
+                  .update(note.copyWith(isArchived: false));
+              _loadNotes();
+            },
+          ),
+        ),
+      );
+      return true;
+    }
+  }
+
   Widget _noteItem(Note note) {
     final cs = Theme.of(context).colorScheme;
     final sel = _selected.contains(note.id);
     final cardColor =
         note.color != 0 ? Color(note.color) : const Color(0xFFF3EEF8);
-    return Card(
+    final card = Card(
       color: cardColor,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       elevation: 0,
@@ -592,6 +647,27 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     ),
+    );
+
+    return Dismissible(
+      key: ValueKey(note.id ?? -1),
+      direction: _selecting
+          ? DismissDirection.none
+          : DismissDirection.horizontal,
+      background: Container(
+        color: Colors.red.shade600,
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 24),
+        child: const Icon(Icons.delete, color: Colors.white, size: 28),
+      ),
+      secondaryBackground: Container(
+        color: Colors.green.shade600,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        child: const Icon(Icons.archive, color: Colors.white, size: 28),
+      ),
+      confirmDismiss: (dir) => _confirmSwipe(note, dir),
+      child: card,
     );
   }
 
@@ -717,7 +793,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(child: _notesBody(l10n)),
           ]),
           const SearchTab(),
-          const SettingsTab(),
+          SettingsTab(onBackToHome: () => setState(() => _tab = 0)),
           _buildFavorites(),
         ],
       ),
