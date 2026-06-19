@@ -56,25 +56,38 @@ class _ArchivedNotesScreenState extends State<ArchivedNotesScreen> {
                     final cardColor = note.color != 0
                         ? Color(note.color)
                         : const Color(0xFFF3EEF8);
-                    return Card(
-                      color: cardColor,
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      child: NoteCard(
-                        note: note,
-                        onTap: () async {
-                          await Navigator.push(
-                            ctx,
-                            MaterialPageRoute(
-                              builder: (_) => NoteDetailScreen(note: note),
-                            ),
-                          );
-                          _load();
-                        },
-                      ),
+                    return Stack(
+                      children: [
+                        Card(
+                          color: cardColor,
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          child: NoteCard(
+                            note: note,
+                            onTap: () async {
+                              await Navigator.push(
+                                ctx,
+                                MaterialPageRoute(
+                                  builder: (_) => NoteDetailScreen(note: note),
+                                ),
+                              );
+                              _load();
+                            },
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 20,
+                          child: Icon(
+                            Icons.inventory_2_outlined,
+                            size: 14,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
