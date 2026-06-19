@@ -56,7 +56,7 @@ class _ArchivedNotesScreenState extends State<ArchivedNotesScreen> {
                     final cardColor = note.color != 0
                         ? Color(note.color)
                         : const Color(0xFFF3EEF8);
-                    return Stack(
+                    final stack = Stack(
                       children: [
                         Card(
                           color: cardColor,
@@ -88,6 +88,47 @@ class _ArchivedNotesScreenState extends State<ArchivedNotesScreen> {
                           ),
                         ),
                       ],
+                    );
+
+                    return Dismissible(
+                      key: ValueKey(note.id ?? -1),
+                      direction: DismissDirection.startToEnd,
+                      background: Container(
+                        color: Colors.red.shade600,
+                        alignment: Alignment.centerLeft,
+                        padding: const EdgeInsets.only(left: 24),
+                        child: const Icon(Icons.delete,
+                            color: Colors.white, size: 28),
+                      ),
+                      confirmDismiss: (_) async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (dctx) => AlertDialog(
+                            title: const Text('Οριστική διαγραφή;'),
+                            content: const Text('Δεν μπορεί να αναιρεθεί.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(dctx, false),
+                                child: const Text('Άκυρο'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(dctx, true),
+                                child: const Text('Διαγραφή',
+                                    style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed == true) {
+                          await DbService.instance.delete(note.id!);
+                          if (!mounted) return true;
+                          setState(() =>
+                              _notes.removeWhere((n) => n.id == note.id));
+                          return true;
+                        }
+                        return false;
+                      },
+                      child: stack,
                     );
                   },
                 ),
