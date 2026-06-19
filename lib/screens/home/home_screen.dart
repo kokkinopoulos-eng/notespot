@@ -24,6 +24,8 @@ import '../capture/note_editor_screen.dart';
 import '../note_detail/note_detail_screen.dart';
 import 'search_tab.dart';
 import 'settings_tab.dart';
+import '../../services/ai_assistant_service.dart';
+import '../voice/voice_note_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -222,6 +224,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   _quickDictation();
                 },
               ),
+              if (kCloudAiEnabled)
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFF7B1FA2),
+                    child: Icon(Icons.auto_awesome, color: Colors.white),
+                  ),
+                  // TODO l10n
+                  title: const Text('Έξυπνη φωνητική'),
+                  // TODO l10n
+                  subtitle: const Text('Φωνή → AI structured σημείωση'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _smartVoice();
+                  },
+                ),
               ListTile(
                 leading: const CircleAvatar(
                   backgroundColor: Color(0xFF00838F),
@@ -466,6 +483,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: FilterChip(
               label: Text(l10n.allCategories),
               selected: _selectedCategory == null,
+              selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+              checkmarkColor: Theme.of(context).colorScheme.primary,
               onSelected: (_) {
                 setState(() => _selectedCategory = null);
                 _loadNotes();
@@ -477,6 +496,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: FilterChip(
                   label: Text(localizedCategory(l10n, c)),
                   selected: _selectedCategory == c,
+                  selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+                  checkmarkColor: Theme.of(context).colorScheme.primary,
                   onSelected: (selected) {
                     setState(() => _selectedCategory = selected ? c : null);
                     _loadNotes();
@@ -723,6 +744,63 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _smartVoice() async {
+    final l10n = AppLocalizations.of(context);
+    final langCode = Localizations.localeOf(context).languageCode;
+    final localeId = langCode == 'el' ? 'el_GR' : 'en_US';
+
+    final result =
+        await VoiceNoteScreen.show(context, localeId: localeId);
+    if (result == null || !mounted) return;
+
+    final now = DateTime.now();
+    final stamp = DateFormat('d/M HH:mm').format(now);
+
+    String title;
+    String content;
+
+    final s = result.structured;
+    if (s != null) {
+      title = s.title;
+      switch (s.type) {
+        case VoiceNoteType.checklist:
+          final items = s.items ?? const <String>[];
+          content = items.map((i) => '[ ] $i').join('\n');
+          if (content.isEmpty) content = result.transcript;
+          break;
+        case VoiceNoteType.reminder:
+          final when = s.reminderAt?.toLocal();
+          final body = s.content ?? result.transcript;
+          content = when != null
+              ? '⏰ ${DateFormat('d/M/y HH:mm').format(when)}\n\n$body'
+              : body;
+          break;
+        case VoiceNoteType.text:
+          content = s.content ?? result.transcript;
+          break;
+      }
+    } else {
+      final firstLine = result.transcript.split('\n').first.trim();
+      title = firstLine.length > 40
+          ? '${firstLine.substring(0, 40)}…'
+          : (firstLine.isNotEmpty
+              ? firstLine
+              : '${l10n.noteTypeVoice} $stamp');
+      content = result.transcript;
+    }
+
+    final noteId = await DbService.instance.insert(Note(
+      type: NoteType.text,
+      title: title,
+      content: content,
+      createdAt: now,
+      updatedAt: now,
+    ));
+    unawaited(_enrichSharedText(noteId, content));
+    if (!mounted) return;
+    await _loadNotes();
   }
 }
 

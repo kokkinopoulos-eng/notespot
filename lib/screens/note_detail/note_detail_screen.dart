@@ -853,6 +853,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           IconButton(
             icon: Icon(
               _note.isArchived ? Icons.unarchive_outlined : Icons.archive_outlined,
+              color: _note.isArchived
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
             ),
             tooltip: _note.isArchived ? 'Επαναφορά από αρχείο' : 'Αρχειοθέτηση',
             onPressed: _toggleArchive,
