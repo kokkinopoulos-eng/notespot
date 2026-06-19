@@ -131,7 +131,9 @@ class _ApiKeyDialogState extends State<_ApiKeyDialog> {
 
 // --- SettingsTab ---
 class SettingsTab extends StatefulWidget {
-  const SettingsTab({super.key});
+  final VoidCallback? onBackToHome;
+
+  const SettingsTab({super.key, this.onBackToHome});
 
   @override
   State<SettingsTab> createState() => _SettingsTabState();
@@ -369,6 +371,22 @@ class _SettingsTabState extends State<SettingsTab> {
 
     return ListView(
       children: [
+        if (widget.onBackToHome != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 4),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: widget.onBackToHome,
+                ),
+                Text(
+                  l10n.settingsTab,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ],
+            ),
+          ),
         // Language section
         _SectionHeader(title: l10n.language),
         ListTile(
