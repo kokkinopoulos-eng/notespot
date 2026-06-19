@@ -92,7 +92,7 @@ class _ArchivedNotesScreenState extends State<ArchivedNotesScreen> {
 
                     return Dismissible(
                       key: ValueKey(note.id ?? -1),
-                      direction: DismissDirection.startToEnd,
+                      direction: DismissDirection.horizontal,
                       background: Container(
                         color: Colors.red.shade600,
                         alignment: Alignment.centerLeft,
@@ -100,7 +100,25 @@ class _ArchivedNotesScreenState extends State<ArchivedNotesScreen> {
                         child: const Icon(Icons.delete,
                             color: Colors.white, size: 28),
                       ),
-                      confirmDismiss: (_) async {
+                      secondaryBackground: Container(
+        color: Colors.green.shade600,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        child: const Icon(Icons.unarchive, color: Colors.white, size: 28),
+      ),
+      confirmDismiss: (dir) async {
+        if (dir == DismissDirection.endToStart) {
+          // Swipe αριστερά = Restore
+          await DbService.instance.update(
+              note.copyWith(isArchived: false, updatedAt: DateTime.now()));
+          if (!mounted) return true;
+          setState(() => _notes.removeWhere((n) => n.id == note.id));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Επαναφέρθηκε στις σημειώσεις')),
+          );
+          return true;
+        }
+        // Swipe δεξιά = Delete
                         final confirmed = await showDialog<bool>(
                           context: context,
                           builder: (dctx) => AlertDialog(
