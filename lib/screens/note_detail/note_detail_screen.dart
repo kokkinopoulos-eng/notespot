@@ -231,6 +231,8 @@ class NoteDetailScreen extends StatefulWidget {
 class _NoteDetailScreenState extends State<NoteDetailScreen> {
   late Note _note;
   bool _evaLearnChecked = true;
+  String? _evaMessage;
+  int _evaMessageGen = 0;
 
   // Preset colors for picker (0 = none/default)
   static const _presetColors = [
@@ -886,7 +888,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       body: Stack(
         children: [
           SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).viewPadding.bottom),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1065,17 +1067,57 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               onTap: () {
                 final isEl =
                     Localizations.localeOf(context).languageCode == 'el';
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    duration: const Duration(seconds: 3),
-                    content: Text(isEl
-                        ? 'Με λένε Eva! Μαθαίνω να ταξινομώ τις σημειώσεις σου όταν διορθώνεις την κατηγορία.'
-                        : "I'm Eva! I learn to sort your notes when you fix the category."),
-                  ),
-                );
+                final msg = isEl
+                    ? 'Με λένε Eva! Μαθαίνω να ταξινομώ τις σημειώσεις σου όταν διορθώνεις την κατηγορία.'
+                    : "I'm Eva! I learn to sort your notes when you fix the category.";
+                _evaMessageGen++;
+                final gen = _evaMessageGen;
+                setState(() => _evaMessage = msg);
+                Future.delayed(const Duration(seconds: 5), () {
+                  if (mounted && gen == _evaMessageGen) {
+                    setState(() => _evaMessage = null);
+                  }
+                });
               },
             ),
           ),
+          if (_evaMessage != null)
+            Positioned(
+              right: 120,
+              top: 110,
+              child: Material(
+                color: Colors.transparent,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 220),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _evaMessage = null),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 10,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        _evaMessage!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
