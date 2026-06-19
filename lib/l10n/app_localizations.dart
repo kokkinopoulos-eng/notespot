@@ -830,11 +830,89 @@ abstract class AppLocalizations {
   /// **'User guide'**
   String get helpTitle;
 
-  /// No description provided for @helpBody.
+  /// No description provided for @helpSecIntroTitle.
   ///
   /// In en, this message translates to:
-  /// **'NoteSpot captures anything you want — text, drawing, photo, voice or checklist — and organises it automatically on your device, offline.\n\n📝 New note\nTap «+» at the bottom right and choose a type: Text/Draw, Photo, From gallery, Voice or Checklist.\n\n✍️ Text & Draw\nThe editor has two areas: text at the top, drawing at the bottom. Drag the divider to resize, or use the full-screen buttons. Draw with a finger or S Pen.\n\n🧮 Handwritten maths\nWrite an expression (e.g. 7 + 5) in the drawing area and tap the ∫ button. The result is shown in handwriting style. Supported: + − × ÷\n\n🔍 Auto-organisation\nNotes are categorised automatically on your device. Text inside photos is recognised and becomes searchable.\n\n⭐ Organisation\nPinning, Favourites, Colours, Archiving, and Lifetime (auto-delete).\n\n⏰ Reminders\nSet a reminder on a note to get a notification.\n\n🔗 Sharing\nShare notes to other apps, or send content to NoteSpot.\n\n📱 Widget\nAdd the widget to your home screen for quick creation.\n\n💾 Backup\nSettings → Backup to export/restore.'**
-  String get helpBody;
+  /// **'What is NoteSpot?'**
+  String get helpSecIntroTitle;
+
+  /// No description provided for @helpSecIntroBody.
+  ///
+  /// In en, this message translates to:
+  /// **'NoteSpot captures text, drawings, photos, voice memos and checklists, and organises them automatically on your device — fully offline. Tap + to create your first note and choose a type.'**
+  String get helpSecIntroBody;
+
+  /// No description provided for @helpSecEditorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Text & Draw editor'**
+  String get helpSecEditorTitle;
+
+  /// No description provided for @helpSecEditorBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The editor has two panes: text at the top, drawing canvas at the bottom. Drag the divider bar to resize them, or tap the expand buttons to go full-screen. Supports finger and S Pen (automatically switches to stylus-only when S Pen is detected).'**
+  String get helpSecEditorBody;
+
+  /// No description provided for @helpSecHandwritingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Handwriting recognition'**
+  String get helpSecHandwritingTitle;
+
+  /// No description provided for @helpSecHandwritingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'In the drawing pane, tap the text icon to convert your handwriting to typed text. For maths, write an expression (e.g. 7 + 5) and tap the ∫ button — the result is inserted as handwritten text. Supported operators: + − × ÷'**
+  String get helpSecHandwritingBody;
+
+  /// No description provided for @helpSecEvaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Eva — smart categorisation'**
+  String get helpSecEvaTitle;
+
+  /// No description provided for @helpSecEvaBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Eva is NoteSpot\'s on-device AI that suggests a category for each note. It learns from your corrections: when you change a category, Eva remembers and applies that pattern to future notes. Settings → Rescan to apply Eva\'s learning to older notes.'**
+  String get helpSecEvaBody;
+
+  /// No description provided for @helpSecFiltersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters & organisation'**
+  String get helpSecFiltersTitle;
+
+  /// No description provided for @helpSecFiltersBody.
+  ///
+  /// In en, this message translates to:
+  /// **'On the home screen: filter by category (chips), colour (dots), or favourites (star tab). Pin notes to keep them at the top. Archive a note to hide it from the main list (Settings → Archive to view). Set a lifetime to auto-delete a note after a chosen period.'**
+  String get helpSecFiltersBody;
+
+  /// No description provided for @helpSecProTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro features'**
+  String get helpSecProTitle;
+
+  /// No description provided for @helpSecProBody.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Assistant (✨ button in the editor): fix grammar, summarise, expand, shorten, change tone or paraphrase using your cloud AI key.\nSmart Voice (mic icon on home): dictate a note and optionally have AI structure it into a proper note with title, body and tags.'**
+  String get helpSecProBody;
+
+  /// No description provided for @helpSecBackupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup, share & OCR'**
+  String get helpSecBackupTitle;
+
+  /// No description provided for @helpSecBackupBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings → Backup data exports all notes to a file you can restore later. Share any note to other apps from the detail screen. Photo notes support OCR: text inside the image is indexed and searchable.'**
+  String get helpSecBackupBody;
 
   /// No description provided for @termsTitle.
   ///

@@ -10,6 +10,7 @@ import '../../services/backup_service.dart';
 import '../../services/db_service.dart';
 import '../../services/local_analysis_service.dart';
 import 'archived_notes_screen.dart';
+import '../help_screen.dart';
 
 // --- Dialog result types ---
 enum _ApiKeyAction { save, delete, cancel }
@@ -493,26 +494,9 @@ class _SettingsTabState extends State<SettingsTab> {
         ListTile(
           leading: const Icon(Icons.help_outline),
           title: Text(l10n.helpTitle),
-          onTap: () => showDialog<void>(
-            context: context,
-            builder: (ctx) {
-              final dl = AppLocalizations.of(ctx);
-              return AlertDialog(
-                title: Text(dl.helpTitle),
-                content: SingleChildScrollView(
-                  child: Text(
-                    dl.helpBody,
-                    style: const TextStyle(height: 1.6),
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('OK'),
-                  ),
-                ],
-              );
-            },
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const HelpScreen()),
           ),
         ),
         ListTile(
