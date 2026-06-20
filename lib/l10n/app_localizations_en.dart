@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'NoteSpot';
+  String get appTitle => 'SpotNote AI';
 
   @override
   String get tagline => 'Capture anything. Find everything.';
@@ -189,7 +189,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recordAudio => 'Record audio';
 
   @override
-  String get premiumTitle => 'NoteSpot Premium';
+  String get premiumTitle => 'SpotNote AI Pro';
 
   @override
   String get premiumDesc =>
@@ -390,11 +390,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get helpTitle => 'User guide';
 
   @override
-  String get helpSecIntroTitle => 'What is NoteSpot?';
+  String get helpSecIntroTitle => 'What is SpotNote AI?';
 
   @override
   String get helpSecIntroBody =>
-      'NoteSpot captures text, drawings, photos, voice memos and checklists, and organises them automatically on your device — fully offline. Tap + to create your first note and choose a type.';
+      'SpotNote AI captures text, drawings, photos, voice memos and checklists, and organises them automatically on your device — fully offline. Tap + to create your first note and choose a type.';
 
   @override
   String get helpSecEditorTitle => 'Text & Draw editor';
@@ -415,21 +415,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get helpSecEvaBody =>
-      'Eva is NoteSpot\'s on-device AI that suggests a category for each note. It learns from your corrections: when you change a category, Eva remembers and applies that pattern to future notes. Settings → Rescan to apply Eva\'s learning to older notes.';
+      'Eva is NoteSpot\'s on-device AI that suggests a category for each note. Tap her purple avatar on the note screen to show a speech bubble with a short intro.\n\nShe learns from your corrections: when you change a category, Eva remembers the pattern. Settings → Rescan Eva to apply her knowledge to existing notes.';
 
   @override
   String get helpSecFiltersTitle => 'Filters & organisation';
 
   @override
   String get helpSecFiltersBody =>
-      'On the home screen: filter by category (chips), colour (dots), or favourites (star tab). Pin notes to keep them at the top. Archive a note to hide it from the main list (Settings → Archive to view). Set a lifetime to auto-delete a note after a chosen period.';
+      'On the home screen: filter by category (chips), colour (dots), or favourites (star tab).\n\nGestures: swipe a note RIGHT to delete (with confirmation), swipe LEFT to archive (with undo SnackBar). In Archive: swipe right for permanent delete.\n\nPin notes to keep them at the top. Archiving hides a note from the main list (Settings → Archive). Set a lifetime to auto-delete after a chosen period.';
 
   @override
   String get helpSecProTitle => 'Pro features';
 
   @override
   String get helpSecProBody =>
-      'AI Assistant (✨ button in the editor): fix grammar, summarise, expand, shorten, change tone or paraphrase using your cloud AI key.\nSmart Voice (mic icon on home): dictate a note and optionally have AI structure it into a proper note with title, body and tags.';
+      'AI Assistant (✨ button in the editor): 6 actions — fix grammar, summarize, expand, shorten, change tone, paraphrase. Preview before applying.\n\nSmart Voice (mic icon in the + menu): dictate and the cloud AI auto-structures the note as plain text, a checklist or a reminder.\n\nBYOK: all Pro features use your own cloud AI key (Anthropic / OpenAI / Google) from Settings → AI.';
 
   @override
   String get helpSecBackupTitle => 'Backup, share & OCR';

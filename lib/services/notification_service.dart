@@ -42,7 +42,7 @@ class NotificationService {
     final tzWhen = tz.TZDateTime.from(when, tz.local);
     await _plugin.zonedSchedule(
       noteId,
-      'NoteSpot',
+      'SpotNote AI',
       title,
       tzWhen,
       const NotificationDetails(
@@ -70,7 +70,7 @@ class NotificationService {
         final tzWhen = tz.TZDateTime.from(when, tz.local);
         await _plugin.zonedSchedule(
           noteId,
-          'NoteSpot',
+          'SpotNote AI',
           title,
           tzWhen,
           const NotificationDetails(

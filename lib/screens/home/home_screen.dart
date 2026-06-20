@@ -755,7 +755,18 @@ class _HomeScreenState extends State<HomeScreen> {
               title: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('NoteSpot'),
+            Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4A148C).withOpacity(0.85),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: RichText(text: const TextSpan(children: [
+                  TextSpan(text: 'Spot', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                  TextSpan(text: 'Note', style: TextStyle(color: Color(0xFFFFD600), fontSize: 20, fontWeight: FontWeight.bold)),
+                  TextSpan(text: ' AI', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                ])),
+              ),
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(

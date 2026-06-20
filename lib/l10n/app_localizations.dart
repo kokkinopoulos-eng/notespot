@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'NoteSpot'**
+  /// **'SpotNote AI'**
   String get appTitle;
 
   /// No description provided for @tagline.
@@ -461,7 +461,7 @@ abstract class AppLocalizations {
   /// No description provided for @premiumTitle.
   ///
   /// In en, this message translates to:
-  /// **'NoteSpot Premium'**
+  /// **'SpotNote AI Pro'**
   String get premiumTitle;
 
   /// No description provided for @premiumDesc.
@@ -833,13 +833,13 @@ abstract class AppLocalizations {
   /// No description provided for @helpSecIntroTitle.
   ///
   /// In en, this message translates to:
-  /// **'What is NoteSpot?'**
+  /// **'What is SpotNote AI?'**
   String get helpSecIntroTitle;
 
   /// No description provided for @helpSecIntroBody.
   ///
   /// In en, this message translates to:
-  /// **'NoteSpot captures text, drawings, photos, voice memos and checklists, and organises them automatically on your device — fully offline. Tap + to create your first note and choose a type.'**
+  /// **'SpotNote AI captures text, drawings, photos, voice memos and checklists, and organises them automatically on your device — fully offline. Tap + to create your first note and choose a type.'**
   String get helpSecIntroBody;
 
   /// No description provided for @helpSecEditorTitle.
@@ -875,7 +875,7 @@ abstract class AppLocalizations {
   /// No description provided for @helpSecEvaBody.
   ///
   /// In en, this message translates to:
-  /// **'Eva is NoteSpot\'s on-device AI that suggests a category for each note. It learns from your corrections: when you change a category, Eva remembers and applies that pattern to future notes. Settings → Rescan to apply Eva\'s learning to older notes.'**
+  /// **'Eva is NoteSpot\'s on-device AI that suggests a category for each note. Tap her purple avatar on the note screen to show a speech bubble with a short intro.\n\nShe learns from your corrections: when you change a category, Eva remembers the pattern. Settings → Rescan Eva to apply her knowledge to existing notes.'**
   String get helpSecEvaBody;
 
   /// No description provided for @helpSecFiltersTitle.
@@ -887,7 +887,7 @@ abstract class AppLocalizations {
   /// No description provided for @helpSecFiltersBody.
   ///
   /// In en, this message translates to:
-  /// **'On the home screen: filter by category (chips), colour (dots), or favourites (star tab). Pin notes to keep them at the top. Archive a note to hide it from the main list (Settings → Archive to view). Set a lifetime to auto-delete a note after a chosen period.'**
+  /// **'On the home screen: filter by category (chips), colour (dots), or favourites (star tab).\n\nGestures: swipe a note RIGHT to delete (with confirmation), swipe LEFT to archive (with undo SnackBar). In Archive: swipe right for permanent delete.\n\nPin notes to keep them at the top. Archiving hides a note from the main list (Settings → Archive). Set a lifetime to auto-delete after a chosen period.'**
   String get helpSecFiltersBody;
 
   /// No description provided for @helpSecProTitle.
@@ -899,7 +899,7 @@ abstract class AppLocalizations {
   /// No description provided for @helpSecProBody.
   ///
   /// In en, this message translates to:
-  /// **'AI Assistant (✨ button in the editor): fix grammar, summarise, expand, shorten, change tone or paraphrase using your cloud AI key.\nSmart Voice (mic icon on home): dictate a note and optionally have AI structure it into a proper note with title, body and tags.'**
+  /// **'AI Assistant (✨ button in the editor): 6 actions — fix grammar, summarize, expand, shorten, change tone, paraphrase. Preview before applying.\n\nSmart Voice (mic icon in the + menu): dictate and the cloud AI auto-structures the note as plain text, a checklist or a reminder.\n\nBYOK: all Pro features use your own cloud AI key (Anthropic / OpenAI / Google) from Settings → AI.'**
   String get helpSecProBody;
 
   /// No description provided for @helpSecBackupTitle.

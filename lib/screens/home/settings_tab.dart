@@ -573,7 +573,7 @@ class _SettingsTabState extends State<SettingsTab> {
         ListTile(
           leading: const Icon(Icons.info_outline),
           title: Text(l10n.version),
-          subtitle: Text('NoteSpot ' + kEditionName + ' · 1.0.0'),
+          subtitle: Text('SpotNote AI ' + kEditionName + ' · 1.0.0+8'),
         ),
       ],
     );

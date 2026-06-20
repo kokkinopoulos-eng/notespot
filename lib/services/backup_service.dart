@@ -39,7 +39,7 @@ class BackupService {
         }
       }
       await encoder.close();
-      await Share.shareXFiles([XFile(zipPath)], subject: 'NoteSpot Backup');
+      await Share.shareXFiles([XFile(zipPath)], subject: 'SpotNote AI Backup');
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

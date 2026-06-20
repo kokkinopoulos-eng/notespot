@@ -9,7 +9,7 @@ class AppLocalizationsEl extends AppLocalizations {
   AppLocalizationsEl([String locale = 'el']) : super(locale);
 
   @override
-  String get appTitle => 'NoteSpot';
+  String get appTitle => 'SpotNote AI';
 
   @override
   String get tagline => 'Κατέγραψε τα πάντα. Βρες τα όλα.';
@@ -189,7 +189,7 @@ class AppLocalizationsEl extends AppLocalizations {
   String get recordAudio => 'Εγγραφή ήχου';
 
   @override
-  String get premiumTitle => 'NoteSpot Premium';
+  String get premiumTitle => 'SpotNote AI Pro';
 
   @override
   String get premiumDesc =>
@@ -391,11 +391,11 @@ class AppLocalizationsEl extends AppLocalizations {
   String get helpTitle => 'Οδηγίες χρήσης';
 
   @override
-  String get helpSecIntroTitle => 'Τι είναι το NoteSpot;';
+  String get helpSecIntroTitle => 'Τι είναι το SpotNote AI;';
 
   @override
   String get helpSecIntroBody =>
-      'Το NoteSpot αποτυπώνει κείμενο, σχέδια, φωτογραφίες, φωνητικές σημειώσεις και λίστες, και τα οργανώνει αυτόματα στη συσκευή σας — εντελώς offline. Πατήστε + για να δημιουργήσετε την πρώτη σας σημείωση και επιλέξτε τύπο.';
+      'Το SpotNote AI αποτυπώνει κείμενο, σχέδια, φωτογραφίες, φωνητικές σημειώσεις και λίστες, και τα οργανώνει αυτόματα στη συσκευή σας — εντελώς offline. Πατήστε + για να δημιουργήσετε την πρώτη σας σημείωση και επιλέξτε τύπο.';
 
   @override
   String get helpSecEditorTitle => 'Editor κειμένου & σχεδίου';
@@ -416,21 +416,21 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get helpSecEvaBody =>
-      'Η Eva είναι το on-device AI του NoteSpot που προτείνει κατηγορία για κάθε σημείωση. Μαθαίνει από τις διορθώσεις σας: όταν αλλάζετε κατηγορία, η Eva το θυμάται και εφαρμόζει αυτό το μοτίβο σε επόμενες σημειώσεις. Ρυθμίσεις → Επανεξέταση για εφαρμογή της γνώσης της Eva σε παλαιότερες σημειώσεις.';
+      'Η Eva είναι το on-device AI του NoteSpot που προτείνει κατηγορία για κάθε σημείωση. Πατήστε το μωβ avatar της στην οθόνη σημείωσης για να εμφανιστεί συννεφάκι με σύντομη εξήγηση.\n\nΜαθαίνει από τις διορθώσεις σας: όταν αλλάζετε κατηγορία, η Eva θυμάται το μοτίβο. Ρυθμίσεις → Επανεξέταση Eva για εφαρμογή της γνώσης της σε παλιότερες σημειώσεις.';
 
   @override
   String get helpSecFiltersTitle => 'Φίλτρα & οργάνωση';
 
   @override
   String get helpSecFiltersBody =>
-      'Στην αρχική οθόνη: φιλτράρισμα ανά κατηγορία (chips), χρώμα (τελείες) ή αγαπημένα (καρτέλα αστεριού). Καρφιτσώστε σημειώσεις για να παραμένουν στην κορυφή. Αρχειοθετήστε μια σημείωση για απόκρυψή της από την κύρια λίστα (Ρυθμίσεις → Αρχείο για προβολή). Ορίστε χρόνο ζωής για αυτόματη διαγραφή μετά από επιλεγμένη περίοδο.';
+      'Στην αρχική: φιλτράρισμα ανά κατηγορία (chips), χρώμα (τελείες) ή αγαπημένα (αστέρι).\n\nΧειρονομίες: σύρετε ΔΕΞΙΑ μια σημείωση για διαγραφή (με επιβεβαίωση), σύρετε ΑΡΙΣΤΕΡΑ για αρχειοθέτηση (με αναίρεση μέσω SnackBar). Στο Αρχείο: σύρετε δεξιά για οριστική διαγραφή.\n\nΚαρφιτσώστε σημειώσεις για να μένουν στην κορυφή. Η αρχειοθέτηση αποκρύπτει σημείωση από την κύρια λίστα (Ρυθμίσεις → Αρχείο). Ορίστε χρόνο ζωής για αυτόματη διαγραφή.';
 
   @override
   String get helpSecProTitle => 'Pro δυνατότητες';
 
   @override
   String get helpSecProBody =>
-      'AI Assistant (κουμπί ✨ στον editor): διόρθωση γραμματικής, περίληψη, ανάπτυξη, συντόμευση, αλλαγή τόνου ή παράφραση με το cloud AI key σας.\nEξυπνη Φωνή (εικονίδιο μικροφώνου στην αρχική): υπαγορεύστε μια σημείωση και προαιρετικά αφήστε το AI να τη δομήσει με τίτλο, σώμα και ετικέτες.';
+      'AI Βοηθός (κουμπί ✨ στον editor): 6 ενέργειες — διόρθωση γραμματικής, περίληψη, ανάπτυξη, συντόμευση, αλλαγή τόνου, παράφραση. Προεπισκόπηση πριν εφαρμόσετε.\n\nΈξυπνη Φωνή (εικονίδιο μικροφώνου στο μενού +): υπαγόρευση + cloud AI που δομεί αυτόματα τη σημείωση ως απλό κείμενο, checklist ή υπενθύμιση.\n\nBYOK: όλες οι Pro δυνατότητες χρησιμοποιούν το δικό σας cloud AI κλειδί (Anthropic / OpenAI / Google) από Ρυθμίσεις → AI.';
 
   @override
   String get helpSecBackupTitle => 'Backup, κοινή χρήση & OCR';
