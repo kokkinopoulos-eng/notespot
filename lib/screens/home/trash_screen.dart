@@ -89,6 +89,28 @@ class _TrashScreenState extends State<TrashScreen> {
     setState(() => _notes.clear());
   }
 
+
+// Swipe hint banner
+Widget _swipeHint({required String left, required String right}) {
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(children: [
+          const Icon(Icons.arrow_back, size: 13, color: Colors.green),
+          const SizedBox(width: 4),
+          Text(left, style: const TextStyle(fontSize: 11, color: Colors.green)),
+        ]),
+        Row(children: [
+          Text(right, style: const TextStyle(fontSize: 11, color: Colors.red)),
+          const SizedBox(width: 4),
+          const Icon(Icons.arrow_forward, size: 13, color: Colors.red),
+        ]),
+      ],
+    ),
+  );
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,6 +140,7 @@ class _TrashScreenState extends State<TrashScreen> {
                 )
               : Column(
                   children: [
+                    _swipeHint(left: 'Επαναφορά', right: 'Διαγραφή'),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                       child: Text(
