@@ -867,12 +867,17 @@ class _HomeScreenState extends State<HomeScreen> {
       content = result.transcript;
     }
 
+    DateTime? reminderAt;
+    if (s != null && s.type == VoiceNoteType.reminder) {
+      reminderAt = s.reminderAt;
+    }
     final noteId = await DbService.instance.insert(Note(
       type: NoteType.text,
       title: title,
       content: content,
       createdAt: now,
       updatedAt: now,
+      reminderAt: reminderAt,
     ));
     unawaited(_enrichSharedText(noteId, content));
     if (!mounted) return;
