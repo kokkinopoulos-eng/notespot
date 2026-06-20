@@ -20,6 +20,7 @@ class Note {
     this.reminderAt,
     this.expiresAt,
     this.categoryLocked = false,
+    this.deletedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -40,6 +41,7 @@ class Note {
   final DateTime? reminderAt;
   final DateTime? expiresAt;
   final bool categoryLocked;
+  final DateTime? deletedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -59,6 +61,7 @@ class Note {
     int? color,
     DateTime? reminderAt,
     DateTime? expiresAt,
+    DateTime? deletedAt,
     bool? categoryLocked,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -79,6 +82,7 @@ class Note {
       color: color ?? this.color,
       reminderAt: reminderAt ?? this.reminderAt,
       expiresAt: expiresAt ?? this.expiresAt,
+      deletedAt: deletedAt ?? this.deletedAt,
       categoryLocked: categoryLocked ?? this.categoryLocked,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -101,6 +105,7 @@ class Note {
         'color': color,
         'reminder_at': reminderAt?.millisecondsSinceEpoch,
         'expires_at': expiresAt?.millisecondsSinceEpoch,
+        'deleted_at': deletedAt?.millisecondsSinceEpoch,
         'category_locked': categoryLocked ? 1 : 0,
         'created_at': createdAt.millisecondsSinceEpoch,
         'updated_at': updatedAt.millisecondsSinceEpoch,
@@ -130,6 +135,9 @@ class Note {
         expiresAt: map['expires_at'] == null
             ? null
             : DateTime.fromMillisecondsSinceEpoch(map['expires_at'] as int),
+        deletedAt: map['deleted_at'] == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(map['deleted_at'] as int),
         createdAt:
             DateTime.fromMillisecondsSinceEpoch(map['created_at'] as int),
         updatedAt:

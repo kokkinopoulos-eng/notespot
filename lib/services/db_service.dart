@@ -1,4 +1,4 @@
-﻿import 'package:path/path.dart';
+import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../core/search_utils.dart';
@@ -9,7 +9,7 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const _dbName = 'notespot.db';
-  static const _dbVersion = 6;
+  static const _dbVersion = 7;
 
   Database? _db;
 
@@ -63,6 +63,9 @@ class DbService {
         )
       ''');
     }
+    if (oldV < 7) {
+      await db.execute('ALTER TABLE notes ADD COLUMN deleted_at INTEGER');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -86,7 +89,8 @@ class DbService {
         expires_at INTEGER,
         category_locked INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
+        updated_at INTEGER NOT NULL,
+        deleted_at INTEGER
       )
     ''');
     await db.execute('CREATE INDEX idx_notes_category ON notes(category)');
@@ -132,7 +136,40 @@ class DbService {
 
   Future<int> delete(int id) async {
     final db = await database;
+    return db.update(
+      'notes',
+      {'deleted_at': DateTime.now().millisecondsSinceEpoch},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deletePermanent(int id) async {
+    final db = await database;
     return db.delete('notes', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<Note>> getTrashed() async {
+    final db = await database;
+    final rows = await db.query('notes',
+        where: 'deleted_at IS NOT NULL', orderBy: 'deleted_at DESC');
+    return rows.map(Note.fromMap).toList();
+  }
+
+  Future<void> restoreFromTrash(int id) async {
+    final db = await database;
+    await db.update('notes', {'deleted_at': null},
+        where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> purgeOldTrashed() async {
+    final db = await database;
+    final cutoff = DateTime.now()
+        .subtract(const Duration(days: 30))
+        .millisecondsSinceEpoch;
+    await db.delete('notes',
+        where: 'deleted_at IS NOT NULL AND deleted_at < ?',
+        whereArgs: [cutoff]);
   }
 
   Future<Note?> getById(int id) async {
@@ -146,7 +183,7 @@ class DbService {
   Future<List<Note>> getFavorites() async {
     final db = await database;
     final rows = await db.query('notes',
-        where: 'is_favorite = 1 AND is_archived = 0',
+        where: 'is_favorite = 1 AND is_archived = 0 AND deleted_at IS NULL',
         orderBy: 'updated_at DESC');
     return rows.map(Note.fromMap).toList();
   }
@@ -154,7 +191,7 @@ class DbService {
   Future<List<Note>> getAll() async {
     final db = await database;
     final rows = await db.query('notes',
-        where: 'is_archived = 0',
+        where: 'is_archived = 0 AND deleted_at IS NULL',
         orderBy: 'is_pinned DESC, created_at DESC');
     return rows.map(Note.fromMap).toList();
   }
@@ -162,7 +199,7 @@ class DbService {
   Future<List<Note>> getArchived() async {
     final db = await database;
     final rows = await db.query('notes',
-        where: 'is_archived = 1', orderBy: 'created_at DESC');
+        where: 'is_archived = 1 AND deleted_at IS NULL', orderBy: 'created_at DESC');
     return rows.map(Note.fromMap).toList();
   }
 
@@ -178,7 +215,7 @@ class DbService {
     final db = await database;
     final rows = await db.query(
       'notes',
-      where: 'is_archived = 0 AND category = ?',
+      where: 'is_archived = 0 AND deleted_at IS NULL AND category = ?',
       whereArgs: [category],
       orderBy: 'is_pinned DESC, created_at DESC',
     );
@@ -198,7 +235,7 @@ class DbService {
     final db = await database;
     final rows = await db.query(
       'notes',
-      where: 'is_archived = 0 AND category_locked = 0',
+      where: 'is_archived = 0 AND deleted_at IS NULL AND category_locked = 0',
       orderBy: 'created_at DESC',
     );
     return rows.map(Note.fromMap).toList();
@@ -212,7 +249,7 @@ class DbService {
         .toList();
     if (terms.isEmpty) return getAll();
     final termWhere = terms.map((_) => 'search_text LIKE ?').join(' AND ');
-    final where = 'is_archived = 0 AND $termWhere';
+    final where = 'is_archived = 0 AND deleted_at IS NULL AND $termWhere';
     final args = terms.map((t) => '%$t%').toList();
     final rows = await db.query(
       'notes',

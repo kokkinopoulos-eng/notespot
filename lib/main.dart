@@ -19,6 +19,7 @@ Future<void> main() async {
   await NotificationService.instance.init();
   await DbService.instance.purgeExpired();
   final prefs = await SharedPreferences.getInstance();
+  await DbService.instance.purgeOldTrashed();
   runApp(NoteSpotApp(initialLocale: prefs.getString('locale')));
 }
 

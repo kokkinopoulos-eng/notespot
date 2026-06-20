@@ -10,6 +10,7 @@ import '../../services/backup_service.dart';
 import '../../services/db_service.dart';
 import '../../services/local_analysis_service.dart';
 import 'archived_notes_screen.dart';
+import 'trash_screen.dart';
 import '../help_screen.dart';
 
 // --- Dialog result types ---
