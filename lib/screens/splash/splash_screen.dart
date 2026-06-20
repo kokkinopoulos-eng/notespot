@@ -27,7 +27,16 @@ class _SplashScreenState extends State<SplashScreen> {
           Image.asset('assets/icon/icon_full.png', width: 180,
               errorBuilder: (_, __, ___) =>
                   const Icon(Icons.menu_book, size: 120, color: Colors.white)),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+          RichText(
+            textAlign: TextAlign.center,
+            text: const TextSpan(children: [
+              TextSpan(text: 'Spot', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+              TextSpan(text: 'Note', style: TextStyle(color: Color(0xFFFFD600), fontSize: 28, fontWeight: FontWeight.bold)),
+              TextSpan(text: ' AI', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+            ]),
+          ),
+          const SizedBox(height: 12),
           const Text('Capture anything. Find everything.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white70, fontSize: 16,

@@ -491,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-          ..._categories.map((c) => Padding(
+          ..._categories.where((c) => _notes.any((n) => n.category == c)).map((c) => Padding(
                 padding: const EdgeInsets.only(right: 6),
                 child: FilterChip(
                   label: Text(localizedCategory(l10n, c)),

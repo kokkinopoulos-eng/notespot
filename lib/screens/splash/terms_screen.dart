@@ -52,7 +52,7 @@ class _TermsScreen extends StatelessWidget {
 
 \u2022 \u0397 \u03B5\u03C6\u03B1\u03C1\u03BC\u03BF\u03B3\u03AE \u03B4\u03B5\u03BD \u03C3\u03C5\u03BB\u03BB\u03AD\u03B3\u03B5\u03B9 analytics \u03BF\u03CD\u03C4\u03B5 \u03C0\u03C1\u03BF\u03C3\u03C9\u03C0\u03B9\u03BA\u03AC \u03B4\u03B5\u03B4\u03BF\u03BC\u03AD\u03BD\u03B1.
 
-\u2022 \u03A4\u03BF NoteSpot Premium \u03B1\u03B3\u03BF\u03C1\u03AC\u03B6\u03B5\u03C4\u03B1\u03B9 \u03BC\u03AD\u03C3\u03C9 Google Play.
+\u2022 \u03A4\u03BF SpotNote AI Premium \u03B1\u03B3\u03BF\u03C1\u03AC\u03B6\u03B5\u03C4\u03B1\u03B9 \u03BC\u03AD\u03C3\u03C9 Google Play.
 
 \u03A0\u03BB\u03AE\u03C1\u03B7\u03C2 \u03C0\u03BF\u03BB\u03B9\u03C4\u03B9\u03BA\u03AE:
 ''';
@@ -70,7 +70,7 @@ Terms of Use & Privacy
 
 \u2022 The app collects no analytics and no personal data.
 
-\u2022 NoteSpot Premium is purchased via Google Play.
+\u2022 SpotNote AI Premium is purchased via Google Play.
 
 Full policy:
 ''';
@@ -87,9 +87,14 @@ Full policy:
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('NoteSpot', textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white, fontSize: 26,
-                      fontWeight: FontWeight.bold)),
+              RichText(
+                textAlign: TextAlign.center,
+                text: const TextSpan(children: [
+                  TextSpan(text: 'Spot', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
+                  TextSpan(text: 'Note', style: TextStyle(color: Color(0xFFFFD600), fontSize: 26, fontWeight: FontWeight.bold)),
+                  TextSpan(text: ' AI', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
+                ]),
+              ),
               const SizedBox(height: 16),
               Expanded(
                 child: Container(

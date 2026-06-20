@@ -241,7 +241,7 @@ class _SettingsTabState extends State<SettingsTab> {
       SnackBar(content: Text(l10n.evaResetDone)),
     );
   }
-  
+
   Future<void> _rescanAll() async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
@@ -365,6 +365,15 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
+  Widget _cardTile(Widget tile) => Card(
+        elevation: 4,
+        color: Colors.white,
+        shadowColor: Colors.black38,
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: tile,
+      );
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -390,7 +399,7 @@ class _SettingsTabState extends State<SettingsTab> {
           ),
         // Language section
         _SectionHeader(title: l10n.language),
-        ListTile(
+        _cardTile(ListTile(
           leading: const Icon(Icons.language),
           title: Text(l10n.language),
           subtitle: Text(
@@ -399,7 +408,7 @@ class _SettingsTabState extends State<SettingsTab> {
                 : l10n.languageGreek,
           ),
           onTap: _openLanguageDialog,
-        ),
+        )),
         const Divider(),
 
         // AI section — only visible in pro builds (kCloudAiEnabled = true)
@@ -415,7 +424,7 @@ class _SettingsTabState extends State<SettingsTab> {
               await _reload();
             },
           ),
-          ListTile(
+          _cardTile(ListTile(
             leading: const Icon(Icons.psychology_outlined),
             title: Text(l10n.aiProvider),
             subtitle: Text(_selectedProvider.displayName),
@@ -426,64 +435,70 @@ class _SettingsTabState extends State<SettingsTab> {
                   : Theme.of(context).colorScheme.outline,
             ),
             onTap: _openProviderDialog,
-          ),
-          ListTile(
+          )),
+          _cardTile(ListTile(
             leading: const Icon(Icons.key_outlined),
             title: Text(l10n.apiKey),
             subtitle: Text(_maskedKey ?? l10n.noApiKey),
             onTap: _openApiKeyDialog,
-          ),
+          )),
           const Divider(),
         ],
 
         // Archive section
         const Divider(),
         _SectionHeader(title: l10n.archiveSection),
-        ListTile(
+        _cardTile(ListTile(
           leading: const Icon(Icons.inventory_2_outlined),
           title: Text(l10n.archivedNotes),
           subtitle: Text(l10n.archivedNotesSubtitle),
-          onTap: () async { await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ArchivedNotesScreen()),
-          ); widget.onBackToHome?.call(); },
-        ),
-        ListTile(
+          onTap: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ArchivedNotesScreen()),
+            );
+            widget.onBackToHome?.call();
+          },
+        )),
+        _cardTile(ListTile(
           leading: const Icon(Icons.delete_outline),
-          title: const Text('\u039a\u03ac\u03b4\u03bf\u03c2 \u03b1\u03bd\u03b1\u03ba\u03cd\u03ba\u03bb\u03c9\u03c3\u03b7\u03c2'),
-          subtitle: const Text('\u03a3\u03b7\u03bc\u03b5\u03b9\u03ce\u03c3\u03b5\u03b9\u03c2 \u03c0\u03bf\u03c5 \u03b4\u03b9\u03b1\u03b3\u03c1\u03ac\u03c6\u03b7\u03ba\u03b1\u03bd \u2014 \u03b4\u03b9\u03b1\u03b3\u03c1\u03ac\u03c6\u03bf\u03bd\u03c4\u03b1\u03b9 \u03bc\u03b5\u03c4\u03ac 30 \u03b7\u03bc\u03ad\u03c1\u03b5\u03c2'),
-          onTap: () async { await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const TrashScreen()),
-          ); widget.onBackToHome?.call(); },
-        ),
+          title: const Text('Κάδος ανακύκλωσης'),
+          subtitle: const Text('Σημειώσεις που διαγράφηκαν — διαγράφονται μετά 30 ημέρες'),
+          onTap: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TrashScreen()),
+            );
+            widget.onBackToHome?.call();
+          },
+        )),
 
         // Eva section
         const Divider(),
         const _SectionHeader(title: 'Eva'),
-        ListTile(
+        _cardTile(ListTile(
           leading: const Icon(Icons.auto_awesome),
           title: Text(l10n.evaRescanAllTitle),
           subtitle: Text(l10n.evaRescanAllSubtitle),
           onTap: _rescanAll,
-        ),
-        ListTile(
+        )),
+        _cardTile(ListTile(
           leading: const Icon(Icons.restart_alt, color: Color(0xFFC62828)),
           title: Text(l10n.evaResetListTitle),
           subtitle: Text(l10n.evaResetListSubtitle),
           onTap: _resetEva,
-        ),
+        )),
 
         // Backup section
         const Divider(),
         _SectionHeader(title: l10n.backupData),
-        ListTile(
+        _cardTile(ListTile(
           leading: const Icon(Icons.backup_outlined),
           title: Text(l10n.backupData),
           subtitle: const Text('Drive, Dropbox, OneDrive...'),
           onTap: () => BackupService.instance.backup(context),
-        ),
-        ListTile(
+        )),
+        _cardTile(ListTile(
           leading: const Icon(Icons.restore_outlined),
           title: Text(l10n.restoreData),
           onTap: () async {
@@ -515,19 +530,19 @@ class _SettingsTabState extends State<SettingsTab> {
               );
             }
           },
-        ),
+        )),
 
         // About section
         _SectionHeader(title: l10n.about),
-        ListTile(
+        _cardTile(ListTile(
           leading: const Icon(Icons.help_outline),
           title: Text(l10n.helpTitle),
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const HelpScreen()),
           ),
-        ),
-        ListTile(
+        )),
+        _cardTile(ListTile(
           leading: const Icon(Icons.description_outlined),
           title: Text(l10n.termsTitle),
           onTap: () => showDialog<void>(
@@ -551,8 +566,8 @@ class _SettingsTabState extends State<SettingsTab> {
               );
             },
           ),
-        ),
-        ListTile(
+        )),
+        _cardTile(ListTile(
           leading: const Icon(Icons.privacy_tip_outlined),
           title: Text(l10n.privacyTitle),
           subtitle: Text(
@@ -569,15 +584,17 @@ class _SettingsTabState extends State<SettingsTab> {
               }
             }
           },
-        ),
-        ListTile(
+        )),
+        _cardTile(ListTile(
           leading: const Icon(Icons.info_outline),
           title: Text(l10n.version),
           subtitle: Text('SpotNote AI ' + kEditionName + ' · 1.0.0+8'),
-        ),
+        )),
       ],
     );
   }
+
+
 }
 
 class _SectionHeader extends StatelessWidget {
