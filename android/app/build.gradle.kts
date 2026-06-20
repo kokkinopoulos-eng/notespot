@@ -42,12 +42,12 @@ android {
         create("free") {
             dimension = "tier"
             applicationId = "gr.webdevelopment.notespot"
-            resValue("string", "app_name", "NoteSpot Free")
+            resValue("string", "app_name", "SpotNote AI")
         }
         create("pro") {
             dimension = "tier"
             applicationId = "com.notespot.pro"
-            resValue("string", "app_name", "NoteSpot Pro")
+            resValue("string", "app_name", "SpotNote AI Pro")
         }
     }
 

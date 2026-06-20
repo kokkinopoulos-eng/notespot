@@ -19,7 +19,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
   Widget _body() => Scaffold(
     key: const ValueKey('splash'),
-    backgroundColor: const Color(0xFF0F152F),
+    backgroundColor: const Color(0xFF1A1A2E),
     body: SafeArea(
       child: SizedBox.expand(
         child: Column(children: [
