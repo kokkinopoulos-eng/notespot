@@ -20,9 +20,17 @@ class OnboardingScreen extends StatelessWidget {
               Icon(Icons.lightbulb_outline,
                   size: 96, color: Theme.of(context).colorScheme.primary),
               const SizedBox(height: 16),
-              Text('NoteSpot',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineLarge),
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: Theme.of(context).textTheme.headlineLarge,
+                  children: const [
+                    TextSpan(text: 'Spot', style: TextStyle(color: Colors.white)),
+                    TextSpan(text: 'Note', style: TextStyle(color: Color(0xFFFFD600))),
+                    TextSpan(text: ' AI', style: TextStyle(color: Colors.white)),
+                  ],
+                ),
+              ),
               const SizedBox(height: 8),
               Text(l10n.tagline,
                   textAlign: TextAlign.center,
