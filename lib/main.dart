@@ -63,7 +63,7 @@ class NoteSpotAppState extends State<NoteSpotApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       scaffoldMessengerKey: rootMessengerKey,
-      title: 'NoteSpot',
+      title: 'SpotNote AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

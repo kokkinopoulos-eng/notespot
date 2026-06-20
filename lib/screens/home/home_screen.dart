@@ -793,7 +793,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(child: _notesBody(l10n)),
           ]),
           const SearchTab(),
-          SettingsTab(onBackToHome: () => setState(() => _tab = 0)),
+          SettingsTab(onBackToHome: () { setState(() => _tab = 0); _loadNotes(); }),
           _buildFavorites(),
         ],
       ),
