@@ -85,6 +85,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   bool _textLoading = false;
   ui.Image? _ghostImage;
 
+  // AI chat mode
+  bool _isAiChat = false;
+  final _chatInputCtrl = TextEditingController();
+  final _chatScrollCtrl = ScrollController();
+  bool _aiChatLoading = false;
+
   DrawingCanvasController get _ink => _pages[_page];
 
   @override
@@ -133,6 +139,10 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     if (note == null) return;
     _titleCtrl.text = note.title;
     _contentCtrl.text = note.content;
+    if (note.isAiChat) {
+      setState(() => _isAiChat = true);
+      _scrollToBottom();
+    }
     // Restore canvas background for all existing pages.
     for (final p in _pages) {
       p.bgColor = note.canvasBg;
@@ -155,6 +165,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     _contentCtrl.dispose();
     _contentFocus.dispose();
     _textScroll.dispose();
+    _chatInputCtrl.dispose();
+    _chatScrollCtrl.dispose();
     for (final p in _pages) {
       p.dispose();
     }
@@ -232,6 +244,37 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     final langName = Localizations.localeOf(context).languageCode == 'el'
         ? 'Greek'
         : 'English';
+
+    if (_isAiChat) {
+      int noteId;
+      if (widget.editNote != null) {
+        final updated = widget.editNote!.copyWith(
+          type: NoteType.text,
+          title: title,
+          content: content,
+          isAiChat: true,
+          updatedAt: now,
+        );
+        await DbService.instance.update(updated);
+        noteId = updated.id!;
+      } else {
+        noteId = await DbService.instance.insert(Note(
+          type: NoteType.text,
+          title: title,
+          content: content,
+          isAiChat: true,
+          createdAt: now,
+          updatedAt: now,
+        ));
+      }
+      if (content.isNotEmpty) {
+        unawaited(_enrichText(noteId, content, langName));
+      }
+      if (!mounted) return;
+      Navigator.pop(context, noteId);
+      return;
+    }
+
     final canvasBg = _pages[0].bgColor;
 
     String? mediaPath;
@@ -592,6 +635,143 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     setState(() {});
   }
 
+  // ── AI Chat ──────────────────────────────────────────────────────────────
+
+  List<({bool isUser, String text})> _parseTurns(String content) {
+    final result = <({bool isUser, String text})>[];
+    for (final block in content.split('\n\n')) {
+      final t = block.trim();
+      if (t.startsWith('[USER] ')) {
+        result.add((isUser: true, text: t.substring(7)));
+      } else if (t.startsWith('[AI] ')) {
+        result.add((isUser: false, text: t.substring(5)));
+      }
+    }
+    return result;
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_chatScrollCtrl.hasClients) {
+        _chatScrollCtrl.animateTo(
+          _chatScrollCtrl.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _sendChatMessage() async {
+    final text = _chatInputCtrl.text.trim();
+    if (text.isEmpty || _aiChatLoading) return;
+    _chatInputCtrl.clear();
+
+    final existing = _contentCtrl.text;
+    final userLine = '[USER] $text';
+    _contentCtrl.text =
+        existing.isEmpty ? userLine : '$existing\n\n$userLine';
+    setState(() => _aiChatLoading = true);
+    _scrollToBottom();
+
+    final prompt =
+        'You are a helpful AI assistant embedded in a note-taking app. '
+        'Answer the user\'s questions clearly and concisely.\n\n'
+        'Conversation so far:\n${_contentCtrl.text}\n\n'
+        'Reply to the last [USER] message. '
+        'Do not include a "[AI] " prefix in your reply.';
+
+    final reply =
+        await CloudAiService.instance.complete(prompt, maxTokens: 1500);
+    if (!mounted) return;
+
+    final aiLine = '[AI] ${reply?.trim() ?? '(No response)'}';
+    _contentCtrl.text = '${_contentCtrl.text}\n\n$aiLine';
+    setState(() => _aiChatLoading = false);
+    _scrollToBottom();
+  }
+
+  Widget _buildChatBubble(({bool isUser, String text}) turn) {
+    final cs = Theme.of(context).colorScheme;
+    return Align(
+      alignment: turn.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
+        decoration: BoxDecoration(
+          color:
+              turn.isUser ? cs.primary : cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(turn.isUser ? 16 : 4),
+            bottomRight: Radius.circular(turn.isUser ? 4 : 16),
+          ),
+        ),
+        child: Text(
+          turn.text,
+          style: TextStyle(
+            color: turn.isUser ? cs.onPrimary : cs.onSurface,
+            fontSize: 15,
+            height: 1.4,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChatBody(BuildContext context) {
+    final turns = _parseTurns(_contentCtrl.text);
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            controller: _chatScrollCtrl,
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+            itemCount: turns.length,
+            itemBuilder: (_, i) => _buildChatBubble(turns[i]),
+          ),
+        ),
+        if (_aiChatLoading) const LinearProgressIndicator(),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _chatInputCtrl,
+                    enabled: !_aiChatLoading,
+                    decoration: InputDecoration(
+                      hintText: 'Ask something…',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                    ),
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _sendChatMessage(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  onPressed: _aiChatLoading ? null : _sendChatMessage,
+                  icon: const Icon(Icons.send),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
 
   Widget _paneHeader({
@@ -735,6 +915,15 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           onChanged: (_) => setState(() {}),
         ),
         actions: [
+          if (kCloudAiEnabled)
+            IconButton(
+              icon: const Icon(Icons.auto_awesome),
+              tooltip: 'Ask AI',
+              isSelected: _isAiChat,
+              selectedIcon: const Icon(Icons.auto_awesome),
+              color: _isAiChat ? cs.primary : null,
+              onPressed: () => setState(() => _isAiChat = !_isAiChat),
+            ),
           AnimatedBuilder(
             animation: Listenable.merge(_pages),
             builder: (_, _) => TextButton(
@@ -744,7 +933,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ),
         ],
       ),
-      floatingActionButton: kCloudAiEnabled
+      floatingActionButton: kCloudAiEnabled && !_isAiChat
           ? FloatingActionButton.extended(
               icon: const Icon(Icons.auto_awesome),
               label: const Text('AI'),
@@ -753,7 +942,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
             )
           : null,
       body: SafeArea(
-        child: LayoutBuilder(
+        child: _isAiChat
+            ? _buildChatBody(context)
+            : LayoutBuilder(
           builder: (context, constraints) => Column(
             children: [
               // ── Text pane: visible in split (0) and text-only (1) ──

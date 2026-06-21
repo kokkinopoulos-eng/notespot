@@ -9,7 +9,7 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const _dbName = 'notespot.db';
-  static const _dbVersion = 7;
+  static const _dbVersion = 8;
 
   Database? _db;
 
@@ -66,6 +66,10 @@ class DbService {
     if (oldV < 7) {
       await db.execute('ALTER TABLE notes ADD COLUMN deleted_at INTEGER');
     }
+    if (oldV < 8) {
+      await db.execute(
+          'ALTER TABLE notes ADD COLUMN is_ai_chat INTEGER NOT NULL DEFAULT 0');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -88,6 +92,7 @@ class DbService {
         reminder_at INTEGER,
         expires_at INTEGER,
         category_locked INTEGER NOT NULL DEFAULT 0,
+        is_ai_chat INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
         deleted_at INTEGER

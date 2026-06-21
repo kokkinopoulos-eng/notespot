@@ -21,6 +21,7 @@ class Note {
     this.expiresAt,
     this.categoryLocked = false,
     this.deletedAt,
+    this.isAiChat = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -42,6 +43,7 @@ class Note {
   final DateTime? expiresAt;
   final bool categoryLocked;
   final DateTime? deletedAt;
+  final bool isAiChat;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -63,6 +65,7 @@ class Note {
     DateTime? expiresAt,
     DateTime? deletedAt,
     bool? categoryLocked,
+    bool? isAiChat,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -84,6 +87,7 @@ class Note {
       expiresAt: expiresAt ?? this.expiresAt,
       deletedAt: deletedAt ?? this.deletedAt,
       categoryLocked: categoryLocked ?? this.categoryLocked,
+      isAiChat: isAiChat ?? this.isAiChat,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -107,6 +111,7 @@ class Note {
         'expires_at': expiresAt?.millisecondsSinceEpoch,
         'deleted_at': deletedAt?.millisecondsSinceEpoch,
         'category_locked': categoryLocked ? 1 : 0,
+        'is_ai_chat': isAiChat ? 1 : 0,
         'created_at': createdAt.millisecondsSinceEpoch,
         'updated_at': updatedAt.millisecondsSinceEpoch,
       };
@@ -129,6 +134,7 @@ class Note {
         isArchived: (map['is_archived'] as int? ?? 0) == 1,
         color: map['color'] as int? ?? 0,
         categoryLocked: (map['category_locked'] as int? ?? 0) == 1,
+        isAiChat: (map['is_ai_chat'] as int? ?? 0) == 1,
         reminderAt: map['reminder_at'] == null
             ? null
             : DateTime.fromMillisecondsSinceEpoch(map['reminder_at'] as int),
