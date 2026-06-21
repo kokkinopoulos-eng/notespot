@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/feature_flags.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key, required this.next});
@@ -24,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen> {
       child: SizedBox.expand(
         child: Column(children: [
           const Spacer(flex: 3),
-          Image.asset('assets/icon/icon_full.png', width: 180,
+          Image.asset(kCloudAiEnabled ? 'assets/icon/icon_pro_512.png' : 'assets/icon/icon_free_512.png', width: 180,
               errorBuilder: (_, __, ___) =>
                   const Icon(Icons.menu_book, size: 120, color: Colors.white)),
           const SizedBox(height: 20),
