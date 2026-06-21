@@ -639,12 +639,18 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
   List<({bool isUser, String text})> _parseTurns(String content) {
     final result = <({bool isUser, String text})>[];
-    for (final block in content.split('\n\n')) {
-      final t = block.trim();
-      if (t.startsWith('[USER] ')) {
-        result.add((isUser: true, text: t.substring(7)));
-      } else if (t.startsWith('[AI] ')) {
-        result.add((isUser: false, text: t.substring(5)));
+    // Σπάμε στους markers [USER] / [AI], ΟΧΙ σε διπλό newline,
+    // ώστε οι πολυγραμμικές απαντήσεις (συνταγές κλπ) να μένουν ακέραιες.
+    final pattern = RegExp(r'\[(USER|AI)\]\s', multiLine: true);
+    final matches = pattern.allMatches(content).toList();
+    for (var i = 0; i < matches.length; i++) {
+      final m = matches[i];
+      final isUser = m.group(1) == 'USER';
+      final start = m.end;
+      final end = (i + 1 < matches.length) ? matches[i + 1].start : content.length;
+      final text = content.substring(start, end).trim();
+      if (text.isNotEmpty) {
+        result.add((isUser: isUser, text: text));
       }
     }
     return result;
@@ -685,7 +691,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         await CloudAiService.instance.complete(prompt, maxTokens: 1500);
     if (!mounted) return;
 
-    final aiLine = '[AI] ${reply?.trim() ?? '(No response)'}';
+    final errMsg = CloudAiService.instance.lastError;
+    final aiLine = '[AI] ${reply?.trim() ?? (errMsg != null ? 'Σφάλμα: ' + errMsg : '(No response)')}';
     _contentCtrl.text = '${_contentCtrl.text}\n\n$aiLine';
     setState(() => _aiChatLoading = false);
     _scrollToBottom();

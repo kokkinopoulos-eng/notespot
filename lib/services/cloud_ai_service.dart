@@ -3,6 +3,7 @@ import '../main.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import '../models/ai_analysis.dart';
 import '../models/ai_provider.dart';
 import 'ai_settings_service.dart';
