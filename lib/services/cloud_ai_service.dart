@@ -383,8 +383,26 @@ class CloudAiService {
       body: jsonEncode({
         'model': 'claude-haiku-4-5',
         'max_tokens': maxTokens,
+        'system':
+            'Είσαι βοηθός σημειώσεων. Απαντάς στα Ελληνικά εκτός αν σου ζητηθεί αλλιώς. '
+            'Για ερωτήσεις που αφορούν πρόσφατα γεγονότα, ελληνικές σειρές/ταινίες/εκπομπές, '
+            'πρόσωπα, τιμές, ή οτιδήποτε χρειάζεται επίκαιρη πληροφορία, ΧΡΗΣΙΜΟΠΟΙΗΣΕ το web_search. '
+            'Αν δεν είσαι σίγουρος και δεν μπορείς να επαληθεύσεις, πες ότι δεν το γνωρίζεις με βεβαιότητα '
+            'αντί να επινοήσεις απάντηση.',
         'messages': [
           {'role': 'user', 'content': prompt}
+        ],
+        'tools': [
+          {
+            'type': 'web_search_20250305',
+            'name': 'web_search',
+            'max_uses': 5,
+            'user_location': {
+              'type': 'approximate',
+              'country': 'GR',
+              'timezone': 'Europe/Athens',
+            },
+          }
         ],
       }),
     );
@@ -395,8 +413,16 @@ class CloudAiService {
     final json = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
     final content = json['content'] as List?;
     if (content == null || content.isEmpty) return null;
-    final first = content.first as Map<String, dynamic>;
-    return (first['text'] as String?)?.trim();
+    // Web search επιστρέφει πολλά blocks· μάζεψε όλα τα text blocks.
+    final buffer = StringBuffer();
+    for (final block in content) {
+      if (block is Map<String, dynamic> && block['type'] == 'text') {
+        final t = block['text'] as String?;
+        if (t != null) buffer.write(t);
+      }
+    }
+    final out = buffer.toString().trim();
+    return out.isEmpty ? null : out;
   }
 
   Future<String?> _completeOpenAi(
