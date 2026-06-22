@@ -755,7 +755,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                     controller: _chatInputCtrl,
                     enabled: !_aiChatLoading,
                     decoration: InputDecoration(
-                      hintText: 'Ask something…',
+                      hintText: '\u03a1\u03ce\u03c4\u03b7\u03c3\u03b5 \u03ba\u03ac\u03c4\u03b9\u2026',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
@@ -923,13 +923,23 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         ),
         actions: [
           if (kCloudAiEnabled)
-            IconButton(
-              icon: const Icon(Icons.auto_awesome),
-              tooltip: 'Ask AI',
-              isSelected: _isAiChat,
-              selectedIcon: const Icon(Icons.auto_awesome),
-              color: _isAiChat ? cs.primary : null,
-              onPressed: () => setState(() => _isAiChat = !_isAiChat),
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: TextButton.icon(
+                icon: Icon(Icons.auto_awesome,
+                    size: 20, color: _isAiChat ? cs.primary : null),
+                label: Text('AI',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: _isAiChat ? cs.primary : null)),
+                style: TextButton.styleFrom(
+                  backgroundColor:
+                      _isAiChat ? cs.primaryContainer.withValues(alpha: 0.4) : null,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                ),
+                onPressed: () => setState(() => _isAiChat = !_isAiChat),
+              ),
             ),
           AnimatedBuilder(
             animation: Listenable.merge(_pages),
@@ -940,10 +950,10 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ),
         ],
       ),
-      floatingActionButton: kCloudAiEnabled && !_isAiChat
+      floatingActionButton: kCloudAiEnabled && !_isAiChat && _paneMode == 1
           ? FloatingActionButton.extended(
-              icon: const Icon(Icons.auto_awesome),
-              label: const Text('AI'),
+              icon: const Icon(Icons.auto_fix_high),
+              label: const Text('AI \u0395\u03c1\u03b3\u03b1\u03bb\u03b5\u03af\u03b1'),
               tooltip: l10n.aiAssistantTitle,
               onPressed: _onAiButtonPressed,
             )
