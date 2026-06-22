@@ -923,23 +923,49 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         ),
         actions: [
           if (kCloudAiEnabled)
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: TextButton.icon(
-                icon: Icon(Icons.auto_awesome,
-                    size: 20, color: _isAiChat ? cs.primary : null),
-                label: Text('AI',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: _isAiChat ? cs.primary : null)),
-                style: TextButton.styleFrom(
-                  backgroundColor:
-                      _isAiChat ? cs.primaryContainer.withValues(alpha: 0.4) : null,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            PopupMenuButton<int>(
+              tooltip: 'AI',
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.auto_awesome,
+                        size: 20, color: _isAiChat ? cs.primary : null),
+                    const SizedBox(width: 4),
+                    Text('AI',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: _isAiChat ? cs.primary : null)),
+                  ],
                 ),
-                onPressed: () => setState(() => _isAiChat = !_isAiChat),
               ),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 0,
+                  child: Row(children: [
+                    Icon(Icons.forum_outlined, size: 20),
+                    SizedBox(width: 12),
+                    Text('\u03a1\u03ce\u03c4\u03b7\u03c3\u03b5 \u03c4\u03bf\u03bd AI'),
+                  ]),
+                ),
+                const PopupMenuItem(
+                  value: 1,
+                  child: Row(children: [
+                    Icon(Icons.auto_fix_high, size: 20),
+                    SizedBox(width: 12),
+                    Text('AI \u0395\u03c1\u03b3\u03b1\u03bb\u03b5\u03af\u03b1'),
+                  ]),
+                ),
+              ],
+              onSelected: (v) {
+                if (v == 0) {
+                  setState(() => _isAiChat = !_isAiChat);
+                } else {
+                  _onAiButtonPressed();
+                }
+              },
             ),
           AnimatedBuilder(
             animation: Listenable.merge(_pages),
@@ -950,14 +976,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ),
         ],
       ),
-      floatingActionButton: kCloudAiEnabled && !_isAiChat && _paneMode == 1
-          ? FloatingActionButton.extended(
-              icon: const Icon(Icons.auto_fix_high),
-              label: const Text('AI \u0395\u03c1\u03b3\u03b1\u03bb\u03b5\u03af\u03b1'),
-              tooltip: l10n.aiAssistantTitle,
-              onPressed: _onAiButtonPressed,
-            )
-          : null,
+      floatingActionButton: null,
       body: SafeArea(
         child: _isAiChat
             ? _buildChatBody(context)
