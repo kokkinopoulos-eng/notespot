@@ -1,4 +1,5 @@
 ﻿import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +20,10 @@ class PremiumService extends ChangeNotifier {
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     _isPremium = prefs.getBool('premium_unlocked') ?? false;
+    // DEBUG ONLY: auto-unlock Pro for local testing; release uses real purchase state
+    if (kDebugMode) {
+      _isPremium = true;
+    }
     notifyListeners();
     _sub = InAppPurchase.instance.purchaseStream.listen(
       _onPurchases,

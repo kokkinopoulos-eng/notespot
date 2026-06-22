@@ -1,5 +1,8 @@
-const bool kCloudAiEnabled =
-    bool.fromEnvironment('ENABLE_CLOUD_AI', defaultValue: false);
+import '../services/premium_service.dart';
 
-/// Human-readable edition name, derived from the build flavor.
-const String kEditionName = kCloudAiEnabled ? 'Pro' : 'Free';
+/// Cloud AI (Pro) features are unlocked at runtime via in-app purchase.
+/// Returns true when the user has purchased the premium unlock (or in debug).
+bool get kCloudAiEnabled => PremiumService.instance.isPremium;
+
+/// Human-readable edition name, derived from purchase state.
+String get kEditionName => kCloudAiEnabled ? 'Pro' : 'Free';
