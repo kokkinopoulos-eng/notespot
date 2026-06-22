@@ -12,6 +12,9 @@ import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 import '../../core/category_labels.dart';
 import '../../core/feature_flags.dart';
+import '../../services/premium_service.dart';
+import '../../widgets/locked_feature.dart';
+import '../../widgets/paywall_sheet.dart';
 import '../../core/timeline_utils.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
@@ -224,8 +227,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   _quickDictation();
                 },
               ),
-              if (kCloudAiEnabled)
-                ListTile(
+              LockedWrapper(
+                locked: !PremiumService.instance.isPremium,
+                onLockedTap: () {
+                  Navigator.pop(ctx);
+                  showPaywall(context);
+                },
+                child: ListTile(
                   leading: const CircleAvatar(
                     backgroundColor: Color(0xFF7B1FA2),
                     child: Icon(Icons.auto_awesome, color: Colors.white),
@@ -239,6 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _smartVoice();
                   },
                 ),
+              ),
               ListTile(
                 leading: const CircleAvatar(
                   backgroundColor: Color(0xFF00838F),
@@ -724,6 +733,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: PremiumService.instance,
+      builder: (context, _) => _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: _selecting

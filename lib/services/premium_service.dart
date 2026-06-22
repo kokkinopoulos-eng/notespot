@@ -1,6 +1,5 @@
 ﻿import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,10 +11,12 @@ class PremiumService extends ChangeNotifier {
 
   bool _isPremium = false;
   String? _lastError;
+  String _priceText = '€4.99';
   StreamSubscription<List<PurchaseDetails>>? _sub;
 
   bool get isPremium => _isPremium;
   String? get lastError => _lastError;
+  String get priceText => _priceText;
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -25,6 +26,7 @@ class PremiumService extends ChangeNotifier {
       _isPremium = true;
     }
     notifyListeners();
+    _fetchPrice();
     _sub = InAppPurchase.instance.purchaseStream.listen(
       _onPurchases,
       onError: (e) {
@@ -49,6 +51,19 @@ class PremiumService extends ChangeNotifier {
         }
       }
     }
+  }
+
+  Future<void> _fetchPrice() async {
+    try {
+      final available = await InAppPurchase.instance.isAvailable();
+      if (!available) return;
+      final response = await InAppPurchase.instance
+          .queryProductDetails({kPremiumProductId});
+      if (response.productDetails.isNotEmpty) {
+        _priceText = response.productDetails.first.price;
+        notifyListeners();
+      }
+    } catch (_) {}
   }
 
   Future<void> _setPremium(bool value) async {

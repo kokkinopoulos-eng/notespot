@@ -8,10 +8,12 @@
 // επόμενο localization pass (Code CLI).
 
 import 'package:flutter/material.dart';
-import '../../core/feature_flags.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/ai_assistant_service.dart';
+import '../../services/premium_service.dart';
 import '../../services/voice_structuring_service.dart';
+import '../../widgets/locked_feature.dart';
+import '../../widgets/paywall_sheet.dart';
 
 /// Αποτέλεσμα που επιστρέφεται στον caller.
 class VoiceNoteResult {
@@ -333,13 +335,22 @@ class _VoiceNoteScreenState extends State<VoiceNoteScreen> {
           _ErrorBanner(error: _error!),
         ],
         const SizedBox(height: 16),
-        if (kCloudAiEnabled)
-          FilledButton.icon(
-            onPressed: isEmpty ? null : _structureWithAi,
-            icon: const Icon(Icons.auto_awesome),
-            // TODO l10n
-            label: const Text('Δομή με AI'),
-          ),
+        ListenableBuilder(
+          listenable: PremiumService.instance,
+          builder: (context, _) {
+            final isPremium = PremiumService.instance.isPremium;
+            return LockedWrapper(
+              locked: !isPremium,
+              onLockedTap: () => showPaywall(context),
+              child: FilledButton.icon(
+                onPressed: isEmpty ? null : _structureWithAi,
+                icon: const Icon(Icons.auto_awesome),
+                // TODO l10n
+                label: const Text('Δομή με AI'),
+              ),
+            );
+          },
+        ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: isEmpty ? null : _saveAsText,

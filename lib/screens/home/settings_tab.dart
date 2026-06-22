@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/feature_flags.dart';
+import '../../services/premium_service.dart';
+import '../../widgets/paywall_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/app_localizations.dart';
 import '../../main.dart';
@@ -376,8 +378,16 @@ class _SettingsTabState extends State<SettingsTab> {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: PremiumService.instance,
+      builder: (context, _) => _buildList(context),
+    );
+  }
+
+  Widget _buildList(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final currentLocale = NoteSpotApp.of(context).locale;
+    final isPremium = PremiumService.instance.isPremium;
 
     return ListView(
       children: [
@@ -411,39 +421,55 @@ class _SettingsTabState extends State<SettingsTab> {
         )),
         const Divider(),
 
-        // AI section — only visible in pro builds (kCloudAiEnabled = true)
-        if (kCloudAiEnabled) ...[
-          _SectionHeader(title: l10n.aiProvider),
-          SwitchListTile(
-            secondary: const Icon(Icons.cloud_outlined),
-            title: Text(l10n.cloudAiToggleTitle),
-            subtitle: Text(l10n.cloudAiToggleSubtitle),
-            value: _aiEnabled,
-            onChanged: (v) async {
-              await AiSettingsService.instance.setAiEnabled(v);
-              await _reload();
-            },
-          ),
+        // AI section — always visible; locked with paywall when not purchased
+        _SectionHeader(title: l10n.aiProvider),
+        if (!isPremium)
           _cardTile(ListTile(
-            leading: const Icon(Icons.psychology_outlined),
-            title: Text(l10n.aiProvider),
-            subtitle: Text(_selectedProvider.displayName),
-            trailing: Icon(
-              _hasKey ? Icons.check_circle : Icons.key_off,
-              color: _hasKey
-                  ? Colors.green
-                  : Theme.of(context).colorScheme.outline,
+            leading: const Icon(Icons.lock_outline, color: Color(0xFF7C4DFF)),
+            title: const Text('Ξεκλείδωσε με Pro'),
+            subtitle: const Text('Αγόρασε το Pro για πρόσβαση σε AI λειτουργίες'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showPaywall(context),
+          )),
+        Opacity(
+          opacity: isPremium ? 1.0 : 0.45,
+          child: IgnorePointer(
+            ignoring: !isPremium,
+            child: Column(
+              children: [
+                SwitchListTile(
+                  secondary: const Icon(Icons.cloud_outlined),
+                  title: Text(l10n.cloudAiToggleTitle),
+                  subtitle: Text(l10n.cloudAiToggleSubtitle),
+                  value: _aiEnabled,
+                  onChanged: (v) async {
+                    await AiSettingsService.instance.setAiEnabled(v);
+                    await _reload();
+                  },
+                ),
+                _cardTile(ListTile(
+                  leading: const Icon(Icons.psychology_outlined),
+                  title: Text(l10n.aiProvider),
+                  subtitle: Text(_selectedProvider.displayName),
+                  trailing: Icon(
+                    _hasKey ? Icons.check_circle : Icons.key_off,
+                    color: _hasKey
+                        ? Colors.green
+                        : Theme.of(context).colorScheme.outline,
+                  ),
+                  onTap: _openProviderDialog,
+                )),
+                _cardTile(ListTile(
+                  leading: const Icon(Icons.key_outlined),
+                  title: Text(l10n.apiKey),
+                  subtitle: Text(_maskedKey ?? l10n.noApiKey),
+                  onTap: _openApiKeyDialog,
+                )),
+              ],
             ),
-            onTap: _openProviderDialog,
-          )),
-          _cardTile(ListTile(
-            leading: const Icon(Icons.key_outlined),
-            title: Text(l10n.apiKey),
-            subtitle: Text(_maskedKey ?? l10n.noApiKey),
-            onTap: _openApiKeyDialog,
-          )),
-          const Divider(),
-        ],
+          ),
+        ),
+        const Divider(),
 
         // Archive section
         const Divider(),
