@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,10 +21,12 @@ class PremiumService extends ChangeNotifier {
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     _isPremium = prefs.getBool('premium_unlocked') ?? false;
+    debugPrint('PREMIUM_INIT prefs=$_isPremium debug=$kDebugMode');
     // DEBUG ONLY: auto-unlock Pro for local testing; release uses real purchase state
     if (kDebugMode) {
       _isPremium = true;
     }
+    debugPrint('PREMIUM_FINAL isPremium=$_isPremium');
     notifyListeners();
     _fetchPrice();
     _sub = InAppPurchase.instance.purchaseStream.listen(
@@ -37,7 +39,9 @@ class PremiumService extends ChangeNotifier {
   }
 
   Future<void> _onPurchases(List<PurchaseDetails> purchases) async {
+    debugPrint('PREMIUM_STREAM got ${purchases.length} purchases');
     for (final p in purchases) {
+      debugPrint('PREMIUM_STREAM product=${p.productID} status=${p.status}');
       if (p.productID == kPremiumProductId) {
         if (p.status == PurchaseStatus.purchased ||
             p.status == PurchaseStatus.restored) {
@@ -64,6 +68,11 @@ class PremiumService extends ChangeNotifier {
         notifyListeners();
       }
     } catch (_) {}
+  }
+
+  /// TEST ONLY - REMOVE BEFORE PRODUCTION
+  Future<void> testTogglePremium() async {
+    await _setPremium(!_isPremium);
   }
 
   Future<void> _setPremium(bool value) async {

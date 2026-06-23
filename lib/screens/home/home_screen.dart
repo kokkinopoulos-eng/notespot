@@ -2,6 +2,7 @@ import '../../services/eva_service.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:record/record.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -794,7 +795,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      kEditionName,
+                      kEditionName + ' P=' + PremiumService.instance.isPremium.toString() + ' D=' + kDebugMode.toString(),
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,

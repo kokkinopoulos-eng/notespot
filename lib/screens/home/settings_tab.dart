@@ -423,6 +423,18 @@ class _SettingsTabState extends State<SettingsTab> {
 
         // AI section — always visible; locked with paywall when not purchased
         _SectionHeader(title: l10n.aiProvider),
+        // TEST ONLY - REMOVE BEFORE PRODUCTION
+        _cardTile(ListTile(
+          leading: const Icon(Icons.bug_report, color: Colors.red),
+          title: const Text('TEST: Toggle Pro'),
+          subtitle: Text('isPremium = ' + isPremium.toString()),
+          trailing: Switch(
+            value: isPremium,
+            onChanged: (_) => PremiumService.instance.testTogglePremium(),
+          ),
+          onTap: () => PremiumService.instance.testTogglePremium(),
+        )),
+        // END TEST ONLY
         if (!isPremium)
           _cardTile(ListTile(
             leading: const Icon(Icons.lock_outline, color: Color(0xFF7C4DFF)),

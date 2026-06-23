@@ -21,19 +21,41 @@ class LockedWrapper extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           IgnorePointer(
-            child: Opacity(opacity: 0.45, child: child),
+            child: Opacity(opacity: 0.5, child: child),
           ),
           Positioned(
-            top: -4,
-            right: -4,
+            top: 2,
+            right: 8,
             child: Container(
-              width: 20,
-              height: 20,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                shape: BoxShape.circle,
+                color: const Color(0xFFFF9800),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.lock, size: 12, color: Colors.white),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.lock, size: 13, color: Colors.white),
+                  SizedBox(width: 3),
+                  Text(
+                    'PRO',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
