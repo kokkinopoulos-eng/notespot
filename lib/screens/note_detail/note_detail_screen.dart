@@ -7,6 +7,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/category_labels.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
@@ -305,6 +306,23 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       await Share.shareXFiles([XFile(path)], text: text);
     } else {
       await Share.share(text);
+    }
+  }
+
+  Future<void> _addToCalendar() async {
+    final title = Uri.encodeComponent(_note.title.isNotEmpty ? _note.title : 'SpotNote');
+    final details = Uri.encodeComponent(_note.content.isNotEmpty ? _note.content : '');
+    final now = DateTime.now();
+    final start = '${now.year}${now.month.toString().padLeft(2,'0')}${now.day.toString().padLeft(2,'0')}T${now.hour.toString().padLeft(2,'0')}${now.minute.toString().padLeft(2,'0')}00';
+    final end = '${now.year}${now.month.toString().padLeft(2,'0')}${now.day.toString().padLeft(2,'0')}T${(now.hour+1).toString().padLeft(2,'0')}${now.minute.toString().padLeft(2,'0')}00';
+    final uri = Uri.parse('content://com.android.calendar/time/$start');
+    final intentUri = Uri.parse(
+      'intent://${Uri.encodeComponent('SpotNote')}#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.item/event;S.title=$title;S.description=$details;S.beginTime=${now.millisecondsSinceEpoch};S.endTime=${now.millisecondsSinceEpoch + 3600000};end'
+    );
+    if (await canLaunchUrl(intentUri)) {
+      await launchUrl(intentUri);
+    } else {
+      await launchUrl(Uri.parse('https://calendar.google.com/calendar/r/eventedit?text=$title&details=$details'));
     }
   }
 
@@ -877,6 +895,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             icon: const Icon(Icons.share),
             tooltip: l10n.share,
             onPressed: _share,
+          ),
+          IconButton(
+            icon: const Icon(Icons.calendar_today_outlined),
+            tooltip: 'Add to Calendar',
+            onPressed: _addToCalendar,
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
