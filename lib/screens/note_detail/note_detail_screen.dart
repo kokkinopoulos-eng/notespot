@@ -880,11 +880,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             tooltip: _note.isArchived ? 'Επαναφορά από αρχείο' : 'Αρχειοθέτηση',
             onPressed: _toggleArchive,
           ),
-          IconButton(
-            icon: const Icon(Icons.print_outlined),
-            tooltip: 'Print',
-            onPressed: _print,
-          ),
           if (_note.type != NoteType.checklist)
             IconButton(
               icon: const Icon(Icons.edit_outlined),
@@ -897,14 +892,20 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             onPressed: _share,
           ),
           IconButton(
-            icon: const Icon(Icons.calendar_today_outlined),
-            tooltip: 'Add to Calendar',
-            onPressed: _addToCalendar,
-          ),
-          IconButton(
             icon: const Icon(Icons.delete_outline),
             tooltip: l10n.delete,
             onPressed: () => _delete(l10n),
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (v) {
+              if (v == 'print') _print();
+              if (v == 'calendar') _addToCalendar();
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'print', child: Row(children: [Icon(Icons.print_outlined), SizedBox(width: 12), Text('Print')])),
+              const PopupMenuItem(value: 'calendar', child: Row(children: [Icon(Icons.calendar_today_outlined), SizedBox(width: 12), Text('Add to Calendar')])),
+            ],
           ),
         ],
       ),
