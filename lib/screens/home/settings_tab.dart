@@ -500,8 +500,8 @@ class _SettingsTabState extends State<SettingsTab> {
         )),
         _cardTile(ListTile(
           leading: const Icon(Icons.delete_outline),
-          title: const Text('Κάδος ανακύκλωσης'),
-          subtitle: const Text('Σημειώσεις που διαγράφηκαν — διαγράφονται μετά 30 ημέρες'),
+          title: Text(l10n.trashTitle),
+          subtitle: Text(l10n.trashSubtitle),
           onTap: () async {
             await Navigator.push(
               context,
