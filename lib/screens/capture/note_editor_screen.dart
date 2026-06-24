@@ -969,12 +969,23 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                         Text('AI \u0395\u03c1\u03b3\u03b1\u03bb\u03b5\u03af\u03b1'),
                       ]),
                     ),
+                    if (widget.editNote?.mediaPath != null)
+                      const PopupMenuItem(
+                        value: 2,
+                        child: Row(children: [
+                          Icon(Icons.image_search, size: 20),
+                          SizedBox(width: 12),
+                          Text('\u03a0\u03b5\u03c1\u03af\u03b3\u03c1\u03b1\u03c8\u03b5 \u03c4\u03b7\u03bd \u03b5\u03b9\u03ba\u03cc\u03bd\u03b1'),
+                        ]),
+                      ),
                   ],
                   onSelected: (v) {
                     if (v == 0) {
                       setState(() => _isAiChat = !_isAiChat);
-                    } else {
+                    } else if (v == 1) {
                       _onAiButtonPressed();
+                    } else if (v == 2) {
+                      _describeImageWithAi();
                     }
                   },
                 ),
@@ -1212,5 +1223,39 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _describeImageWithAi() async {
+    final path = widget.editNote?.mediaPath;
+    if (path == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('\u0391\u03bd\u03ac\u03bb\u03c5\u03c3\u03b7 \u03b5\u03b9\u03ba\u03cc\u03bd\u03b1\u03c2\u2026'),
+        duration: Duration(seconds: 4),
+      ),
+    );
+    final langName = Localizations.localeOf(context).languageCode == 'el'
+        ? 'Greek'
+        : 'English';
+    final result = await CloudAiService.instance.analyzeImage(path, langName);
+    if (!mounted) return;
+    final desc = result?.description.trim() ?? '';
+    if (desc.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('\u0397 AI \u03b4\u03b5\u03bd \u03b5\u03c0\u03ad\u03c3\u03c4\u03c1\u03b5\u03c8\u03b5 \u03c0\u03b5\u03c1\u03b9\u03b3\u03c1\u03b1\u03c6\u03ae.'),
+        ),
+      );
+      return;
+    }
+    final existing = _contentCtrl.text.trim();
+    final newText = existing.isEmpty ? desc : '$existing\n\n$desc';
+    setState(() {
+      _contentCtrl.text = newText;
+      _contentCtrl.selection = TextSelection.fromPosition(
+        TextPosition(offset: newText.length),
+      );
+    });
   }
 }

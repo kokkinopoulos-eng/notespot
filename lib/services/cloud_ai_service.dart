@@ -57,6 +57,7 @@ class CloudAiService {
       '{"title": "short title describing the MAIN subject, max 6 words, in <LANG>", '
       '"category": "one of [passwords, contacts, shopping, receipts, finance, work, health, travel, ideas, addresses, pets, food, education, tech, vehicle, home, appointments, bills, personal, other] matching the MAIN subject", '
       '"tags": ["3-6 keywords about the MAIN subject in <LANG>"], '
+      '"description": "2-3 sentence natural-language description of the MAIN subject in <LANG>, friendly and informative", '
       '"extracted_text": "text readable on the MAIN subject verbatim (brand, label, amounts), empty string if none"}';
 
   static const _textPromptTemplate =
