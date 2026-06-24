@@ -537,4 +537,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trashSubtitle => 'Deleted notes — removed after 30 days';
+
+  @override
+  String get trashRestore => 'Restore';
+
+  @override
+  String get trashDelete => 'Delete';
+
+  @override
+  String get trashExpiry => 'Notes are permanently deleted after 30 days.';
 }

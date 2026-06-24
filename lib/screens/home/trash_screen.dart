@@ -128,7 +128,7 @@ Widget _swipeHint({required String left, required String right}) {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _notes.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -140,11 +140,11 @@ Widget _swipeHint({required String left, required String right}) {
                 )
               : Column(
                   children: [
-                    _swipeHint(left: 'Επαναφορά', right: 'Διαγραφή'),
+                    _swipeHint(left: AppLocalizations.of(context)!.trashRestore, right: AppLocalizations.of(context)!.trashDelete),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                       child: Text(
-                        'Οι σημειώσεις διαγράφονται οριστικά μετά από 30 ημέρες.',
+                        AppLocalizations.of(context)!.trashExpiry,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.grey,
                             ),

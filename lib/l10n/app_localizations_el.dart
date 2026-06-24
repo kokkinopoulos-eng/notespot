@@ -539,4 +539,14 @@ class AppLocalizationsEl extends AppLocalizations {
   @override
   String get trashSubtitle =>
       'Διαγραμμένες σημειώσεις — αφαιρούνται μετά από 30 ημέρες';
+
+  @override
+  String get trashRestore => 'Επαναφορά';
+
+  @override
+  String get trashDelete => 'Διαγραφή';
+
+  @override
+  String get trashExpiry =>
+      'Οι σημειώσεις διαγράφονται οριστικά μετά από 30 ημέρες.';
 }

@@ -1099,6 +1099,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deleted notes — removed after 30 days'**
   String get trashSubtitle;
+
+  /// No description provided for @trashRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get trashRestore;
+
+  /// No description provided for @trashDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get trashDelete;
+
+  /// No description provided for @trashExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes are permanently deleted after 30 days.'**
+  String get trashExpiry;
 }
 
 class _AppLocalizationsDelegate

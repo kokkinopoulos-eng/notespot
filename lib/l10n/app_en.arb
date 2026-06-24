@@ -190,5 +190,8 @@
   "photoSpotTitle": "Photo + AI",
   "photoSpotSubtitle": "Auto AI description",
   "trashTitle": "Recycle Bin",
-  "trashSubtitle": "Deleted notes — removed after 30 days"
+  "trashSubtitle": "Deleted notes — removed after 30 days",
+  "trashRestore": "Restore",
+  "trashDelete": "Delete",
+  "trashExpiry": "Notes are permanently deleted after 30 days."
 }
