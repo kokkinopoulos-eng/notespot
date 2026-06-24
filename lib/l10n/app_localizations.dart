@@ -1063,11 +1063,7 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No archived notes'**
   String get archivedNotesEmpty;
-  String get smartVoiceSubtitle;
-  String get photoSpotTitle;
-  String get photoSpotSubtitle;
-  String get trashTitle;
-  String get trashSubtitle;
+  String get noteTypeTextDrawSub;
 }
 
 class _AppLocalizationsDelegate
