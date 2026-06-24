@@ -1064,6 +1064,11 @@ abstract class AppLocalizations {
   /// **'No archived notes'**
   String get archivedNotesEmpty;
   String get noteTypeTextDrawSub;
+  String get smartVoiceSubtitle;
+  String get photoSpotTitle;
+  String get photoSpotSubtitle;
+  String get trashTitle;
+  String get trashSubtitle;
 }
 
 class _AppLocalizationsDelegate

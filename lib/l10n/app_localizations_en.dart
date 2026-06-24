@@ -521,4 +521,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get archivedNotesEmpty => 'No archived notes';
   @override
   String get noteTypeTextDrawSub => 'Tap for text and drawing';
+  @override
+  String get smartVoiceSubtitle => 'Voice \u2192 AI structured note';
+  @override
+  String get photoSpotTitle => 'Photo + AI';
+  @override
+  String get photoSpotSubtitle => 'Auto AI description';
+  @override
+  String get trashTitle => 'Recycle Bin';
+  @override
+  String get trashSubtitle => 'Deleted notes \u2014 removed after 30 days';
 }
