@@ -1063,11 +1063,41 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No archived notes'**
   String get archivedNotesEmpty;
+
+  /// No description provided for @noteTypeTextDrawSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap for text and drawing'**
   String get noteTypeTextDrawSub;
+
+  /// No description provided for @smartVoiceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice → AI structured note'**
   String get smartVoiceSubtitle;
+
+  /// No description provided for @photoSpotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo + AI'**
   String get photoSpotTitle;
+
+  /// No description provided for @photoSpotSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto AI description'**
   String get photoSpotSubtitle;
+
+  /// No description provided for @trashTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recycle Bin'**
   String get trashTitle;
+
+  /// No description provided for @trashSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted notes — removed after 30 days'**
   String get trashSubtitle;
 }
 

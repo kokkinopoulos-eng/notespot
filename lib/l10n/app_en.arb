@@ -184,5 +184,11 @@
   "noteTypeFromGallery": "From gallery",
   "noteTypeVoice": "Voice",
   "noteTypeChecklist": "Checklist",
-  "archivedNotesEmpty": "No archived notes"
+  "archivedNotesEmpty": "No archived notes",
+  "noteTypeTextDrawSub": "Tap for text and drawing",
+  "smartVoiceSubtitle": "Voice → AI structured note",
+  "photoSpotTitle": "Photo + AI",
+  "photoSpotSubtitle": "Auto AI description",
+  "trashTitle": "Recycle Bin",
+  "trashSubtitle": "Deleted notes — removed after 30 days"
 }

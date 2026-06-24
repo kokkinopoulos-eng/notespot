@@ -196,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Icon(Icons.edit_note, color: Colors.white),
                 ),
                 title: Text(l.noteTypeTextDraw),
-                subtitle: Text(Localizations.localeOf(context).languageCode == 'el' ? '\u03a0\u03ac\u03c4\u03b1 \u03b3\u03b9\u03b1 \u03ba\u03b5\u03af\u03bc\u03b5\u03bd\u03bf \u03ba\u03b1\u03b9 \u03c3\u03c7\u03ad\u03b4\u03b9\u03bf' : 'Tap for text and drawing'),
+                subtitle: Text(l.noteTypeTextDrawSub),
                 onTap: () {
                   Navigator.pop(ctx);
                   _openEditor();
@@ -246,10 +246,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     backgroundColor: Color(0xFF7B1FA2),
                     child: Icon(Icons.auto_awesome, color: Colors.white),
                   ),
-                  // TODO l10n
-                  title: const Text('Έξυπνη φωνητική'),
-                  // TODO l10n
-                  subtitle: const Text('Φωνή → AI structured σημείωση'),
+                  title: Text(l.smartVoiceTitle),
+                  subtitle: Text(l.smartVoiceSubtitle),
                   onTap: () {
                     Navigator.pop(ctx);
                     _smartVoice();
