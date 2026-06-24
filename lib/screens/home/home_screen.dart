@@ -224,25 +224,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   _quickGallery();
                 },
               ),
-              LockedWrapper(
-                locked: !PremiumService.instance.isPremium,
-                onLockedTap: () {
-                  Navigator.pop(ctx);
-                  showPaywall(context);
-                },
-                child: ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Color(0xFF1565C0),
-                    child: Icon(Icons.auto_awesome, color: Colors.white),
-                  ),
-                  title: const Text('\u03a6\u03c9\u03c4\u03bf\u03b3\u03c1\u03b1\u03c6\u03af\u03b1 + AI'),
-                  subtitle: const Text('\u0391\u03c5\u03c4\u03cc\u03bc\u03b1\u03c4\u03b7 \u03c0\u03b5\u03c1\u03b9\u03b3\u03c1\u03b1\u03c6\u03ae \u03b1\u03c0\u03cc AI'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _quickPhotoSpot();
-                  },
-                ),
-              ),
               ListTile(
                 leading: const CircleAvatar(
                   backgroundColor: Color(0xFFC62828),
@@ -393,36 +374,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadNotes();
   }
 
-  Future<void> _quickPhotoSpot() async {
-    final path = await MediaService.instance.pickFromGallery();
-    if (path == null || !mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final langName = Localizations.localeOf(context).languageCode == 'el'
-        ? 'Greek'
-        : 'English';
-    final now = DateTime.now();
-    final stamp = DateFormat('d/M HH:mm').format(now);
-    final noteId = await DbService.instance.insert(Note(
-      type: NoteType.photo,
-      title: '${l10n.photoNote} $stamp',
-      mediaPath: path,
-      createdAt: now,
-      updatedAt: now,
-    ));
-    // Always run local Eva enrichment (free path).
-    unawaited(_enrichPhoto(noteId, path, langName));
-    // Premium-only: append AI description to content.
-    if (PremiumService.instance.isPremium) {
-      unawaited(_appendAiDescription(noteId, path, langName));
-    }
-    final note = await DbService.instance.getById(noteId);
-    if (note == null || !mounted) return;
-    await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => NoteDetailScreen(note: note)),
-    );
-    _loadNotes();
-  }
 
   Future<void> _appendAiDescription(int noteId, String path, String lang) async {
     if (!kCloudAiEnabled) return;
