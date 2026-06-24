@@ -115,7 +115,7 @@ Widget _swipeHint({required String left, required String right}) {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Κάδος ανακύκλωσης'),
+        title: Text(AppLocalizations.of(context)!.trashTitle),
         actions: [
           if (_notes.isNotEmpty)
             IconButton(
@@ -134,7 +134,7 @@ Widget _swipeHint({required String left, required String right}) {
                     children: [
                       Icon(Icons.delete_outline, size: 64, color: Colors.grey),
                       SizedBox(height: 12),
-                      Text('Ο κάδος είναι άδειος'),
+                      Text(AppLocalizations.of(context)!.trashSubtitle),
                     ],
                   ),
                 )
