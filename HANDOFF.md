@@ -79,7 +79,7 @@ Package: gr.webdevelopment.notespot | Flavor: free (το ΜΟΝΑΔΙΚΟ ενε
 - lib/services/cloud_ai_service.dart: CloudAiService — όλες οι AI κλήσεις (Claude/Gemini/OpenAI)
 - lib/services/eva_service.dart: Eva — on-device, FREE, ΜΗΝ ΑΓΓΙΖΕΙΣ
 - lib/widgets/locked_feature.dart: LockedWrapper — PRO chip πορτοκαλί, 50% opacity
-- χlib/widgets/paywall_sheet.dart: showPaywall() bottom sheet
+- lib/widgets/paywall_sheet.dart: showPaywall() bottom sheet
 - lib/screens/capture/note_editor_screen.dart: κύριος editor (κείμενο + σχέδιο + AI chat)
 - lib/screens/home/home_screen.dart: λίστα σημειώσεων + create menu (+)
 - lib/screens/home/settings_tab.dart: ρυθμίσεις (AI section, backup, κλπ)
