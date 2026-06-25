@@ -838,7 +838,16 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Icon(Icons.add),
             )
           : null,
-      body: IndexedStack(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home_bg.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
+            child: IndexedStack(
         index: _tab,
         children: [
           Column(children: [
@@ -848,6 +857,9 @@ class _HomeScreenState extends State<HomeScreen> {
           const SearchTab(),
           SettingsTab(onBackToHome: () { setState(() => _tab = 0); _loadNotes(); }),
           _buildFavorites(),
+        ],
+      ),
+          ),
         ],
       ),
       bottomNavigationBar: BottomAppBar(
