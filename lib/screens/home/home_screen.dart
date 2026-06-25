@@ -820,7 +820,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      kEditionName + ' P=' + PremiumService.instance.isPremium.toString() + ' D=' + kDebugMode.toString(),
+                      kEditionName,
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
