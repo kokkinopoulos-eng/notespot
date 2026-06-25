@@ -233,11 +233,24 @@ class _PaywallSheetState extends State<_PaywallSheet> {
   Widget _providerCard(BuildContext context, String name, String url, ColorScheme cs) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        title: Text(name),
-        trailing: TextButton(
-          onPressed: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
-          child: const Text('\u0394\u03b7\u03bc\u03b9\u03bf\u03cd\u03c1\u03b3\u03b7\u03c3\u03b5 key \u2192'),
+      child: InkWell(
+        onTap: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+                  child: const Text('\u0394\u03b7\u03bc\u03b9\u03bf\u03cd\u03c1\u03b3\u03b7\u03c3\u03b5 key \u2192'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

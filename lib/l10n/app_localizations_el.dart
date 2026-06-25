@@ -361,7 +361,7 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get cloudAiToggleSubtitle =>
-      'Βελτιώνει την κατηγοριοποίηση χρησιμοποιώντας το API key σας';
+      'Βελτιώνει την κατηγοριοποίηση και ενεργοποιεί τις έξυπνες λειτουργίες με το δικό σου API key';
 
   @override
   String get archiveSection => 'Αρχείο';
