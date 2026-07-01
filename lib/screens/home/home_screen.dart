@@ -1,5 +1,6 @@
 import '../../services/eva_service.dart';
 import 'dart:async';
+import 'package:local_auth/local_auth.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -55,6 +56,22 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription<Uri?>? _widgetSubscription;
 
   bool get _selecting => _selected.isNotEmpty;
+
+  final _localAuth = LocalAuthentication();
+
+  Future<bool> _authForPrivateNote() async {
+    try {
+      return await _localAuth.authenticate(
+        localizedReason: 'Επαλήθευση για άνοιγμα ιδιωτικής σημείωσης',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: false,
+        ),
+      );
+    } catch (_) {
+      return false;
+    }
+  }
 
   @override
   void initState() {
@@ -647,6 +664,10 @@ class _HomeScreenState extends State<HomeScreen> {
             child: NoteCard(
               note: note,
               onTap: () async {
+                if (note.isPrivate) {
+                  final ok = await _authForPrivateNote();
+                  if (!ok || !mounted) return;
+                }
                 await Navigator.push<bool>(
                   context,
                   MaterialPageRoute(

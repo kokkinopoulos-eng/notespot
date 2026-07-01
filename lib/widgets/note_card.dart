@@ -41,6 +41,9 @@ class NoteCard extends StatelessWidget {
 
   Widget? _trailing() {
     final icons = <Widget>[];
+    if (note.isPrivate) {
+      icons.add(const Icon(Icons.lock, size: 14, color: Color(0xFF6B4FA0)));
+    }
     if (note.isPinned) {
       icons.add(const Icon(Icons.push_pin, size: 14, color: Color(0xFF6B4FA0)));
     }
@@ -110,13 +113,15 @@ class NoteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).toString();
     final date = DateFormat.yMMMd(locale).format(note.createdAt);
-    final Widget subtitle = note.type == NoteType.checklist
-        ? _checklistPreview(date)
-        : Text(
-            note.content.isEmpty ? date : '${note.content}\n$date',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          );
+    final Widget subtitle = note.isPrivate
+        ? Text(date)
+        : note.type == NoteType.checklist
+            ? _checklistPreview(date)
+            : Text(
+                note.content.isEmpty ? date : '${note.content}\n$date',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              );
     return ListTile(
       onTap: onTap,
       leading: _leading(),

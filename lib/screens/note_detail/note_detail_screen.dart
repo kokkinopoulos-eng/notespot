@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/category_labels.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/note.dart';
+import '../../services/custom_category_service.dart';
 import '../../services/db_service.dart';
 import '../../services/eva_service.dart';
 import '../../services/local_analysis_service.dart';
@@ -381,6 +382,15 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     if (mounted) Navigator.pop(context, true);
   }
 
+  Future<void> _togglePrivate() async {
+    final updated = _note.copyWith(
+      isPrivate: !_note.isPrivate,
+      updatedAt: DateTime.now(),
+    );
+    await DbService.instance.update(updated);
+    if (mounted) setState(() => _note = updated);
+  }
+
   Future<void> _showColorPicker() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -653,6 +663,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       reminderAt: reminderAt,
       expiresAt: _note.expiresAt,
       categoryLocked: _note.categoryLocked,
+      isPrivate: _note.isPrivate,
       createdAt: _note.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -680,6 +691,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       reminderAt: _note.reminderAt,
       expiresAt: expiry,
       categoryLocked: _note.categoryLocked,
+      isPrivate: _note.isPrivate,
       createdAt: _note.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -879,6 +891,16 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             ),
             tooltip: _note.isArchived ? 'Επαναφορά από αρχείο' : 'Αρχειοθέτηση',
             onPressed: _toggleArchive,
+          ),
+          IconButton(
+            icon: Icon(
+              _note.isPrivate ? Icons.lock : Icons.lock_open_outlined,
+              color: _note.isPrivate
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            tooltip: _note.isPrivate ? 'Αφαίρεση κλειδώματος' : 'Ιδιωτική σημείωση',
+            onPressed: _togglePrivate,
           ),
           if (_note.type != NoteType.checklist)
             IconButton(
@@ -1149,7 +1171,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 }
 
 // --- Eva category section ---
-class _EvaSection extends StatelessWidget {
+class _EvaSection extends StatefulWidget {
   const _EvaSection({
     required this.currentCategory,
     required this.learnChecked,
@@ -1167,9 +1189,121 @@ class _EvaSection extends StatelessWidget {
   final ValueChanged<bool?> onLearnChanged;
 
   @override
+  State<_EvaSection> createState() => _EvaSectionState();
+}
+
+class _EvaSectionState extends State<_EvaSection> {
+  List<String> _customCats = [];
+  late String _selectedCat;
+
+  static const _addSentinel = '__add_custom__';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCat = widget.currentCategory;
+    _loadCustomCats();
+  }
+
+  @override
+  void didUpdateWidget(_EvaSection old) {
+    super.didUpdateWidget(old);
+    if (old.currentCategory != widget.currentCategory) {
+      setState(() => _selectedCat = widget.currentCategory);
+    }
+  }
+
+  Future<void> _loadCustomCats() async {
+    final cats = await CustomCategoryService.instance.getCategories();
+    if (mounted) setState(() => _customCats = cats);
+  }
+
+  Future<void> _showAddDialog() async {
+    final ctrl = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(widget.isEl ? 'Νέα κατηγορία' : 'New category'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            hintText: widget.isEl ? 'Όνομα κατηγορίας' : 'Category name',
+          ),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(widget.isEl ? 'Άκυρο' : 'Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: Text(widget.isEl ? 'Προσθήκη' : 'Add'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (name == null || name.isEmpty) return;
+    await CustomCategoryService.instance.addCategory(name);
+    await _loadCustomCats();
+    widget.onCategoryPicked(name);
+    if (mounted) setState(() => _selectedCat = name);
+  }
+
+  Future<void> _deleteCustomCat(String name) async {
+    await CustomCategoryService.instance.removeCategory(name);
+    if (_selectedCat == name) {
+      widget.onCategoryPicked('other');
+      setState(() => _selectedCat = 'other');
+    }
+    await _loadCustomCats();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final secondary = Theme.of(context).colorScheme.secondary;
     final bodySmall = Theme.of(context).textTheme.bodySmall;
+    final isEl = widget.isEl;
+
+    // Build all dropdown items: Eva built-ins + custom + "+" sentinel
+    final allCatKeys = {
+      ...LocalAnalysisService.kCategories,
+      ..._customCats,
+    };
+    // If the note's category is a custom one not in SharedPreferences, still include it
+    final orphanCat = !allCatKeys.contains(_selectedCat) && _selectedCat.isNotEmpty
+        ? _selectedCat
+        : null;
+    final effectiveSelected = allCatKeys.contains(_selectedCat)
+        ? _selectedCat
+        : orphanCat ?? 'other';
+
+    final items = <DropdownMenuItem<String>>[
+      ...LocalAnalysisService.kCategories.map((cat) => DropdownMenuItem(
+            value: cat,
+            child: Text(categoryLabel(cat, greek: isEl)),
+          )),
+      if (orphanCat != null)
+        DropdownMenuItem(value: orphanCat, child: Text(orphanCat)),
+      ..._customCats.map((cat) => DropdownMenuItem(
+            value: cat,
+            child: Text(cat),
+          )),
+      DropdownMenuItem(
+        value: _addSentinel,
+        child: Row(
+          children: [
+            const Icon(Icons.add, size: 16),
+            const SizedBox(width: 6),
+            Text(isEl ? 'Νέα κατηγορία...' : 'New category...'),
+          ],
+        ),
+      ),
+    ];
+
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 6, 4, 2),
       decoration: BoxDecoration(
@@ -1186,7 +1320,7 @@ class _EvaSection extends StatelessWidget {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  isLocked
+                  widget.isLocked
                       ? (isEl ? 'Κατηγορία (χειροκίνητη)' : 'Category (manual)')
                       : (isEl
                           ? 'Η Eva πρότεινε αυτή την κατηγορία'
@@ -1199,38 +1333,53 @@ class _EvaSection extends StatelessWidget {
               ),
             ],
           ),
-          DropdownButtonFormField<String>(
-            initialValue: currentCategory,
+          DropdownButton<String>(
+            value: effectiveSelected,
             isDense: true,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 0, vertical: 4),
-            ),
+            isExpanded: true,
+            underline: const SizedBox.shrink(),
             style: bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
-            items: LocalAnalysisService.kCategories
-                .map((cat) => DropdownMenuItem(
-                      value: cat,
-                      child: Text(categoryLabel(cat, greek: isEl)),
-                    ))
-                .toList(),
+            items: items,
             onChanged: (v) {
-              if (v != null) onCategoryPicked(v);
+              if (v == null) return;
+              if (v == _addSentinel) {
+                _showAddDialog();
+                return;
+              }
+              widget.onCategoryPicked(v);
+              setState(() => _selectedCat = v);
             },
           ),
+          if (_customCats.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 6,
+              runSpacing: 2,
+              children: _customCats
+                  .map((cat) => Chip(
+                        label: Text(cat,
+                            style: const TextStyle(fontSize: 12)),
+                        deleteIcon: const Icon(Icons.close, size: 14),
+                        onDeleted: () => _deleteCustomCat(cat),
+                        visualDensity: VisualDensity.compact,
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap,
+                      ))
+                  .toList(),
+            ),
+          ],
           CheckboxListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            value: learnChecked,
+            value: widget.learnChecked,
             visualDensity: VisualDensity.compact,
             title: Text(
               isEl ? 'Βοήθησε την Eva να μάθει' : 'Help Eva learn',
               style: bodySmall,
             ),
-            onChanged: onLearnChanged,
+            onChanged: widget.onLearnChanged,
             controlAffinity: ListTileControlAffinity.leading,
           ),
         ],
