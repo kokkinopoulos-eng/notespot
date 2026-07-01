@@ -76,15 +76,18 @@ class _HelpSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return ExpansionTile(
       leading: Icon(icon, size: 22),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: cs.surface,
+      collapsedBackgroundColor: cs.surface,
       children: [
         Text(
           body,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.55),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.55, color: cs.onSurface),
         ),
       ],
     );

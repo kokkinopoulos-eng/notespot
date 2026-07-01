@@ -784,6 +784,40 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
   // ─────────────────────────────────────────────────────────────────────────
 
+  Future<void> _showTitleDialog(BuildContext context) async {
+    final tmp = TextEditingController(text: _titleCtrl.text);
+    final l10n = AppLocalizations.of(context);
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.titleLabel),
+        content: TextField(
+          controller: tmp,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: l10n.titleLabel,
+            border: const OutlineInputBorder(),
+          ),
+          onSubmitted: (_) => Navigator.pop(ctx),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Άκυρο'),
+          ),
+          FilledButton(
+            onPressed: () {
+              setState(() => _titleCtrl.text = tmp.text);
+              Navigator.pop(ctx);
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+    tmp.dispose();
+  }
+
   Widget _paneHeader({
     required IconData icon,
     required String label,
@@ -1106,6 +1140,13 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                             bg: cs.tertiaryContainer,
                             fg: cs.onTertiaryContainer,
                             actions: [
+                              if (_paneMode == 2)
+                                IconButton(
+                                  icon: const Icon(Icons.title, size: 20),
+                                  visualDensity: VisualDensity.compact,
+                                  tooltip: l10n.titleLabel,
+                                  onPressed: () => _showTitleDialog(context),
+                                ),
                               if (_mathLoading || _textLoading)
                                 const SizedBox(
                                   width: 32,

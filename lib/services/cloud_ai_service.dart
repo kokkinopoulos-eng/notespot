@@ -69,7 +69,7 @@ class CloudAiService {
       '"extracted_text": ""}';
 
   String _imagePrompt(String lang) =>
-      _imagePromptTemplate.replaceAll('<LANG>', lang);
+      'Reply in $lang.\n\n${_imagePromptTemplate.replaceAll('<LANG>', lang)}';
 
   String _textPrompt(String lang, String text) =>
       '${_textPromptTemplate.replaceAll('<LANG>', lang)}\n\nText to analyze:\n$text';
