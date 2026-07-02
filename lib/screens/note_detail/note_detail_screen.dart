@@ -892,16 +892,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             tooltip: _note.isArchived ? 'Επαναφορά από αρχείο' : 'Αρχειοθέτηση',
             onPressed: _toggleArchive,
           ),
-          IconButton(
-            icon: Icon(
-              _note.isPrivate ? Icons.lock : Icons.lock_open_outlined,
-              color: _note.isPrivate
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            tooltip: _note.isPrivate ? 'Αφαίρεση κλειδώματος' : 'Ιδιωτική σημείωση',
-            onPressed: _togglePrivate,
-          ),
           if (_note.type != NoteType.checklist)
             IconButton(
               icon: const Icon(Icons.edit_outlined),
@@ -921,10 +911,13 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (v) {
-              if (v == 'print') _print();
+              if (v == 'lock') _togglePrivate(); if (v == 'print') _print();
               if (v == 'calendar') _addToCalendar();
             },
+
             itemBuilder: (_) => [
+              PopupMenuItem(value: 'lock', child: Row(children: [Icon(_note.isPrivate ? Icons.lock : Icons.lock_open_outlined), SizedBox(width: 12), Text(_note.isPrivate ? '\u0391\u03c6\u03b1\u03af\u03c1\u03b5\u03c3\u03b7 \u03ba\u03bb\u03b5\u03b9\u03b4\u03ce\u03bc\u03b1\u03c4\u03bf\u03c2' : '\u0399\u03b4\u03b9\u03c9\u03c4\u03b9\u03ba\u03ae \u03c3\u03b7\u03bc\u03b5\u03af\u03c9\u03c3\u03b7')])),
+
               const PopupMenuItem(value: 'print', child: Row(children: [Icon(Icons.print_outlined), SizedBox(width: 12), Text('Print')])),
               const PopupMenuItem(value: 'calendar', child: Row(children: [Icon(Icons.calendar_today_outlined), SizedBox(width: 12), Text('Add to Calendar')])),
             ],
