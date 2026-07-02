@@ -668,8 +668,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: NoteCard(
               note: note,
               onTap: () async {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('isPrivate=' + note.isPrivate.toString())));
-                if (note.isPrivate) {
+                                if (note.isPrivate) {
                   final ok = await _authForPrivateNote();
                   if (!ok || !mounted) return;
                 }
