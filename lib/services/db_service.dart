@@ -9,7 +9,7 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const _dbName = 'notespot.db';
-  static const _dbVersion = 9;
+  static const _dbVersion = 10;
 
   Database? _db;
 

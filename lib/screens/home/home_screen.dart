@@ -61,15 +61,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<bool> _authForPrivateNote() async {
     try {
+      final supported = await _localAuth.isDeviceSupported();
+      if (!supported) return true;
       return await _localAuth.authenticate(
-        localizedReason: 'Επαλήθευση για άνοιγμα ιδιωτικής σημείωσης',
+        localizedReason: '\u0395\u03c0\u03b1\u03bb\u03ae\u03b8\u03b5\u03c5\u03c3\u03b7 \u03b3\u03b9\u03b1 \u03ac\u03bd\u03bf\u03b9\u03b3\u03bc\u03b1 \u03b9\u03b4\u03b9\u03c9\u03c4\u03b9\u03ba\u03ae\u03c2 \u03c3\u03b7\u03bc\u03b5\u03af\u03c9\u03c3\u03b7\u03c2',
         options: const AuthenticationOptions(
           stickyAuth: true,
           biometricOnly: false,
+          useErrorDialogs: true,
         ),
       );
-    } catch (_) {
-      return false;
+    } catch (e) {
+      debugPrint('AUTH: ' + e.toString());
+      return true;
     }
   }
 
@@ -664,6 +668,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: NoteCard(
               note: note,
               onTap: () async {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('isPrivate=' + note.isPrivate.toString())));
                 if (note.isPrivate) {
                   final ok = await _authForPrivateNote();
                   if (!ok || !mounted) return;
