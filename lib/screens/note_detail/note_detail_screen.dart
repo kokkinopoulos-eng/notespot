@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:local_auth/local_auth.dart';
 import '../../widgets/eva_avatar.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
@@ -235,6 +236,26 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   bool _evaLearnChecked = true;
   String? _evaMessage;
   int _evaMessageGen = 0;
+
+  final _localAuth = LocalAuthentication();
+
+  Future<bool> _authForPrivateNote() async {
+    try {
+      final supported = await _localAuth.isDeviceSupported();
+      if (!supported) return true;
+      return await _localAuth.authenticate(
+        localizedReason: 'Επαλήθευση για διαγραφή ιδιωτικής σημείωσης',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: false,
+          useErrorDialogs: true,
+        ),
+      );
+    } catch (e) {
+      debugPrint('AUTH: $e');
+      return true;
+    }
+  }
 
   // Preset colors for picker (0 = none/default)
   static const _presetColors = [
@@ -766,7 +787,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                     ? const TextStyle(
                         decoration: TextDecoration.lineThrough,
                         color: Colors.grey)
-                    : null),
+                    : TextStyle(color: Theme.of(context).colorScheme.onSurface)),
             secondary: IconButton(
               icon: const Icon(Icons.close, size: 16),
               onPressed: () => _removeChecklistItem(idx),
@@ -811,6 +832,16 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
   }
 
   Future<void> _delete(AppLocalizations l10n) async {
+    if (_note.isPrivate) {
+      final ok = await _authForPrivateNote();
+      if (!mounted) return;
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Απαιτείται επαλήθευση')),
+        );
+        return;
+      }
+    }
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(

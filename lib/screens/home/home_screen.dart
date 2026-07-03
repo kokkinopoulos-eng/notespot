@@ -487,6 +487,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _deleteSelected(AppLocalizations l10n) async {
+    final hasPrivate = _notes.any(
+        (n) => n.id != null && _selected.contains(n.id) && n.isPrivate);
+    if (hasPrivate) {
+      final ok = await _authForPrivateNote();
+      if (!mounted) return;
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Απαιτείται επαλήθευση')),
+        );
+        return;
+      }
+    }
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -598,6 +610,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<bool> _confirmSwipe(Note note, DismissDirection dir) async {
     if (dir == DismissDirection.startToEnd) {
       // Swipe δεξιά = Delete (with confirm)
+      if (note.isPrivate) {
+        final ok = await _authForPrivateNote();
+        if (!mounted) return false;
+        if (!ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Απαιτείται επαλήθευση')),
+          );
+          return false;
+        }
+      }
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
