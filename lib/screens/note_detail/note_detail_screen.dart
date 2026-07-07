@@ -784,9 +784,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             controlAffinity: ListTileControlAffinity.leading,
             title: Text(text,
                 style: checked
-                    ? const TextStyle(
+                    ? TextStyle(
                         decoration: TextDecoration.lineThrough,
-                        color: Colors.grey)
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))
                     : TextStyle(color: Theme.of(context).colorScheme.onSurface)),
             secondary: IconButton(
               icon: const Icon(Icons.close, size: 16),
