@@ -335,9 +335,6 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     final title = Uri.encodeComponent(_note.title.isNotEmpty ? _note.title : 'SpotNote');
     final details = Uri.encodeComponent(_note.content.isNotEmpty ? _note.content : '');
     final now = DateTime.now();
-    final start = '${now.year}${now.month.toString().padLeft(2,'0')}${now.day.toString().padLeft(2,'0')}T${now.hour.toString().padLeft(2,'0')}${now.minute.toString().padLeft(2,'0')}00';
-    final end = '${now.year}${now.month.toString().padLeft(2,'0')}${now.day.toString().padLeft(2,'0')}T${(now.hour+1).toString().padLeft(2,'0')}${now.minute.toString().padLeft(2,'0')}00';
-    final uri = Uri.parse('content://com.android.calendar/time/$start');
     final intentUri = Uri.parse(
       'intent://${Uri.encodeComponent('SpotNote')}#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.item/event;S.title=$title;S.description=$details;S.beginTime=${now.millisecondsSinceEpoch};S.endTime=${now.millisecondsSinceEpoch + 3600000};end'
     );

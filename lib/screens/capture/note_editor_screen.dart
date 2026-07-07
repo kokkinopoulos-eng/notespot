@@ -82,8 +82,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final _textScroll = ScrollController();
   final List<DrawingCanvasController> _pages = [DrawingCanvasController()];
   int _page = 0;
-  double _split = 0.5;
-  int _paneMode = 0; // 0=split, 1=text-only, 2=ink-only
+  int _paneMode = 1; // 1=text-only, 2=ink-only
   bool _mathLoading = false;
   bool _textLoading = false;
   ui.Image? _ghostImage;
@@ -100,21 +99,21 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   void initState() {
     super.initState();
     _loadEditNote();
-    _loadSplit();
+    _loadPaneMode();
     _loadStylusPrefs();
   }
 
-  Future<void> _loadSplit() async {
+  Future<void> _loadPaneMode() async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getDouble('editor_split');
-    if (saved != null && mounted) {
-      setState(() => _split = saved.clamp(0.2, 0.8));
+    final saved = prefs.getInt('editor_pane_mode');
+    if (saved != null && (saved == 1 || saved == 2) && mounted) {
+      setState(() => _paneMode = saved);
     }
   }
 
-  Future<void> _saveSplit() async {
+  Future<void> _savePaneMode() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('editor_split', _split);
+    await prefs.setInt('editor_pane_mode', _paneMode);
   }
 
   Future<void> _loadStylusPrefs() async {
@@ -846,39 +845,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     );
   }
 
-  Widget _divider(BuildContext context, double totalHeight) {
-    final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onVerticalDragUpdate: (d) {
-        if (totalHeight <= 0) return;
-        setState(() {
-          _split = (_split + d.delta.dy / totalHeight).clamp(0.2, 0.8);
-        });
-      },
-      onVerticalDragEnd: (_) => _saveSplit(),
-      child: Container(
-        height: 22,
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest,
-          border: Border.symmetric(
-            horizontal: BorderSide(color: cs.outlineVariant, width: 0.6),
-          ),
-        ),
-        child: Center(
-          child: Container(
-            width: 48,
-            height: 5,
-            decoration: BoxDecoration(
-              color: cs.primary.withValues(alpha: 0.55),
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _onAiButtonPressed() async {
     final selection = _contentCtrl.selection;
     final hasSelection = selection.isValid && !selection.isCollapsed;
@@ -942,7 +908,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final cs = Theme.of(context).colorScheme;
-    final textFlex = (_split * 1000).round();
     final atLast = _page == _pages.length - 1;
     final canAdd = atLast && _pages.length < kMaxInkPages && !_ink.isEmpty;
 
@@ -959,6 +924,17 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           onChanged: (_) => setState(() {}),
         ),
         actions: [
+          IconButton(
+            icon: Icon(
+              _paneMode == 1 ? Icons.gesture : Icons.keyboard_alt_outlined,
+              size: 22,
+            ),
+            tooltip: _paneMode == 1 ? l10n.drawNote : l10n.textNote,
+            onPressed: () {
+              setState(() => _paneMode = _paneMode == 1 ? 2 : 1);
+              _savePaneMode();
+            },
+          ),
           ListenableBuilder(
             listenable: PremiumService.instance,
             builder: (context, _) {
@@ -1039,215 +1015,64 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       body: SafeArea(
         child: _isAiChat
             ? _buildChatBody(context)
-            : LayoutBuilder(
-          builder: (context, constraints) => Column(
-            children: [
-              // ── Text pane: visible in split (0) and text-only (1) ──
-              if (_paneMode != 2)
-                Expanded(
-                  flex: _paneMode == 1 ? 1 : textFlex,
-                  child: Container(
-                    color: Colors.white,
-                    child: Column(
-                      children: [
-                        _paneHeader(
-                          icon: Icons.keyboard_alt_outlined,
-                          label: l10n.textNote.toUpperCase(),
-                          bg: cs.secondaryContainer,
-                          fg: cs.onSecondaryContainer,
-                          actions: [
-                            IconButton(
-                              icon: Icon(
-                                _paneMode == 1
-                                    ? Icons.fullscreen_exit
-                                    : Icons.fullscreen,
-                                size: 17,
-                              ),
-                              tooltip: _paneMode == 1
-                                  ? l10n.restoreSplit
-                                  : l10n.maximizeText,
-                              visualDensity: VisualDensity.compact,
-                              onPressed: () => setState(
-                                  () => _paneMode = _paneMode == 1 ? 0 : 1),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.backspace_outlined,
-                                  size: 17),
-                              tooltip: l10n.clearText,
-                              visualDensity: VisualDensity.compact,
-                              onPressed: () => _confirmClearText(l10n),
-                            ),
-                          ],
-                        ),
-                        Expanded(
-                          child: Stack(
-                            children: [
-                              const Positioned.fill(
-                                child: CustomPaint(
-                                  painter: _TextNotebookPainter(),
-                                ),
-                              ),
-                              Scrollbar(
-                                controller: _textScroll,
-                                thumbVisibility: true,
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                      16, 4, 16, 8),
-                                  child: TextField(
-                                    controller: _contentCtrl,
-                                    focusNode: _contentFocus,
-                                    scrollController: _textScroll,
-                                    maxLines: null,
-                                    expands: true,
-                                    decoration: InputDecoration(
-                                      hintText: l10n.noteHint,
-                                      hintStyle: TextStyle(
-                                          color: Colors.grey.shade400),
-                                      border: InputBorder.none,
-                                    ),
-                                    style: const TextStyle(
-                                      fontFamily: 'monospace',
-                                      fontSize: 20,
-                                      height: 1.5,
-                                      color: Colors.black87,
-                                    ),
-                                    onChanged: (_) => setState(() {}),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              // ── Divider handle: split mode only ────────────────────
-              if (_paneMode == 0) _divider(context, constraints.maxHeight),
-              // ── Ink pane: visible in split (0) and ink-only (2) ───
-              if (_paneMode != 1)
-                Expanded(
-                  flex: _paneMode == 2 ? 1 : 1000 - textFlex,
-                  child: AnimatedBuilder(
-                    animation: Listenable.merge(_pages),
-                    builder: (_, _) => Container(
-                      color: _ink.bgColor,
+            : Column(
+              children: [
+                // ── Text pane: text-only mode (1) ─────────────────────
+                if (_paneMode == 1)
+                  Expanded(
+                    child: Container(
+                      color: Colors.white,
                       child: Column(
                         children: [
                           _paneHeader(
-                            icon: Icons.gesture,
-                            label: l10n.drawNote.toUpperCase(),
-                            bg: cs.tertiaryContainer,
-                            fg: cs.onTertiaryContainer,
+                            icon: Icons.keyboard_alt_outlined,
+                            label: l10n.textNote.toUpperCase(),
+                            bg: cs.secondaryContainer,
+                            fg: cs.onSecondaryContainer,
                             actions: [
-                              if (_paneMode == 2)
-                                IconButton(
-                                  icon: const Icon(Icons.title, size: 20),
-                                  visualDensity: VisualDensity.compact,
-                                  tooltip: l10n.titleLabel,
-                                  onPressed: () => _showTitleDialog(context),
-                                ),
-                              if (_mathLoading || _textLoading)
-                                const SizedBox(
-                                  width: 32,
-                                  height: 32,
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  ),
-                                )
-                              else
-                                PopupMenuButton<String>(
-                                  icon: const Icon(Icons.auto_fix_high,
-                                      size: 18),
-                                  tooltip: l10n.inkRecognize,
-                                  enabled: !_ink.isEmpty,
-                                  onSelected: (v) {
-                                    if (v == 'math') _runMathRecognition();
-                                    if (v == 'text') _runTextRecognition();
-                                  },
-                                  itemBuilder: (ctx) => [
-                                    PopupMenuItem(
-                                      value: 'math',
-                                      child: Row(children: [
-                                        const Icon(Icons.functions, size: 18),
-                                        const SizedBox(width: 10),
-                                        Text(l10n.inkMathAction),
-                                      ]),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'text',
-                                      child: Row(children: [
-                                        const Icon(Icons.text_fields, size: 18),
-                                        const SizedBox(width: 10),
-                                        Text(l10n.inkTextAction),
-                                      ]),
-                                    ),
-                                  ],
-                                ),
                               IconButton(
-                                icon: Icon(
-                                  _paneMode == 2
-                                      ? Icons.fullscreen_exit
-                                      : Icons.fullscreen,
-                                  size: 20,
-                                ),
-                                tooltip: _paneMode == 2
-                                    ? l10n.restoreSplit
-                                    : l10n.maximizeInk,
+                                icon: const Icon(Icons.backspace_outlined,
+                                    size: 17),
+                                tooltip: l10n.clearText,
                                 visualDensity: VisualDensity.compact,
-                                onPressed: () => setState(() =>
-                                    _paneMode = _paneMode == 2 ? 0 : 2),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.chevron_left, size: 20),
-                                visualDensity: VisualDensity.compact,
-                                onPressed: _page > 0
-                                    ? () => _goToPage(_page - 1)
-                                    : null,
-                              ),
-                              Text('${_page + 1}/${_pages.length}',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: cs.onTertiaryContainer)),
-                              IconButton(
-                                icon: Icon(
-                                    atLast
-                                        ? Icons.add
-                                        : Icons.chevron_right,
-                                    size: 20),
-                                visualDensity: VisualDensity.compact,
-                                onPressed: atLast
-                                    ? (canAdd ? _addPage : null)
-                                    : () => _goToPage(_page + 1),
+                                onPressed: () => _confirmClearText(l10n),
                               ),
                             ],
                           ),
                           Expanded(
                             child: Stack(
                               children: [
-                                Positioned.fill(
+                                const Positioned.fill(
                                   child: CustomPaint(
-                                    painter: _NotebookPainter(
-                                        bgColor: _ink.bgColor),
+                                    painter: _TextNotebookPainter(),
                                   ),
                                 ),
-                                if (_ghostImage != null)
-                                  Positioned.fill(
-                                    child: Opacity(
-                                      opacity: 0.3,
-                                      child: RawImage(
-                                          image: _ghostImage,
-                                          fit: BoxFit.fill),
+                                Scrollbar(
+                                  controller: _textScroll,
+                                  thumbVisibility: true,
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 4, 16, 8),
+                                    child: TextField(
+                                      controller: _contentCtrl,
+                                      focusNode: _contentFocus,
+                                      scrollController: _textScroll,
+                                      maxLines: null,
+                                      expands: true,
+                                      decoration: InputDecoration(
+                                        hintText: l10n.noteHint,
+                                        hintStyle: TextStyle(
+                                            color: Colors.grey.shade400),
+                                        border: InputBorder.none,
+                                      ),
+                                      style: const TextStyle(
+                                        fontFamily: 'monospace',
+                                        fontSize: 20,
+                                        height: 1.5,
+                                        color: Colors.black87,
+                                      ),
+                                      onChanged: (_) => setState(() {}),
                                     ),
-                                  ),
-                                Positioned.fill(
-                                  child: Listener(
-                                    onPointerDown: (_) =>
-                                        _contentFocus.unfocus(),
-                                    child: DrawingSurface(controller: _ink),
                                   ),
                                 ),
                               ],
@@ -1257,11 +1082,127 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                       ),
                     ),
                   ),
-                ),
-              if (_paneMode != 1) DrawingToolbar(controller: _ink),
-            ],
-          ),
-        ),
+                // ── Ink pane: drawing-only mode (2) ───────────────────
+                if (_paneMode == 2)
+                  Expanded(
+                    child: AnimatedBuilder(
+                      animation: Listenable.merge(_pages),
+                      builder: (_, _) => Container(
+                        color: _ink.bgColor,
+                        child: Column(
+                          children: [
+                            _paneHeader(
+                              icon: Icons.gesture,
+                              label: l10n.drawNote.toUpperCase(),
+                              bg: cs.tertiaryContainer,
+                              fg: cs.onTertiaryContainer,
+                              actions: [
+                                IconButton(
+                                  icon: const Icon(Icons.title, size: 20),
+                                  visualDensity: VisualDensity.compact,
+                                  tooltip: l10n.titleLabel,
+                                  onPressed: () => _showTitleDialog(context),
+                                ),
+                                if (_mathLoading || _textLoading)
+                                  const SizedBox(
+                                    width: 32,
+                                    height: 32,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(8),
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    ),
+                                  )
+                                else
+                                  PopupMenuButton<String>(
+                                    icon: const Icon(Icons.auto_fix_high,
+                                        size: 18),
+                                    tooltip: l10n.inkRecognize,
+                                    enabled: !_ink.isEmpty,
+                                    onSelected: (v) {
+                                      if (v == 'math') _runMathRecognition();
+                                      if (v == 'text') _runTextRecognition();
+                                    },
+                                    itemBuilder: (ctx) => [
+                                      PopupMenuItem(
+                                        value: 'math',
+                                        child: Row(children: [
+                                          const Icon(Icons.functions, size: 18),
+                                          const SizedBox(width: 10),
+                                          Text(l10n.inkMathAction),
+                                        ]),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'text',
+                                        child: Row(children: [
+                                          const Icon(Icons.text_fields, size: 18),
+                                          const SizedBox(width: 10),
+                                          Text(l10n.inkTextAction),
+                                        ]),
+                                      ),
+                                    ],
+                                  ),
+                                IconButton(
+                                  icon: const Icon(Icons.chevron_left, size: 20),
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: _page > 0
+                                      ? () => _goToPage(_page - 1)
+                                      : null,
+                                ),
+                                Text('${_page + 1}/${_pages.length}',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: cs.onTertiaryContainer)),
+                                IconButton(
+                                  icon: Icon(
+                                      atLast
+                                          ? Icons.add
+                                          : Icons.chevron_right,
+                                      size: 20),
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: atLast
+                                      ? (canAdd ? _addPage : null)
+                                      : () => _goToPage(_page + 1),
+                                ),
+                              ],
+                            ),
+                            Expanded(
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: CustomPaint(
+                                      painter: _NotebookPainter(
+                                          bgColor: _ink.bgColor),
+                                    ),
+                                  ),
+                                  if (_ghostImage != null)
+                                    Positioned.fill(
+                                      child: Opacity(
+                                        opacity: 0.3,
+                                        child: RawImage(
+                                            image: _ghostImage,
+                                            fit: BoxFit.fill),
+                                      ),
+                                    ),
+                                  Positioned.fill(
+                                    child: Listener(
+                                      onPointerDown: (_) =>
+                                          _contentFocus.unfocus(),
+                                      child: DrawingSurface(controller: _ink),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                if (_paneMode == 2) DrawingToolbar(controller: _ink),
+              ],
+            ),
       ),
     );
   }
