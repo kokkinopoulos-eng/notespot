@@ -735,7 +735,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
   Widget _buildChatBody(BuildContext context) {
     final turns = _parseTurns(_contentCtrl.text);
-    return Column(
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      child: Column(
       children: [
         Expanded(
           child: ListView.builder(
@@ -777,7 +779,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
             ),
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 
