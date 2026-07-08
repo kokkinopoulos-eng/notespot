@@ -981,7 +981,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             else if (_note.content.isNotEmpty)
               SelectableText(
                 _note.content,
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface),
               ),
             const SizedBox(height: 12),
             const Divider(height: 1, thickness: 0.5),
