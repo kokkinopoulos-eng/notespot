@@ -1140,6 +1140,16 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                             bg: cs.tertiaryContainer,
                             fg: cs.onTertiaryContainer,
                             actions: [
+              IconButton(
+                icon: Icon(
+                  _paneMode == 2 ? Icons.fullscreen_exit : Icons.fullscreen,
+                  size: 17,
+                ),
+                tooltip: _paneMode == 2 ? l10n.restoreSplit : l10n.maximizeInk,
+                visualDensity: VisualDensity.compact,
+                onPressed: () => setState(
+                    () => _paneMode = _paneMode == 2 ? 0 : 2),
+              ),
                               if (_paneMode == 2)
                                 IconButton(
                                   icon: const Icon(Icons.title, size: 20),
