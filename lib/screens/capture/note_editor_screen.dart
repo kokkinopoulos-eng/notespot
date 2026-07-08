@@ -713,7 +713,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         ),
         decoration: BoxDecoration(
           color:
-              turn.isUser ? cs.primary : cs.surfaceContainerHighest,
+              turn.isUser ? const Color(0xFF7C4DFF) : const Color(0xFFEEEEEE),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -724,7 +724,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         child: Text(
           turn.text,
           style: TextStyle(
-            color: turn.isUser ? cs.onPrimary : cs.onSurface,
+            color: turn.isUser ? Colors.white : Colors.black87,
             fontSize: 15,
             height: 1.4,
           ),
@@ -736,7 +736,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   Widget _buildChatBody(BuildContext context) {
     final turns = _parseTurns(_contentCtrl.text);
     return Container(
-      color: Theme.of(context).colorScheme.surface,
+      color: Colors.white,
       child: Column(
       children: [
         Expanded(
@@ -758,7 +758,10 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   child: TextField(
                     controller: _chatInputCtrl,
                     enabled: !_aiChatLoading,
+                    style: const TextStyle(color: Colors.black87),
                     decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
                       hintText: '\u03a1\u03ce\u03c4\u03b7\u03c3\u03b5 \u03ba\u03ac\u03c4\u03b9\u2026',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
