@@ -142,7 +142,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     _titleCtrl.text = note.title;
     _contentCtrl.text = note.content;
     if (note.isAiChat) {
-      setState(() => _isAiChat = true);
+      setState(() { _isAiChat = true; _paneMode = 1; });
       _scrollToBottom();
     }
     // Restore canvas background for all existing pages.
@@ -991,7 +991,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   ],
                   onSelected: (v) {
                     if (v == 0) {
-                      setState(() => _isAiChat = !_isAiChat);
+                      setState(() { _isAiChat = !_isAiChat; if (_isAiChat) _paneMode = 1; });
                     } else if (v == 1) {
                       _onAiButtonPressed();
                     } else if (v == 2) {
