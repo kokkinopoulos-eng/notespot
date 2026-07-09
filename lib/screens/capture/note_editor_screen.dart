@@ -824,9 +824,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     required Color bg,
     required Color fg,
     List<Widget> actions = const [],
-    VoidCallback? onTap,
   }) {
-    return GestureDetector(onTap: onTap, child: Container(
+    return Container(
       height: 34,
       color: bg,
       child: Row(
@@ -844,7 +843,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ...actions,
         ],
       ),
-    ));
+    );
   }
 
   Widget _divider(BuildContext context, double totalHeight) {
@@ -949,7 +948,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: _isAiChat ? Colors.white : null,
       appBar: AppBar(
         title: TextField(
           controller: _titleCtrl,
@@ -1053,7 +1051,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                     child: Column(
                       children: [
                         _paneHeader(
-                          onTap: () => setState(() => _paneMode = _paneMode == 1 ? 0 : 1),
                           icon: Icons.keyboard_alt_outlined,
                           label: l10n.textNote.toUpperCase(),
                           bg: cs.secondaryContainer,
@@ -1138,22 +1135,11 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                       child: Column(
                         children: [
                           _paneHeader(
-                          onTap: () => setState(() => _paneMode = _paneMode == 2 ? 0 : 2),
                             icon: Icons.gesture,
                             label: l10n.drawNote.toUpperCase(),
                             bg: cs.tertiaryContainer,
                             fg: cs.onTertiaryContainer,
                             actions: [
-              IconButton(
-                icon: Icon(
-                  _paneMode == 2 ? Icons.fullscreen_exit : Icons.fullscreen,
-                  size: 17,
-                ),
-                tooltip: _paneMode == 2 ? l10n.restoreSplit : l10n.maximizeInk,
-                visualDensity: VisualDensity.compact,
-                onPressed: () => setState(
-                    () => _paneMode = _paneMode == 2 ? 0 : 2),
-              ),
                               if (_paneMode == 2)
                                 IconButton(
                                   icon: const Icon(Icons.title, size: 20),
