@@ -824,8 +824,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     required Color bg,
     required Color fg,
     List<Widget> actions = const [],
+    VoidCallback? onTap,
   }) {
-    return Container(
+    return GestureDetector(onTap: onTap, child: Container(
       height: 34,
       color: bg,
       child: Row(
@@ -843,7 +844,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ...actions,
         ],
       ),
-    );
+    ));
   }
 
   Widget _divider(BuildContext context, double totalHeight) {
@@ -1051,6 +1052,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                     child: Column(
                       children: [
                         _paneHeader(
+                          onTap: () => setState(() => _paneMode = _paneMode == 1 ? 0 : 1),
                           icon: Icons.keyboard_alt_outlined,
                           label: l10n.textNote.toUpperCase(),
                           bg: cs.secondaryContainer,
@@ -1135,6 +1137,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                       child: Column(
                         children: [
                           _paneHeader(
+                          onTap: () => setState(() => _paneMode = _paneMode == 2 ? 0 : 2),
                             icon: Icons.gesture,
                             label: l10n.drawNote.toUpperCase(),
                             bg: cs.tertiaryContainer,
