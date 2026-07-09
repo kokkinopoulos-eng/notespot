@@ -949,6 +949,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
+      backgroundColor: _isAiChat ? Colors.white : null,
       appBar: AppBar(
         title: TextField(
           controller: _titleCtrl,
